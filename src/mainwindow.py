@@ -2,7 +2,8 @@ from PyQt6 import QtWidgets, uic, QtCore
 import psutil
 import GPUtil
 from src.messagebox import CustomMessageBox
-
+import sys
+import pandas as pd
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -26,6 +27,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.home_results_button.clicked.connect(self.showChooseResultsPage)
 
 
+        # Other buttons
+        self.dataset_csv_button.clicked.connect(self.load_csv)
+        self.dataset_save_button.clicked.connect(self.save_csv)
+        self.settings_button.clicked.connect(self.showSettingsPage)
+
         self.old_pos = self.pos()
         self.mousePressed = False
         self.is_maximized = False
@@ -40,8 +46,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fade_animation = QtCore.QPropertyAnimation(self.opacity_effect, b"opacity")
         self.fade_animation.setDuration(500)
 
+        self.df = None
+        self.df_last_file_path = ""
+        self.current_page = "Home"
+        self.onSettingsPage = False
 
         self.showHomePage() #this ensures to start at the home page
+
 
 
 
@@ -100,6 +111,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showHomePage(self):
         self.fadeToPage(self.home_page)
+        if self.onSettingsPage:
+            self.onSettingsPage = False
+            self.settings_button.clicked.connect(self.showSettingsPage)
 
     def showDatasetPage(self):
         self.fadeToPage(self.dataset_page)
@@ -110,9 +124,108 @@ class MainWindow(QtWidgets.QMainWindow):
     def showChooseResultsPage(self):
         self.fadeToPage(self.choose_results_page)
 
+    def showSettingsPage(self):
+        self.fadeToPage(self.settings_page)
+        self.onSettingsPage = True
+        if self.current_page == "Home":
+            self.settings_button.clicked.connect(self.showHomePage)
+
+    def load_csv(self):
+        # Open file dialog to choose CSV file
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select CSV File", "", "CSV Files (*.csv)")
         
+        if file_path:
+            try:
+                self.df = pd.read_csv(file_path)
+                self.dataset_filepath_label.setText(file_path)
+                print("CSV loaded successfully!")
+                print(self.df.head())
+            except Exception as e:
+                print(f"Error while loading CSV: {e}")
+                QtWidgets.QMessageBox.critical(self, "Error", f"Failed to load CSV: {e}")
+                def cancel_action():
+                    print("User canceled.")
+
+                msg = CustomMessageBox(
+                    "Error Warning",
+                    "Warning!\n Failed to load CSV.",
+                    [
+                        ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
+                    ],
+                    self
+                )
+                msg.exec()
+        else:
+            return
+        
+    def save_csv(self, df):
+        if self.df is None or self.df.empty:
+            #QtWidgets.QMessageBox.warning(self, "Warning", "No data to save.")
+            def cancel_action():
+                print("User canceled.")
+
+            msg = CustomMessageBox(
+                "No Data Warning",
+                "Warning!\nThere is no data to save.",
+                [
+                    ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
+                ],
+                self
+            )
+            msg.exec()
+            return
+        
+        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save CSV File", self.df_last_file_path, "CSV Files (*.csv);;All Files (*)")
+        
+        print("runs until here")
+        # If the user cancels
+        if not file_path:
+            return
+
+        # Ensure it has a .csv extension
+        if not file_path.endswith(".csv"):
+            file_path += ".csv"
+
+        try:
+            self.df.to_csv(file_path, index=False)
+            print(f"CSV saved successfully at {file_path}!")
+            #QtWidgets.QMessageBox.information(self, "Success", f"CSV saved successfully at:\n{file_path}")
+            text = f"Success!\nCSV saved successfully at:\n{file_path}"
+            def cancel_action():
+                print("User canceled.")
+
+            msg = CustomMessageBox(
+                "Success",
+                text,
+                [
+                    ("Ok", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
+                ],
+                self
+            )
+            msg.exec()
+
+        except Exception as e:
+            print(f"Error while saving CSV: {e}")
+            #QtWidgets.QMessageBox.critical(self, "Error", f"Failed to save CSV: {e}")
+            text = f"Error!\nFailed to save CSV: {e}"
+            def cancel_action():
+                print("User canceled.")
+
+            msg = CustomMessageBox(
+                "Error",
+                text,
+                [
+                    ("Discard", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
+                ],
+                self
+            )
+            msg.exec()
+
+
+
+
     def show_warning(self):
-        # Define the actions to be taken when the buttons are clicked
+        # Actions to be taken when the buttons are clicked
         def discard_action():
             print("User discarded!")
             self.showHomePage()

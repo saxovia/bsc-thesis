@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SparseNN</class>
- <widget class="QMainWindow" name="SparseNN">
+ <class>SparseNNGenerator</class>
+ <widget class="QMainWindow" name="SparseNNGenerator">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1127</width>
-    <height>800</height>
+    <width>1283</width>
+    <height>877</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -133,15 +133,15 @@ QPushButton:pressed {
 
 
 QMessageBox {
-	background-color: #181621;
+	background-color: black;
 	color: white;
-	border-radius: 15px;
+	border-radius: 10px;
 	font-size: 12px;
-	padding: 50px;
+	padding: 100px;
 	border-radius: 10px;
 	border-style: solid;
-	border-width: 5px;
-	border-color: #5c5a63;
+	border-width: 40px;
+	border-color: black;
 }
 
 QMessageBox QPushButton {
@@ -163,188 +163,6 @@ QMessageBox QPushButton:hover {
     <property name="verticalSpacing">
      <number>0</number>
     </property>
-    <item row="0" column="0">
-     <widget class="QFrame" name="title_frame">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_3">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <property name="spacing">
-        <number>0</number>
-       </property>
-       <item row="0" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <property name="spacing">
-          <number>10</number>
-         </property>
-         <property name="leftMargin">
-          <number>15</number>
-         </property>
-         <item>
-          <widget class="QPushButton" name="pushButton_3">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/neural-net.png</normaloff>icons/neural-net.png</iconset>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_3">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Sparse NN Adjuster</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="0" column="1">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>691</width>
-           <height>17</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="0" column="2">
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QPushButton" name="minimize_button">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/minimize-sign.png</normaloff>icons/minimize-sign.png</iconset>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="maximize_button">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/maximize.png</normaloff>icons/maximize.png</iconset>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="close_button">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/close.png</normaloff>icons/close.png</iconset>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <widget class="QWidget" name="footer_widget" native="true">
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_5">
-       <property name="leftMargin">
-        <number>20</number>
-       </property>
-       <property name="topMargin">
-        <number>4</number>
-       </property>
-       <property name="rightMargin">
-        <number>20</number>
-       </property>
-       <property name="bottomMargin">
-        <number>4</number>
-       </property>
-       <item row="0" column="0">
-        <widget class="QLabel" name="footer_label">
-         <property name="font">
-          <font>
-           <pointsize>8</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>-</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
     <item row="1" column="0">
      <widget class="QFrame" name="main_frame">
       <property name="frameShape">
@@ -393,7 +211,7 @@ QMessageBox QPushButton:hover {
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>2</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="home_page">
              <layout class="QGridLayout" name="gridLayout_7">
@@ -472,10 +290,10 @@ QMessageBox QPushButton:hover {
                  <enum>QFrame::Raised</enum>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_8">
-                 <item row="3" column="0">
-                  <widget class="QPushButton" name="home_model_button">
+                 <item row="4" column="0">
+                  <widget class="QPushButton" name="home_results_button">
                    <property name="text">
-                    <string>Choose a model</string>
+                    <string>View existing results</string>
                    </property>
                   </widget>
                  </item>
@@ -499,10 +317,10 @@ QMessageBox QPushButton:hover {
                    </property>
                   </spacer>
                  </item>
-                 <item row="4" column="0">
-                  <widget class="QPushButton" name="home_results_button">
+                 <item row="3" column="0">
+                  <widget class="QPushButton" name="home_model_button">
                    <property name="text">
-                    <string>View existing results</string>
+                    <string>Choose a model</string>
                    </property>
                   </widget>
                  </item>
@@ -516,47 +334,41 @@ QMessageBox QPushButton:hover {
               <property name="verticalSpacing">
                <number>10</number>
               </property>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label">
-                <property name="minimumSize">
+              <item row="2" column="3">
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
                  <size>
-                  <width>0</width>
-                  <height>90</height>
+                  <width>40</width>
+                  <height>20</height>
                  </size>
                 </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>90</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <pointsize>22</pointsize>
-                  <bold>false</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Dataset settings</string>
-                </property>
-               </widget>
+               </spacer>
               </item>
-              <item row="2" column="2">
+              <item row="2" column="5">
                <widget class="QPushButton" name="pushButton_4">
                 <property name="text">
                  <string>Choose model</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="1">
-               <widget class="QPushButton" name="pushButton_2">
+              <item row="2" column="0">
+               <widget class="QPushButton" name="dataset_save_button">
                 <property name="text">
-                 <string>Start Training</string>
+                 <string>Save Dataset</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0" colspan="3">
-               <widget class="QFrame" name="frame_3">
+              <item row="1" column="0" colspan="6">
+               <widget class="QFrame" name="dataset_main_content_frame">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="frameShape">
                  <enum>QFrame::StyledPanel</enum>
                 </property>
@@ -564,17 +376,20 @@ QMessageBox QPushButton:hover {
                  <enum>QFrame::Raised</enum>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_10">
-                 <item row="0" column="1">
-                  <widget class="QLabel" name="label_6">
+                 <item row="3" column="0">
+                  <widget class="QLabel" name="dataset_unsaved_label">
                    <property name="text">
-                    <string>placeholder for filepath</string>
+                    <string>Unsaved changes?</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="3" column="0">
-                  <widget class="QLabel" name="label_5">
+                 <item row="0" column="1">
+                  <widget class="QLabel" name="dataset_filepath_label">
+                   <property name="styleSheet">
+                    <string notr="true">color: rgb(166, 166, 166)</string>
+                   </property>
                    <property name="text">
-                    <string>:D</string>
+                    <string/>
                    </property>
                   </widget>
                  </item>
@@ -588,8 +403,8 @@ QMessageBox QPushButton:hover {
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>781</width>
-                      <height>467</height>
+                      <width>937</width>
+                      <height>551</height>
                      </rect>
                     </property>
                     <property name="autoFillBackground">
@@ -601,30 +416,204 @@ QMessageBox QPushButton:hover {
                      </property>
                      <item>
                       <widget class="QLabel" name="label_4">
+                       <property name="font">
+                        <font>
+                         <pointsize>14</pointsize>
+                        </font>
+                       </property>
                        <property name="text">
-                        <string>:33333333333</string>
+                        <string>Editing your dataset</string>
                        </property>
                       </widget>
                      </item>
                      <item>
-                      <widget class="QLabel" name="label_7">
-                       <property name="text">
-                        <string>TextLabel</string>
+                      <widget class="QFrame" name="frame_4">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
                        </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_8">
-                       <property name="text">
-                        <string>TextLabel</string>
+                       <property name="minimumSize">
+                        <size>
+                         <width>0</width>
+                         <height>400</height>
+                        </size>
                        </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_20">
-                       <property name="text">
-                        <string>TextLabel</string>
+                       <property name="frameShape">
+                        <enum>QFrame::StyledPanel</enum>
                        </property>
+                       <property name="frameShadow">
+                        <enum>QFrame::Raised</enum>
+                       </property>
+                       <layout class="QGridLayout" name="gridLayout_11">
+                        <property name="leftMargin">
+                         <number>25</number>
+                        </property>
+                        <item row="12" column="0">
+                         <widget class="QLabel" name="label_30">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Dimensionality Reduction - PCA</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="8" column="0">
+                         <widget class="QLabel" name="label_26">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Removing Dublicates</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="0">
+                         <widget class="QLabel" name="label_7">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Choose a label column??</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="13" column="0">
+                         <widget class="QLabel" name="label">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Aggregate</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="6" column="0">
+                         <widget class="QLabel" name="label_24">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Normalization</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="9" column="0">
+                         <widget class="QLabel" name="label_27">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Merging</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="14" column="0">
+                         <widget class="QLabel" name="label_5">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Custom</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="label_22">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Edit columns</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="4" column="0">
+                         <widget class="QLabel" name="label_23">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Edit rows</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="5" column="0">
+                         <widget class="QLabel" name="label_8">
+                          <property name="text">
+                           <string>TextLabel</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="7" column="0">
+                         <widget class="QLabel" name="label_25">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Transformation</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="11" column="0">
+                         <widget class="QLabel" name="label_29">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Encoding</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="10" column="0">
+                         <widget class="QLabel" name="label_28">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Create new columns</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="3" column="0">
+                         <widget class="QLabel" name="label_6">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Outliers</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </widget>
                      </item>
                      <item>
@@ -635,86 +624,9 @@ QMessageBox QPushButton:hover {
                       </widget>
                      </item>
                      <item>
-                      <widget class="QLabel" name="label_16">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_9">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
                       <widget class="QLabel" name="label_10">
                        <property name="text">
                         <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_19">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_17">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_15">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_18">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_11">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_12">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_14">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_13">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pushButton_6">
-                       <property name="text">
-                        <string>PushButton</string>
                        </property>
                       </widget>
                      </item>
@@ -729,8 +641,18 @@ QMessageBox QPushButton:hover {
                    </widget>
                   </widget>
                  </item>
+                 <item row="4" column="0">
+                  <widget class="Line" name="line">
+                   <property name="styleSheet">
+                    <string notr="true">color: transparent; border:none;</string>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                  </widget>
+                 </item>
                  <item row="0" column="0">
-                  <widget class="QPushButton" name="pushButton">
+                  <widget class="QPushButton" name="dataset_csv_button">
                    <property name="maximumSize">
                     <size>
                      <width>200</width>
@@ -742,44 +664,179 @@ QMessageBox QPushButton:hover {
                    </property>
                   </widget>
                  </item>
-                 <item row="4" column="0">
-                  <widget class="Line" name="line">
-                   <property name="styleSheet">
-                    <string notr="true">color: transparent; border:none;</string>
-                   </property>
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
+                </layout>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="dataset_header_label">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>70</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>22</pointsize>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Dataset settings</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="4">
+               <widget class="QPushButton" name="pushButton_2">
+                <property name="text">
+                 <string>Start Training</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <spacer name="horizontalSpacer_3">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="4" colspan="2">
+               <widget class="QScrollArea" name="dataset_error_scroll_area">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="widgetResizable">
+                 <bool>true</bool>
+                </property>
+                <widget class="QWidget" name="scrollAreaWidgetContents_2">
+                 <property name="geometry">
+                  <rect>
+                   <x>0</x>
+                   <y>0</y>
+                   <width>406</width>
+                   <height>100</height>
+                  </rect>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_3">
+                  <item>
+                   <widget class="QLabel" name="dataset_errors_title_label">
+                    <property name="styleSheet">
+                     <string notr="true">color: rgb(166, 166, 166)</string>
+                    </property>
+                    <property name="text">
+                     <string>Error Messages:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="dataset_error_message_label">
+                    <property name="styleSheet">
+                     <string notr="true">color: rgb(166, 166, 166)</string>
+                    </property>
+                    <property name="text">
+                     <string>-</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="model_page">
+             <layout class="QGridLayout" name="gridLayout_14">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_2">
+                <property name="text">
+                 <string>I dont even know</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="label_12">
+                <property name="text">
+                 <string>TextLabel</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="choose_results_page"/>
+            <widget class="QWidget" name="settings_page">
+             <layout class="QGridLayout" name="gridLayout_13">
+              <item row="1" column="0">
+               <widget class="QFrame" name="frame_3">
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_12">
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_11">
+                   <property name="text">
+                    <string>TextLabel</string>
                    </property>
                   </widget>
                  </item>
                 </layout>
                </widget>
               </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_9">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>70</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>22</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Settings</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="model_page">
-             <widget class="QLabel" name="label_2">
-              <property name="geometry">
-               <rect>
-                <x>160</x>
-                <y>150</y>
-                <width>461</width>
-                <height>281</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>I dont even know</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-              </property>
-              <property name="wordWrap">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </widget>
-            <widget class="QWidget" name="choose_results_page"/>
-            <widget class="QWidget" name="settings_page"/>
            </widget>
           </item>
          </layout>
@@ -898,6 +955,188 @@ QMessageBox QPushButton:hover {
       </layout>
      </widget>
     </item>
+    <item row="0" column="0">
+     <widget class="QFrame" name="title_frame">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="leftMargin">
+          <number>15</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="pushButton_3">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/neural-net.png</normaloff>icons/neural-net.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Sparse NN Generator</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="1">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>691</width>
+           <height>17</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="2">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="minimize_button">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/minimize-sign.png</normaloff>icons/minimize-sign.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="maximize_button">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/maximize.png</normaloff>icons/maximize.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="close_button">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/close.png</normaloff>icons/close.png</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QWidget" name="footer_widget" native="true">
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>4</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>4</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="QLabel" name="footer_label">
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>-</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -905,7 +1144,7 @@ QMessageBox QPushButton:hover {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1127</width>
+     <width>1283</width>
      <height>22</height>
     </rect>
    </property>

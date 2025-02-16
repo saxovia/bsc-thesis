@@ -1,7 +1,8 @@
 try:
     from PyQt6 import QtWidgets, uic
     import psutil
-    import gputil
+    import GPUtil
+    import pandas
 
 except ImportError as e:
     # Run libsinstaller.py
