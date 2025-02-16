@@ -7,6 +7,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from PyQt6 import QtCore, QtWidgets
 from src.messagebox import CustomMessageBox
 import pytest
+
+def dummy_test():
+    pass
 """
 @pytest.fixture(scope="module", autouse=True)
 def app():
