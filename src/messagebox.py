@@ -2,6 +2,8 @@ from PyQt6 import QtWidgets, QtCore
 
 class CustomMessageBox(QtWidgets.QMessageBox):
     def __init__(self, title, message, buttons, parent=None):
+        if parent is None:
+            parent = QtWidgets.QWidget()
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setText(message)
@@ -9,7 +11,10 @@ class CustomMessageBox(QtWidgets.QMessageBox):
 
         self.button_map = {}  # Store buttons with their labels
         for button_text, role, callback in buttons:
-            btn = self.addButton(button_text, role)
+            # Ensure role is a valid QMessageBox.ButtonRole
+            if isinstance(role, int):
+                role = QtWidgets.QMessageBox.ButtonRole(role)  # Convert to proper ButtonRole
+            btn = self.addButton(button_text, role)  # Use button text and role
             btn.setObjectName(button_text.lower().replace(" ", "_"))
             self.button_map[btn] = callback  # Store callback for later
 

@@ -2,14 +2,14 @@ try:
     from PyQt6 import QtWidgets, uic
     import psutil
     import gputil
-    
+
 except ImportError as e:
     # Run libsinstaller.py
     import sys, os, subprocess
     subprocess.check_call([sys.executable, "libsinstaller.py"])
-    sys.exit(1)
+    #sys.exit(1)
     
-from mainwindow import MainWindow
+from src.mainwindow import MainWindow
 
 if __name__ == "__main__":
     import sys

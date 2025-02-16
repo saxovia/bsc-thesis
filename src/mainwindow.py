@@ -1,8 +1,7 @@
 from PyQt6 import QtWidgets, uic, QtCore
 import psutil
 import GPUtil
-from messagebox import CustomMessageBox
-from messagebox import CustomMessageBox
+from src.messagebox import CustomMessageBox
 
 
 class MainWindow(QtWidgets.QMainWindow):
