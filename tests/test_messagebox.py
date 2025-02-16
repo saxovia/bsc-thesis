@@ -8,7 +8,7 @@ from PyQt6 import QtCore, QtWidgets
 from src.messagebox import CustomMessageBox
 import pytest
 
-def dummy_test():
+def test_dummy():
     pass
 """
 @pytest.fixture(scope="module", autouse=True)
