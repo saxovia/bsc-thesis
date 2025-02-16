@@ -1,21 +1,13 @@
 try:
     from PyQt6 import QtWidgets, uic
     import psutil
-    import GPUtil
+    import gputil
+    
 except ImportError as e:
-    # Install it for user
-    import subprocess
-    import sys
-    import os
-
-    def install(package):
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-    install("pyqt6")
-    install("psutil")
-    install("gputil")
-
-
+    # Run libsinstaller.py
+    import sys, os, subprocess
+    subprocess.check_call([sys.executable, "libsinstaller.py"])
+    sys.exit(1)
     
 from mainwindow import MainWindow
 
