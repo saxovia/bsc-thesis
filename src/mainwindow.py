@@ -4,6 +4,7 @@ import GPUtil
 from src.messagebox import CustomMessageBox
 import sys
 import pandas as pd
+import numpy as np
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -31,6 +32,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dataset_csv_button.clicked.connect(self.load_csv)
         self.dataset_save_button.clicked.connect(self.save_csv)
         self.settings_button.clicked.connect(self.showSettingsPage)
+        self.dataset_apply_button.clicked.connect(self.applyChangesToDataset)
+        self.view_header_button.clicked.connect(self.viewDataset)
 
         self.old_pos = self.pos()
         self.mousePressed = False
@@ -50,10 +53,49 @@ class MainWindow(QtWidgets.QMainWindow):
         self.df_last_file_path = ""
         self.current_page = "Home"
         self.onSettingsPage = False
+        
 
         self.showHomePage() #this ensures to start at the home page
 
 
+    def applyChangesToDataset(self):
+        if self.encoding_input.toPlainText() != "":
+            print("runnign")
+            text = self.encoding_input.toPlainText()
+            try:
+                exec_env = {"df": self.df}
+                exec(text, exec_env)
+
+                # if there are modifications:
+                if "df" in exec_env:
+                    self.df = exec_env["df"]
+                self.dataset_error_message_label.setText("Code executed successfully.")
+            except Exception as e:
+                self.dataset_error_message_label.setText(f"Error: {str(e)}")
+
+    def viewDataset(self):
+        data = self.df.head(5)
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle("Dataset Header")
+
+        table = QtWidgets.QTableWidget(dialog)
+        table.setRowCount(data.shape[0])
+        table.setColumnCount(data.shape[1])
+        table.setHorizontalHeaderLabels(data.columns)
+
+        for row in range(data.shape[0]):
+            for col in range(data.shape[1]):
+                item = QtWidgets.QTableWidgetItem(str(data.iloc[row, col]))
+                table.setItem(row, col, item)
+
+
+        table.resizeColumnsToContents()
+        table.resizeRowsToContents()
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(table)
+        dialog.setLayout(layout)
+
+        dialog.exec()
 
 
     def fadeToPage(self, new_page):
