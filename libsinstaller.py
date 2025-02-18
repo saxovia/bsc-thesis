@@ -22,5 +22,5 @@ def install_requirements():
         print(req_file + " not found!")
 
 if __name__=="__main__":
-    check_python_version()
+    #check_python_version()
     install_requirements()

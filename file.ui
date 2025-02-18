@@ -19,6 +19,7 @@
   <property name="styleSheet">
    <string notr="true">QWidget {
     background-color: #181621;
+color: #fff;
 }
 
 #title_frame {
@@ -230,7 +231,7 @@ border: none;
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>2</number>
             </property>
             <widget class="QWidget" name="home_page">
              <layout class="QGridLayout" name="gridLayout_7">
@@ -445,9 +446,9 @@ Get started by either importing a dataset or choosing a model and adjust its par
                     <property name="geometry">
                      <rect>
                       <x>0</x>
-                      <y>-293</y>
+                      <y>0</y>
                       <width>937</width>
-                      <height>951</height>
+                      <height>929</height>
                      </rect>
                     </property>
                     <property name="autoFillBackground">
@@ -493,167 +494,7 @@ Get started by either importing a dataset or choosing a model and adjust its par
                         <property name="leftMargin">
                          <number>25</number>
                         </property>
-                        <item row="15" column="0">
-                         <widget class="QLabel" name="label_30">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Dimensionality Reduction - PCA</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="10" column="0">
-                         <widget class="QLabel" name="label_26">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Removing Dublicates</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="4" column="0">
-                         <widget class="QLabel" name="label_6">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Outliers</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="3" column="0">
-                         <widget class="QLabel" name="label_7">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Choose a label column??</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="16" column="0">
-                         <widget class="QLabel" name="label">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Aggregate</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="8" column="0">
-                         <widget class="QLabel" name="label_24">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Normalization</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="11" column="0">
-                         <widget class="QLabel" name="label_27">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Merging</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="17" column="0">
-                         <widget class="QLabel" name="label_5">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Custom</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="6" column="0">
-                         <widget class="QLabel" name="label_23">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Edit rows</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="7" column="0">
-                         <widget class="QLabel" name="label_8">
-                          <property name="text">
-                           <string>TextLabel</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="9" column="0">
-                         <widget class="QLabel" name="label_25">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Transformation</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="2" column="0">
-                         <widget class="QGroupBox" name="groupBox">
-                          <property name="minimumSize">
-                           <size>
-                            <width>0</width>
-                            <height>250</height>
-                           </size>
-                          </property>
-                          <property name="font">
-                           <font>
-                            <pointsize>-1</pointsize>
-                           </font>
-                          </property>
-                          <property name="styleSheet">
-                           <string notr="true"/>
-                          </property>
-                          <property name="title">
-                           <string>Edit columns</string>
-                          </property>
-                          <layout class="QVBoxLayout" name="verticalLayout_4">
-                           <item>
-                            <widget class="QLabel" name="label_13">
-                             <property name="text">
-                              <string>Input your column:</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QTextEdit" name="textEdit"/>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                        <item row="14" column="0">
+                        <item row="13" column="0">
                          <widget class="QLabel" name="label_29">
                           <property name="font">
                            <font>
@@ -665,23 +506,17 @@ Get started by either importing a dataset or choosing a model and adjust its par
                           </property>
                          </widget>
                         </item>
-                        <item row="12" column="0">
-                         <widget class="QLabel" name="label_28">
-                          <property name="font">
-                           <font>
-                            <pointsize>12</pointsize>
-                           </font>
-                          </property>
-                          <property name="text">
-                           <string>Create new columns</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="5" column="0">
+                        <item row="6" column="0">
                          <widget class="QGroupBox" name="groupBox_2">
                           <property name="minimumSize">
                            <size>
                             <width>0</width>
+                            <height>100</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
                             <height>100</height>
                            </size>
                           </property>
@@ -698,6 +533,18 @@ Get started by either importing a dataset or choosing a model and adjust its par
                            </item>
                            <item>
                             <widget class="QTextEdit" name="encoding_input">
+                             <property name="minimumSize">
+                              <size>
+                               <width>0</width>
+                               <height>100</height>
+                              </size>
+                             </property>
+                             <property name="maximumSize">
+                              <size>
+                               <width>16777215</width>
+                               <height>100</height>
+                              </size>
+                             </property>
                              <property name="html">
                               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
@@ -736,14 +583,177 @@ li.checked::marker { content: &quot;\2612&quot;; }
                           </layout>
                          </widget>
                         </item>
+                        <item row="14" column="0">
+                         <widget class="QLabel" name="label_30">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Dimensionality Reduction - PCA</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="8" column="0">
+                         <widget class="QLabel" name="label_24">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Normalization</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="4" column="0">
+                         <widget class="QGroupBox" name="groupBox_4">
+                          <property name="title">
+                           <string>Label column</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="5" column="0">
+                         <widget class="QGroupBox" name="groupBox_3">
+                          <property name="title">
+                           <string>Outliers</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="0">
+                         <widget class="QGroupBox" name="groupBox">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>100</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
+                            <height>150</height>
+                           </size>
+                          </property>
+                          <property name="font">
+                           <font>
+                            <pointsize>-1</pointsize>
+                           </font>
+                          </property>
+                          <property name="styleSheet">
+                           <string notr="true"/>
+                          </property>
+                          <property name="title">
+                           <string>Edit columns</string>
+                          </property>
+                          <layout class="QVBoxLayout" name="verticalLayout_4">
+                           <item>
+                            <widget class="QLabel" name="label_13">
+                             <property name="text">
+                              <string>Input your column(s):</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QTextEdit" name="textEdit_2">
+                             <property name="html">
+                              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;:D&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QComboBox" name="comboBox_2">
+                             <item>
+                              <property name="text">
+                               <string>Delete</string>
+                              </property>
+                             </item>
+                             <item>
+                              <property name="text">
+                               <string>Add</string>
+                              </property>
+                             </item>
+                             <item>
+                              <property name="text">
+                               <string>Merge - Aggregate</string>
+                              </property>
+                             </item>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item row="11" column="0">
+                         <widget class="QLabel" name="label_27">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Merging datasets</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="3" column="0">
+                         <widget class="QGroupBox" name="groupBox_6">
+                          <property name="title">
+                           <string>Edit rows</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="10" column="0">
+                         <widget class="QLabel" name="label_26">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Removing Dublicates</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="15" column="0">
+                         <widget class="QGroupBox" name="groupBox_5">
+                          <property name="title">
+                           <string>Custom</string>
+                          </property>
+                          <layout class="QGridLayout" name="gridLayout_15">
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="label_5">
+                             <property name="text">
+                              <string>Input your custom code to modify the dataset:</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="0">
+                            <widget class="QTextEdit" name="textEdit"/>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item row="9" column="0">
+                         <widget class="QLabel" name="label_25">
+                          <property name="font">
+                           <font>
+                            <pointsize>12</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Transformation</string>
+                          </property>
+                         </widget>
+                        </item>
                        </layout>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_21">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
                       </widget>
                      </item>
                      <item>

@@ -31,7 +31,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Other buttons
         self.dataset_csv_button.clicked.connect(self.load_csv)
         self.dataset_save_button.clicked.connect(self.save_csv)
-        self.settings_button.clicked.connect(self.showSettingsPage)
+        
         self.dataset_apply_button.clicked.connect(self.applyChangesToDataset)
         self.view_header_button.clicked.connect(self.viewDataset)
 
@@ -56,11 +56,11 @@ class MainWindow(QtWidgets.QMainWindow):
         
 
         self.showHomePage() #this ensures to start at the home page
-
+        self.settings_button.clicked.connect(self.showSettingsPage)
 
     def applyChangesToDataset(self):
         if self.encoding_input.toPlainText() != "":
-            print("runnign")
+            #print("runnign")
             text = self.encoding_input.toPlainText()
             try:
                 exec_env = {"df": self.df}
@@ -99,7 +99,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def fadeToPage(self, new_page):
-            """ Fade animation when switching pages """
+            #print(self.current_page, "when fading to page")
             self.fade_animation.stop()
             self.fade_animation.setStartValue(0.0)
             self.fade_animation.setEndValue(1.0)
@@ -151,26 +151,46 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # buttons functions
 
+    def changeSettingsButton(self):
+        self.settings_button.clicked.connect(self.showSettingsPage)
+
     def showHomePage(self):
         self.fadeToPage(self.home_page)
-        if self.onSettingsPage:
-            self.onSettingsPage = False
-            self.settings_button.clicked.connect(self.showSettingsPage)
+        self.previous_page = self.current_page
+        self.current_page = "Home"
+        self.changeSettingsButton()
 
     def showDatasetPage(self):
         self.fadeToPage(self.dataset_page)
+        self.previous_page = self.current_page
+        self.current_page = "Dataset"
+        self.changeSettingsButton()
 
     def showModelPage(self):
         self.fadeToPage(self.model_page)
+        self.previous_page = self.current_page
+        self.current_page = "Model"
+        self.changeSettingsButton()
 
     def showChooseResultsPage(self):
         self.fadeToPage(self.choose_results_page)
+        self.previous_page = self.current_page
+        self.current_page = "Results"
+        self.changeSettingsButton()
 
     def showSettingsPage(self):
         self.fadeToPage(self.settings_page)
-        self.onSettingsPage = True
-        if self.current_page == "Home":
+        self.previous_page = self.current_page
+        self.current_page = "Settings"
+
+        if self.previous_page == "Home":
             self.settings_button.clicked.connect(self.showHomePage)
+        elif self.previous_page == "Dataset":
+            self.settings_button.clicked.connect(self.showDatasetPage)
+        elif self.previous_page == "Model":
+            self.settings_button.clicked.connect(self.showModelPage)
+        elif self.previous_page == "Results":
+            self.settings_button.clicked.connect(self.showChooseResultsPage)
 
     def load_csv(self):
         # Open file dialog to choose CSV file
