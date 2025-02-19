@@ -31,9 +31,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Other buttons
         self.dataset_csv_button.clicked.connect(self.load_csv)
         self.dataset_save_button.clicked.connect(self.save_csv)
-        
         self.dataset_apply_button.clicked.connect(self.applyChangesToDataset)
         self.view_header_button.clicked.connect(self.viewDataset)
+        self.settings_button.clicked.connect(self.showSettingsPage)
 
         self.old_pos = self.pos()
         self.mousePressed = False
@@ -56,7 +56,6 @@ class MainWindow(QtWidgets.QMainWindow):
         
 
         self.showHomePage() #this ensures to start at the home page
-        self.settings_button.clicked.connect(self.showSettingsPage)
 
     def applyChangesToDataset(self):
         if self.encoding_input.toPlainText() != "":
