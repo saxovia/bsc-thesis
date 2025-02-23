@@ -2,3 +2,4 @@ pyqt6==6.4.2
 psutil==7.0.0
 gputil==1.4.0
 pandas==2.2.3
+torch==2.6.0

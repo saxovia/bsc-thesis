@@ -5,6 +5,10 @@ from src.messagebox import CustomMessageBox
 import sys
 import pandas as pd
 import numpy as np
+from src.uianimations import UIAnimations
+from src.windowcontrol import WindowControl
+from src.pagenavigator import PageNavigator
+from src.csvhandler import CSVHandler
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -14,34 +18,35 @@ class MainWindow(QtWidgets.QMainWindow):
         self.restart_button.clicked.connect(self.show_warning)
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
 
-        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+        #self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
         self.maximize_button.setCheckable(True)
-        if self.statusBar():
-            self.statusBar().setSizeGripEnabled(False)
+        #if self.statusBar():
+        #    self.statusBar().setSizeGripEnabled(False)
 
 
+        self.navigator = PageNavigator(self)
         self.minimize_button.clicked.connect(self.showMinimized)
         self.maximize_button.clicked.connect(self.toggle_maximize_restore)
         self.close_button.clicked.connect(self.close)
-        self.home_dataset_button.clicked.connect(self.showDatasetPage)
-        self.home_model_button.clicked.connect(self.showModelPage)
-        self.home_results_button.clicked.connect(self.showChooseResultsPage)
+        self.home_dataset_button.clicked.connect(self.navigator.showDatasetPage)
+        self.home_model_button.clicked.connect(self.navigator.showModelPage)
+        self.home_results_button.clicked.connect(self.navigator.showChooseResultsPage)
 
 
         # Other buttons
-        self.dataset_csv_button.clicked.connect(self.load_csv)
-        self.dataset_save_button.clicked.connect(self.save_csv)
+        self.csv_handler = CSVHandler(self)
+        self.dataset_csv_button.clicked.connect(self.csv_handler.load_csv)
+        self.dataset_save_button.clicked.connect(self.csv_handler.save_csv)
         self.dataset_apply_button.clicked.connect(self.applyChangesToDataset)
         self.view_header_button.clicked.connect(self.viewDataset)
-        self.settings_button.clicked.connect(self.showSettingsPage)
+        self.settings_button.clicked.connect(self.navigator.showSettingsPage)
 
         self.old_pos = self.pos()
-        self.mousePressed = False
         self.is_maximized = False
         
 
         self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update_ram_usage)
+        self.timer.timeout.connect(self.update_specs_usage)
         self.timer.start(1000)
 
         self.opacity_effect = QtWidgets.QGraphicsOpacityEffect(self.stackedWidget)
@@ -53,9 +58,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.df_last_file_path = ""
         self.current_page = "Home"
         self.onSettingsPage = False
-        
+        self.window_control = WindowControl(self)
 
-        self.showHomePage() #this ensures to start at the home page
+        #self.home_button.clicked.connect(self.navigator.showHomePage)
+
+        self.navigator.showHomePage() #this ensures to start at the home page
 
     def applyChangesToDataset(self):
         if self.encoding_input.toPlainText() != "":
@@ -96,14 +103,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
         dialog.exec()
 
+    def fadeInUp(self, widget):
+        UIAnimations.fadeInUp(self.stackedWidget)
 
     def fadeToPage(self, new_page):
-            #print(self.current_page, "when fading to page")
-            self.fade_animation.stop()
-            self.fade_animation.setStartValue(0.0)
-            self.fade_animation.setEndValue(1.0)
-            self.fade_animation.start()
-            self.stackedWidget.setCurrentWidget(new_page)
+        #print(self.current_page, "when fading to page")
+
+
+        #self.fade_animation.stop()
+        #self.fade_animation.setStartValue(0.0)
+        #self.fade_animation.setEndValue(1.0)
+        #self.fade_animation.start()
+        self.stackedWidget.setCurrentWidget(new_page)
+        UIAnimations.fadeInUp(new_page)
 
     def toggle_maximize_restore(self):
         if self.isFullScreen():
@@ -113,33 +125,36 @@ class MainWindow(QtWidgets.QMainWindow):
             self.showFullScreen()
             self.is_maximized = True
 
-    # Define a method to be called when the button is clicked
-    def on_button_click(self):
-        print("Button from the UI was clicked!")
-
     # Dragging functions
 
     def mousePressEvent(self, event):
-        if event.button()==QtCore.Qt.MouseButton.LeftButton:
-            self.mousePressed=True
-            self.old_pos=event.globalPosition().toPoint()
+        self.window_control.mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.mousePressed:
-            delta=event.globalPosition().toPoint()-self.old_pos
-            self.move(self.x()+delta.x(),self.y()+delta.y())
-            self.old_pos=event.globalPosition().toPoint()
+        self.window_control.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if event.button()==QtCore.Qt.MouseButton.LeftButton:
-            self.mousePressed=False
-            screen = QtWidgets.QApplication.primaryScreen().geometry()
-            window_pos = self.geometry()
-            if window_pos.top() <= screen.top() + 10:
-                    self.showMaximized()
-                    self.is_maximized = True
+        self.window_control.mouseReleaseEvent(event)
 
-    def update_ram_usage(self):
+    def type_text_effect(self, label, text, interval=50):
+        self.typing_timer = QtCore.QTimer(self)
+        self.typing_text = text
+        self.typing_index = 0
+        self.label_to_update = label
+
+        self.typing_timer.timeout.connect(self.update_typing)
+        self.typing_timer.start(interval)
+
+    def update_typing(self):
+        if self.typing_index < len(self.typing_text):
+            self.label_to_update.setText(self.typing_text[:self.typing_index + 1])
+            self.typing_index += 1
+        else:
+            self.typing_timer.stop()
+
+
+    # Update usage of PC's specs - for footer
+    def update_specs_usage(self):
         memory = psutil.virtual_memory()
         ram_usage = memory.used / (1024 ** 3)
         ram_total = memory.total / (1024 ** 3)
@@ -151,45 +166,9 @@ class MainWindow(QtWidgets.QMainWindow):
     # buttons functions
 
     def changeSettingsButton(self):
+        self.settings_button.clicked.disconnect()
         self.settings_button.clicked.connect(self.showSettingsPage)
 
-    def showHomePage(self):
-        self.fadeToPage(self.home_page)
-        self.previous_page = self.current_page
-        self.current_page = "Home"
-        self.changeSettingsButton()
-
-    def showDatasetPage(self):
-        self.fadeToPage(self.dataset_page)
-        self.previous_page = self.current_page
-        self.current_page = "Dataset"
-        self.changeSettingsButton()
-
-    def showModelPage(self):
-        self.fadeToPage(self.model_page)
-        self.previous_page = self.current_page
-        self.current_page = "Model"
-        self.changeSettingsButton()
-
-    def showChooseResultsPage(self):
-        self.fadeToPage(self.choose_results_page)
-        self.previous_page = self.current_page
-        self.current_page = "Results"
-        self.changeSettingsButton()
-
-    def showSettingsPage(self):
-        self.fadeToPage(self.settings_page)
-        self.previous_page = self.current_page
-        self.current_page = "Settings"
-
-        if self.previous_page == "Home":
-            self.settings_button.clicked.connect(self.showHomePage)
-        elif self.previous_page == "Dataset":
-            self.settings_button.clicked.connect(self.showDatasetPage)
-        elif self.previous_page == "Model":
-            self.settings_button.clicked.connect(self.showModelPage)
-        elif self.previous_page == "Results":
-            self.settings_button.clicked.connect(self.showChooseResultsPage)
 
     def load_csv(self):
         # Open file dialog to choose CSV file
@@ -281,9 +260,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self
             )
             msg.exec()
-
-
-
 
     def show_warning(self):
         # Actions to be taken when the buttons are clicked
