@@ -1,5 +1,5 @@
 
-
+"""
 import torch
 from torch import nn
 from torch import optim
@@ -26,10 +26,12 @@ print(model)
 
 
 """
+"""
 NeuralNetwork(
   (layer_1): Linear(in_features=2, out_features=10, bias=True)
   (layer_2): Linear(in_features=10, out_features=1, bias=True)
 )
+"""
 """
 
 
@@ -52,9 +54,7 @@ for epoch in range(num_epochs):
 
 print("Training Complete")
 
-"""
-Training Complete
-"""
+
 
 
 step = range(len(loss_values))
@@ -64,4 +64,4 @@ plt.plot(step, np.array(loss_values))
 plt.title("Step-wise Loss")
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
-plt.show()
+plt.show()"""

@@ -1,4 +1,4 @@
-import warnings
+"""import warnings
 warnings.filterwarnings("ignore")
 
 import torch
@@ -35,7 +35,7 @@ for batch, (X, y) in enumerate(train_dataloader):
     break
 
 
-"""
+
 Batch: 1
 X shape: torch.Size([64, 2])
 y shape: torch.Size([64])

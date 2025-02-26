@@ -6,10 +6,13 @@ class PageNavigator:
         self.main_window.stackedWidget.setCurrentWidget(new_page)
         self.main_window.fadeInUp(new_page)
 
+
+
     def showHomePage(self):
         self.fadeToPage(self.main_window.home_page)
         self.main_window.previous_page = self.main_window.current_page
         self.main_window.current_page = "Home"
+        self.main_window.ui_handler.type_text_effect(self.main_window.home_text, self.main_window.home_text.text(), self.main_window.home_page)
 
     def showDatasetPage(self):
         self.fadeToPage(self.main_window.dataset_page)

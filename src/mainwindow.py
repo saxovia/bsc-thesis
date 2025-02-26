@@ -13,7 +13,7 @@ from src.csvhandler import CSVHandler
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Hello World')
+        self.setWindowTitle('Sparse Neural Network Generator')
         uic.loadUi('file.ui', self)
         self.restart_button.clicked.connect(self.show_warning)
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
@@ -34,6 +34,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         # Other buttons
+        self.ui_handler = UIAnimations()
         self.csv_handler = CSVHandler(self)
         self.dataset_csv_button.clicked.connect(self.csv_handler.load_csv)
         self.dataset_save_button.clicked.connect(self.csv_handler.save_csv)
@@ -66,7 +67,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def applyChangesToDataset(self):
         if self.encoding_input.toPlainText() != "":
-            #print("runnign")
             text = self.encoding_input.toPlainText()
             try:
                 exec_env = {"df": self.df}
@@ -104,18 +104,11 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.exec()
 
     def fadeInUp(self, widget):
-        UIAnimations.fadeInUp(self.stackedWidget)
+        self.ui_handler.fadeInUp(self.stackedWidget) #this redirects the pagenavigator.py to the animations.py
 
     def fadeToPage(self, new_page):
-        #print(self.current_page, "when fading to page")
-
-
-        #self.fade_animation.stop()
-        #self.fade_animation.setStartValue(0.0)
-        #self.fade_animation.setEndValue(1.0)
-        #self.fade_animation.start()
         self.stackedWidget.setCurrentWidget(new_page)
-        UIAnimations.fadeInUp(new_page)
+        self.ui_handler.fadeInUp(new_page)
 
     def toggle_maximize_restore(self):
         if self.isFullScreen():
@@ -262,10 +255,17 @@ class MainWindow(QtWidgets.QMainWindow):
             msg.exec()
 
     def show_warning(self):
+
+
+        #opacity_effect = QtWidgets.QGraphicsOpacityEffect(self)
+        #opacity_effect.setOpacity(0.5)  # Set the dimming level (0.0 to 1.0)
+        #self.setGraphicsEffect(opacity_effect)
         # Actions to be taken when the buttons are clicked
+        
         def discard_action():
             print("User discarded!")
-            self.showHomePage()
+            self.navigator.showHomePage()
+            self.df = None
 
         def cancel_action():
             print("User canceled.")
@@ -273,12 +273,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # Create the message box
         msg = CustomMessageBox(
             "Restart Action",
-            "Warning!\nAre you sure you want to restart? Your progress will be lost.",
+            "Warning!\nAre you sure you want to **restart**? Your progress will be lost.",
             [
-                ("Discard", QtWidgets.QMessageBox.ButtonRole.AcceptRole, discard_action),
-                ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
+            ("Discard", QtWidgets.QMessageBox.ButtonRole.AcceptRole, discard_action),
+            ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
             ],
             self
         )
         # Run the message box
         msg.exec()
+        self.setGraphicsEffect(None)
