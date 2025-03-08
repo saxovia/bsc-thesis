@@ -1,0 +1,244 @@
+import torch
+import torch.nn as nn
+import torchvision
+import networkx as nx 
+import numpy as np
+import graphlib as gl
+
+import torchvision.datasets as dset
+#mnist_dataset = dset.MNIST(root='./data', train=True, transform=None, target_transform=None, download=True)
+
+#mnist_testset = dset.MNIST(root='./data', train=False, transform=None)
+
+
+num_nodes = 50
+k = 4
+p = 0.2
+
+ws_graph = nx.watts_strogatz_graph(num_nodes, k, p)
+
+dag = nx.DiGraph()
+dag.add_nodes_from(ws_graph.nodes)
+
+for u, v in ws_graph.edges(): 
+    if np.random.rand() > 0.5:  # 0.5 is the probability of edge direction
+        dag.add_edge(u, v)
+    else:
+        dag.add_edge(v, u)
+"""
+import numpy as np
+def undirected_graph_to_dag(G):
+    adj_matrix=nx.to_numpy_array(G)
+    n = adj_matrix.shape[0]
+    dag = nx.DiGraph()
+    dag.add_nodes_from(G.nodes)
+
+    for i in range(n):
+        for j in range(i):
+            if adj_matrix[i][j]>0: # checks if there is an edge between i and j. does it check wether
+                #
+                dag.add_edge(i,j)
+    
+    return dag
+"""
+
+# to get the DAG, make a function that takes an undirected graph and set the lower triangular adjacency matrix of the new graph. diagonal entries and upper triangular matrix are set to zero of the final graph
+def undirtodag(G):
+    adj_matrix = nx.to_numpy_array(G)
+    n = adj_matrix.shape[0]
+    dag = nx.DiGraph()
+    dag.add_nodes_from(G.nodes)
+    for i in range(n):
+        for j in range(i): #ensures that the lower triangular matrix is used
+            if adj_matrix[i][j] > 0: #checks if there is an edge between i and j
+                dag.add_edge(i,j)
+
+    return dag
+
+dag = undirtodag(ws_graph)
+
+# print first 10 nodes
+print(list(dag.nodes)[:10])
+
+topological_nodes = list(nx.topological_sort(dag))
+sorted_dag = nx.DiGraph()
+sorted_dag.add_nodes_from(topological_nodes)
+
+for u, v in dag.edges():
+    if topological_nodes.index(u) < topological_nodes.index(v):
+        sorted_dag.add_edge(u, v)
+
+dag = sorted_dag
+
+import matplotlib.pyplot as plt
+nx.draw(dag, with_labels=True)
+plt.show()
+
+
+
+layer_assignment = {node: i for i, node in enumerate(topological_nodes)} # Assign nodes to layers based on topological sort -> topological sort means that the nodes are ordered in such a way that all edges go from left to right
+
+# Fix isolated nodes by assigning them to the last hidden layer
+for node in dag.nodes: # Assign nodes without any incoming or outgoing edges to a new layer
+ if dag.out_degree(node) == 0 and dag.in_degree(node) == 0: # If the node has no incoming or outgoing edges
+        layer_assignment[node] = max(layer_assignment.values()) + 1 # Assign the node to a new layer
+
+# Define the LSTM layer
+class LSTMLayer(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super(LSTMLayer, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True)
+
+    def forward(self, x):
+        # Assuming x is of shape (batch_size, seq_len, input_size)
+        out, _ = self.lstm(x)
+        return out
+def create_lstm_networks(dag, layer_assignment):
+    lstm_networks = {}
+    layer_inputs = {}  # Stores the input size for each layer
+    layer_nodes = {}   # Stores the number of nodes in each layer
+
+    # Initialize storage
+    for node, layer in layer_assignment.items():
+        if layer not in layer_inputs:
+            layer_inputs[layer] = 0
+            layer_nodes[layer] = 0
+        
+        layer_nodes[layer] += 1  # Count how many nodes are in each layer
+
+    # Compute input sizes correctly
+    for node, layer in layer_assignment.items():
+        predecessors = list(dag.predecessors(node))
+        
+        # Sum hidden sizes of previous layers for input
+        input_size = sum(layer_nodes[layer_assignment[pred]] for pred in predecessors if layer_assignment[pred] in layer_nodes) if predecessors else 1
+        layer_inputs[layer] = max(layer_inputs[layer], input_size)  # Avoid redundant summing
+    
+    # Create LSTMs for each layer
+    for layer in sorted(layer_inputs.keys()):
+        input_size = layer_inputs[layer]
+        hidden_size = layer_nodes[layer]  # Correct hidden size
+        
+        lstm_networks[layer] = LSTMLayer(input_size, hidden_size)
+        
+        print(f"Layer {layer}: Input Size = {input_size}, Hidden Size = {hidden_size}")
+
+    return lstm_networks
+
+# Generate LSTMs with the corrected logic
+lstm_networks = create_lstm_networks(dag, layer_assignment)
+
+
+
+
+
+
+class MLP(nn.Module):
+    def __init__(self):
+        super(MLP, self).__init__()
+        self.fc1 = nn.Linear(89, 44)
+        self.fc2 = nn.Linear(44, 22)
+        self.fc3 = nn.Linear(22, 11)
+        self.fc4 = nn.Linear(11, 4)
+        self.fc5 = nn.Linear(4, 80)  # Final layer
+
+        self.activation = nn.ReLU()  # Non-linearity
+
+    def forward(self, x):
+        x = self.activation(self.fc1(x))
+        x = self.activation(self.fc2(x))
+        x = self.activation(self.fc3(x))
+        x = self.activation(self.fc4(x))
+        x = self.fc5(x)  # No activation for output
+        return x
+
+# Instantiate MLP
+mlp = MLP()
+print(mlp)
+
+
+class LSTMNetwork(nn.Module):
+    def __init__(self, input_size=16, hidden_size=16, num_layers=3):
+        super(LSTMNetwork, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+
+    def forward(self, x):
+        out, _ = self.lstm(x)  # Output and hidden state
+        return out
+
+# Instantiate LSTM
+lstm = LSTMNetwork()
+print(lstm)
+
+
+
+import networkx as nx
+import torch
+import torch.nn as nn
+import numpy as np
+
+def generate_ws_graph(num_nodes, k, p):
+    """Generates a Watts-Strogatz graph adjacency matrix."""
+    ws_graph = nx.watts_strogatz_graph(num_nodes, k, p)
+    adj_matrix = nx.to_numpy_array(ws_graph)
+    return torch.tensor(adj_matrix, dtype=torch.float32)
+
+# Define layer sizes (as per your original MLP)
+layer_sizes = [89, 44, 22, 11, 4, 80]
+
+class SparseMLPLayer(nn.Module):
+    def __init__(self, in_features, out_features, adj_matrix):
+        super(SparseMLPLayer, self).__init__()
+        self.adj_matrix = adj_matrix  # Connectivity pattern
+        self.weights = nn.Parameter(torch.randn(in_features, out_features) * 0.1)
+        self.bias = nn.Parameter(torch.zeros(out_features))
+        
+    def forward(self, x):
+        # Apply graph mask: Remove connections that don't exist in the WS graph
+        masked_weights = self.weights * self.adj_matrix
+        return torch.relu(x @ masked_weights + self.bias)
+class WS_MLP(nn.Module):
+    def __init__(self, layer_sizes, k=4, p=0.2):
+        super(WS_MLP, self).__init__()
+        self.layers = nn.ModuleList()
+        
+        for i in range(len(layer_sizes) - 1):
+            # Generate WS Graph for each layer
+            adj_matrix = generate_ws_graph(layer_sizes[i], k, p)
+            self.layers.append(SparseMLPLayer(layer_sizes[i], layer_sizes[i+1], adj_matrix))
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+# Instantiate WS-MLP
+ws_mlp = WS_MLP(layer_sizes)
+print(ws_mlp)
+class SparseLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, k=4, p=0.2):
+        super(SparseLSTM, self).__init__()
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
+        
+        # Generate adjacency matrices for each LSTM layer
+        self.adj_matrices = [generate_ws_graph(hidden_size, k, p) for _ in range(num_layers)]
+        
+        # Define standard LSTM
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+    
+    def forward(self, x):
+        # Forward pass through the LSTM
+        out, (hn, cn) = self.lstm(x)
+        
+        # Apply graph mask to hidden states (prune weights)
+        for i in range(self.num_layers):
+            hn[i] = hn[i] * self.adj_matrices[i]  # Keep only WS connections
+        
+        return out
+
+# Instantiate WS-LSTM
+ws_lstm = SparseLSTM(input_size=16, hidden_size=16, num_layers=3)
+print(ws_lstm)
+
+

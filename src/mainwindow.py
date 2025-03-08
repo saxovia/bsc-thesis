@@ -158,11 +158,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # buttons functions
 
-    def changeSettingsButton(self):
-        self.settings_button.clicked.disconnect()
-        self.settings_button.clicked.connect(self.showSettingsPage)
-
-
     def load_csv(self):
         # Open file dialog to choose CSV file
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select CSV File", "", "CSV Files (*.csv)")

@@ -37,10 +37,14 @@ class UIAnimations:
         def update_typing():
             nonlocal typing_index
             if typing_index < len(text):
-                label.setText(text[:typing_index + 1])
-                typing_index += 1
+                label.setText(text[:typing_index + 5])
+                typing_index += 5
             else:
+                label.setText(text)
                 typing_timer.stop()
+        def start_typing():
+                typing_timer.timeout.connect(update_typing)
+                typing_timer.start(interval)
+        label.setText(" ")
 
-        typing_timer.timeout.connect(update_typing)
-        typing_timer.start(interval)
+        QtCore.QTimer.singleShot(500, start_typing)
