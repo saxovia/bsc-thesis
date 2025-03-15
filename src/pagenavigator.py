@@ -1,11 +1,21 @@
+import PyQt6 as Qt
+
 class PageNavigator:
     def __init__(self, main_window):
         self.main_window = main_window
 
     def fadeToPage(self, new_page):
+        #force it to wait at first - for the padding to apply
+        
+        Qt.QtCore.QTimer.singleShot(100, lambda: self.performFadeIn(new_page))
+        #set the page to the new page
+        #self.main_window.stackedWidget.setCurrentWidget(new_page)
+        #self.main_window.fadeInUp(new_page)
+
+    def performFadeIn(self, new_page):
+        # Set the page to the new page
         self.main_window.stackedWidget.setCurrentWidget(new_page)
         self.main_window.fadeInUp(new_page)
-
 
     def resetSettingsButton(self):
         self.main_window.settings_button.disconnect()

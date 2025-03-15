@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1296</width>
-    <height>856</height>
+    <width>1209</width>
+    <height>799</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -256,10 +256,16 @@ QPlainTextEdit {
     <bool>true</bool>
    </property>
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>1200</width>
+     <height>700</height>
+    </size>
    </property>
    <layout class="QGridLayout" name="gridLayout">
     <property name="leftMargin">
@@ -359,16 +365,16 @@ QPlainTextEdit {
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
           <property name="leftMargin">
-           <number>0</number>
+           <number>50</number>
           </property>
           <property name="topMargin">
-           <number>0</number>
+           <number>50</number>
           </property>
           <property name="rightMargin">
-           <number>60</number>
+           <number>90</number>
           </property>
           <property name="bottomMargin">
-           <number>0</number>
+           <number>60</number>
           </property>
           <item row="0" column="0">
            <widget class="QStackedWidget" name="stackedWidget">
@@ -387,19 +393,19 @@ QPlainTextEdit {
              </property>
              <layout class="QGridLayout" name="gridLayout_7">
               <property name="leftMargin">
-               <number>30</number>
+               <number>0</number>
               </property>
               <property name="topMargin">
-               <number>30</number>
+               <number>0</number>
               </property>
               <property name="rightMargin">
                <number>0</number>
               </property>
               <property name="bottomMargin">
-               <number>60</number>
+               <number>0</number>
               </property>
               <property name="horizontalSpacing">
-               <number>60</number>
+               <number>30</number>
               </property>
               <property name="verticalSpacing">
                <number>0</number>
@@ -432,7 +438,7 @@ QPlainTextEdit {
                   <number>0</number>
                  </property>
                  <property name="rightMargin">
-                  <number>70</number>
+                  <number>0</number>
                  </property>
                  <property name="bottomMargin">
                   <number>0</number>
@@ -563,7 +569,7 @@ Alternatively, import an already trained model and customize the pruning process
                 </property>
                 <layout class="QGridLayout" name="gridLayout_8">
                  <property name="leftMargin">
-                  <number>70</number>
+                  <number>0</number>
                  </property>
                  <property name="topMargin">
                   <number>0</number>
@@ -686,16 +692,16 @@ Alternatively, import an already trained model and customize the pruning process
             <widget class="QWidget" name="dataset_page">
              <layout class="QGridLayout" name="gridLayout_9">
               <property name="leftMargin">
-               <number>30</number>
+               <number>0</number>
               </property>
               <property name="topMargin">
-               <number>50</number>
+               <number>0</number>
               </property>
               <property name="rightMargin">
-               <number>60</number>
+               <number>0</number>
               </property>
               <property name="bottomMargin">
-               <number>60</number>
+               <number>0</number>
               </property>
               <property name="verticalSpacing">
                <number>10</number>
@@ -798,7 +804,7 @@ Alternatively, import an already trained model and customize the pruning process
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>918</width>
+                      <width>841</width>
                       <height>997</height>
                      </rect>
                     </property>
@@ -1299,7 +1305,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
                    <x>0</x>
                    <y>0</y>
                    <width>406</width>
-                   <height>100</height>
+                   <height>70</height>
                   </rect>
                  </property>
                  <property name="styleSheet">
@@ -1340,6 +1346,58 @@ li.checked::marker { content: &quot;\2612&quot;; }
             </widget>
             <widget class="QWidget" name="model_page">
              <layout class="QGridLayout" name="gridLayout_14">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <property name="horizontalSpacing">
+               <number>20</number>
+              </property>
+              <property name="verticalSpacing">
+               <number>10</number>
+              </property>
+              <item row="1" column="0">
+               <widget class="QPushButton" name="pushButton">
+                <property name="text">
+                 <string>Find best parameters</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="2">
+               <widget class="QPushButton" name="pushButton_2">
+                <property name="text">
+                 <string>Start Training</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QPushButton" name="pushButton_4">
+                <property name="text">
+                 <string>Modify Dataset</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="0" colspan="4">
                <widget class="QFrame" name="frame_5">
                 <property name="frameShape">
@@ -1349,6 +1407,21 @@ li.checked::marker { content: &quot;\2612&quot;; }
                  <enum>QFrame::Raised</enum>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_17">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
                  <item row="0" column="0">
                   <widget class="QLabel" name="label_2">
                    <property name="minimumSize">
@@ -1390,8 +1463,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>975</width>
-                      <height>540</height>
+                      <width>865</width>
+                      <height>469</height>
                      </rect>
                     </property>
                     <layout class="QGridLayout" name="gridLayout_16">
@@ -1414,40 +1487,6 @@ li.checked::marker { content: &quot;\2612&quot;; }
                   </widget>
                  </item>
                 </layout>
-               </widget>
-              </item>
-              <item row="1" column="2">
-               <widget class="QPushButton" name="pushButton_2">
-                <property name="text">
-                 <string>Start Training</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="3">
-               <widget class="QPushButton" name="pushButton_4">
-                <property name="text">
-                 <string>Modify Dataset</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <spacer name="horizontalSpacer_4">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="1" column="0">
-               <widget class="QPushButton" name="pushButton">
-                <property name="text">
-                 <string>Find best parameters</string>
-                </property>
                </widget>
               </item>
              </layout>
@@ -1487,6 +1526,21 @@ li.checked::marker { content: &quot;\2612&quot;; }
             </widget>
             <widget class="QWidget" name="settings_page">
              <layout class="QGridLayout" name="gridLayout_13">
+              <property name="leftMargin">
+               <number>60</number>
+              </property>
+              <property name="topMargin">
+               <number>50</number>
+              </property>
+              <property name="rightMargin">
+               <number>80</number>
+              </property>
+              <property name="bottomMargin">
+               <number>60</number>
+              </property>
+              <property name="verticalSpacing">
+               <number>10</number>
+              </property>
               <item row="1" column="0">
                <widget class="QFrame" name="frame_3">
                 <property name="frameShape">
@@ -1812,7 +1866,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1296</width>
+     <width>1209</width>
      <height>22</height>
     </rect>
    </property>

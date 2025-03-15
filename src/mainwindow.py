@@ -8,13 +8,13 @@ import numpy as np
 from src.uianimations import UIAnimations
 from src.windowcontrol import WindowControl
 from src.pagenavigator import PageNavigator
-from src.csvhandler import CSVHandler
+#from temp.csvhandler import CSVHandler
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Sparse Neural Network Generator')
-        uic.loadUi('file.ui', self)
+        uic.loadUi('mainwindowui.ui', self)
         self.restart_button.clicked.connect(self.show_warning)
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
 
@@ -35,11 +35,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Other buttons
         self.ui_handler = UIAnimations()
-        self.csv_handler = CSVHandler(self)
-        self.dataset_csv_button.clicked.connect(self.csv_handler.load_csv)
-        self.dataset_save_button.clicked.connect(self.csv_handler.save_csv)
-        self.dataset_apply_button.clicked.connect(self.applyChangesToDataset)
-        self.view_header_button.clicked.connect(self.viewDataset)
+        #self.csv_handler = CSVHandler(self)
+        #self.dataset_csv_button.clicked.connect(self.csv_handler.load_csv)
+        #self.dataset_save_button.clicked.connect(self.csv_handler.save_csv)
+        #self.dataset_apply_button.clicked.connect(self.applyChangesToDataset)
+        #self.view_header_button.clicked.connect(self.viewDataset)
         self.settings_button.clicked.connect(self.navigator.showSettingsPage)
 
         self.old_pos = self.pos()
@@ -154,7 +154,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         gpus = GPUtil.getGPUs()
         gpu_usage = gpus[0].load * 100 if gpus else 0
-        self.footer_label.setText(f"RAM: {ram_usage:.2f} GB / {ram_total:.2f} GB | CPU: {psutil.cpu_percent()}% | GPU Usage: {gpu_usage}%")
+        statusbartext = f"RAM: {ram_usage:.2f} GB / {ram_total:.2f} GB | CPU: {psutil.cpu_percent()}% | GPU Usage: {gpu_usage}%"
+        self.statusbar.showMessage(statusbartext)
 
     # buttons functions
 
@@ -268,7 +269,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Create the message box
         msg = CustomMessageBox(
             "Restart Action",
-            "Warning!\nAre you sure you want to **restart**? Your progress will be lost.",
+            "Warning!\nAre you sure you want to restart? Your progress will be lost.",
             [
             ("Discard", QtWidgets.QMessageBox.ButtonRole.AcceptRole, discard_action),
             ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
