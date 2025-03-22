@@ -11,6 +11,9 @@ from src.pagenavigator import PageNavigator
 from src.templatetable import ReorderTableView, ReorderTableModel
 #from temp.csvhandler import CSVHandler
 
+GLOBAL_CHOSEN_MODEL = None
+GLOBAL_CHOSEN_DATASET = None
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -18,13 +21,27 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi('mainwindowui.ui', self)
         self.restart_button.clicked.connect(self.show_warning)
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        """
+        self.setCentralWidget(self.centralwidget)
 
         self.shadow = QtWidgets.QGraphicsDropShadowEffect(self)
-        self.shadow.setBlurRadius(17)
+        self.shadow.setBlurRadius(20)
         self.shadow.setXOffset(0)
         self.shadow.setYOffset(0)
         self.shadow.setColor(QtGui.QColor(0, 0, 0, 150))
-        self.setGraphicsEffect(self.shadow)
+
+        # Main content frame (excluding status bar)
+        self.main_frame = QtWidgets.QFrame(self.centralwidget)
+        self.main_frame.setStyleSheet("background-color: white; border-radius: 10px;")
+        self.main_frame.setGraphicsEffect(self.shadow)
+
+        # Layout for the centralwidget
+        self.layout = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.layout.setContentsMargins(10, 10, 10, 10)  # Ensure space for the shadow
+        self.layout.addWidget(self.main_frame)
+        """
         #self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
         self.maximize_button.setCheckable(True)
         #if self.statusBar():
@@ -38,7 +55,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.home_dataset_button.clicked.connect(self.navigator.showDatasetPage)
         self.home_model_button.clicked.connect(self.navigator.showModelPage)
         self.home_results_button.clicked.connect(self.navigator.showChooseResultsPage)
-
+        self.modify_dataset_button.clicked.connect(self.navigator.showDatasetPage)
+        self.dataset_choose_model_button.clicked.connect(self.navigator.showModelPage)
+        self.model_train_button.clicked.connect(self.navigator.showModelStartingPage)
 
         # Other buttons
         self.ui_handler = UIAnimations()
@@ -67,12 +86,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_page = "Home"
         self.onSettingsPage = False
         self.window_control = WindowControl(self)
-
         #self.home_button.clicked.connect(self.navigator.showHomePage)
 
         self.navigator.showHomePage() #this ensures to start at the home page
         self.navigator.showModelStartingPage()
         self.showTableWidget()
+    def toggle_stackedWidget2_page(self):
+        """Toggle between page1 and page2 in stackedWidget2.
+        current_index = self.stackedWidget_2.currentIndex()
+        next_index = 1 if current_index == 0 else 0  # Toggle between 0 and 1
+        self.stackedWidget2.setCurrentIndex(next_index)"""
+
 
     def applyChangesToDataset(self):
         if self.encoding_input.toPlainText() != "":
@@ -113,7 +137,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.exec()
 
     def fadeInUp(self, widget):
-        self.ui_handler.fadeInUp(self.stackedWidget) #this redirects the pagenavigator.py to the animations.py
+        self.ui_handler.fadeInUp(widget) #this redirects the pagenavigator.py to the animations.py
 
     def fadeToPage(self, new_page):
         self.stackedWidget.setCurrentWidget(new_page)

@@ -19,6 +19,12 @@
     <height>0</height>
    </size>
   </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>1080</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
@@ -43,7 +49,7 @@ QMainWindow, #scrollArea_2 {
 	background: #111;
 }
 QLabel, QWidget {
-	color: #FAF9F6;
+	color: #EEE;
 	background-color: transparent;
 }
 
@@ -62,20 +68,20 @@ QScrollArea {
 }
 
 
-QScrollBar:vertical {
+QScrollBar:vertical, QScrollBar:horizontal {
 	background-color: transparent;
 	width: 8px;
 	height: 8px;
 	border-radius: 5px;
 }
 
-QScrollBar::handle:vertical {
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
 	background-color: #494dca;
 	border-radius: 5px;
 	width: 15px;
 }
 
-QScrollBar::handle:vertical:hover {
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
 	background-color: #6562d1;
 }
 
@@ -84,7 +90,15 @@ QTextEdit QScrollBar::sub-page:vertical,
 QScrollBar::add-line:vertical,
 QTextEdit QScrollBar::sub-line:vertical,
 QScrollBar::add-page:vertical,
-QScrollBar::sub-page:vertical {
+QScrollBar::sub-page:vertical,
+
+QScrollBar::add-page:horizontal,
+QTextEdit QScrollBar::sub-page:horizontal,
+QScrollBar::add-line:horizontal,
+QTextEdit QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal
+ {
 	background-color: transparent;
 	border: none
 }
@@ -323,9 +337,10 @@ QTableWidget::horizontalHeader, QTableWidget::verticalHeader, QTableView::horizo
 
 
 
-QTableWidget QTableView {
+QTableWidget, QTableView {
     border-collapse: collapse;
     margin-top: 10px;
+	color: #DDD;			
 }
 </string>
   </property>
@@ -1275,7 +1290,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
                </widget>
               </item>
               <item row="2" column="0">
-               <widget class="QPushButton" name="datatset_choose_model_button">
+               <widget class="QPushButton" name="dataset_choose_model_button">
                 <property name="text">
                  <string>Choose model</string>
                 </property>
@@ -1304,7 +1319,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
                <number>10</number>
               </property>
               <item row="3" column="0">
-               <widget class="QPushButton" name="pushButton_4">
+               <widget class="QPushButton" name="modify_dataset_button">
                 <property name="text">
                  <string>Modify Dataset</string>
                 </property>
@@ -1351,10 +1366,44 @@ li.checked::marker { content: &quot;\2612&quot;; }
                  <property name="bottomMargin">
                   <number>0</number>
                  </property>
-                 <item row="2" column="0" colspan="2">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_2">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>70</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>100</height>
+                    </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>22</pointsize>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="autoFillBackground">
+                    <bool>false</bool>
+                   </property>
+                   <property name="text">
+                    <string>Model</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0" colspan="2">
                   <widget class="QStackedWidget" name="stackedWidget_2">
                    <property name="currentIndex">
-                    <number>1</number>
+                    <number>0</number>
                    </property>
                    <widget class="QWidget" name="model_starting_page">
                     <layout class="QGridLayout" name="gridLayout_23">
@@ -1537,6 +1586,105 @@ li.checked::marker { content: &quot;\2612&quot;; }
                    </widget>
                    <widget class="QWidget" name="model_pruning_page">
                     <layout class="QGridLayout" name="gridLayout_18">
+                     <item row="0" column="0">
+                      <widget class="QWidget" name="widget" native="true">
+                       <property name="minimumSize">
+                        <size>
+                         <width>0</width>
+                         <height>30</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>16777215</width>
+                         <height>50</height>
+                        </size>
+                       </property>
+                       <layout class="QGridLayout" name="gridLayout_19">
+                        <item row="0" column="1">
+                         <spacer name="horizontalSpacer_5">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>40</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_20">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>50</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
+                            <height>50</height>
+                           </size>
+                          </property>
+                          <property name="font">
+                           <font>
+                            <pointsize>22</pointsize>
+                            <bold>true</bold>
+                           </font>
+                          </property>
+                          <property name="autoFillBackground">
+                           <bool>false</bool>
+                          </property>
+                          <property name="text">
+                           <string>Pruning</string>
+                          </property>
+                          <property name="alignment">
+                           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                          </property>
+                          <property name="wordWrap">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="2">
+                         <widget class="QLabel" name="label_21">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>50</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
+                            <height>50</height>
+                           </size>
+                          </property>
+                          <property name="font">
+                           <font>
+                            <pointsize>22</pointsize>
+                            <bold>true</bold>
+                           </font>
+                          </property>
+                          <property name="autoFillBackground">
+                           <bool>false</bool>
+                          </property>
+                          <property name="text">
+                           <string>MLP</string>
+                          </property>
+                          <property name="alignment">
+                           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                          </property>
+                          <property name="wordWrap">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
                      <item row="2" column="0">
                       <widget class="QGroupBox" name="groupBox_4">
                        <property name="minimumSize">
@@ -1609,8 +1757,51 @@ li.checked::marker { content: &quot;\2612&quot;; }
                        </layout>
                       </widget>
                      </item>
+                    </layout>
+                   </widget>
+                   <widget class="QWidget" name="model_pruning_table_page">
+                    <layout class="QGridLayout" name="gridLayout_15">
+                     <item row="1" column="0">
+                      <widget class="QTableWidget" name="tableWidgetPruning">
+                       <row>
+                        <property name="text">
+                         <string>A</string>
+                        </property>
+                       </row>
+                       <column>
+                        <property name="text">
+                         <string>A</string>
+                        </property>
+                       </column>
+                       <column>
+                        <property name="text">
+                         <string>B</string>
+                        </property>
+                       </column>
+                       <column>
+                        <property name="text">
+                         <string>C</string>
+                        </property>
+                       </column>
+                       <column>
+                        <property name="text">
+                         <string>D</string>
+                        </property>
+                       </column>
+                       <column>
+                        <property name="text">
+                         <string>E</string>
+                        </property>
+                       </column>
+                       <column>
+                        <property name="text">
+                         <string>F</string>
+                        </property>
+                       </column>
+                      </widget>
+                     </item>
                      <item row="0" column="0">
-                      <widget class="QWidget" name="widget" native="true">
+                      <widget class="QWidget" name="widget_4" native="true">
                        <property name="minimumSize">
                         <size>
                          <width>0</width>
@@ -1623,9 +1814,22 @@ li.checked::marker { content: &quot;\2612&quot;; }
                          <height>50</height>
                         </size>
                        </property>
-                       <layout class="QGridLayout" name="gridLayout_19">
+                       <layout class="QGridLayout" name="gridLayout_20">
+                        <item row="0" column="1">
+                         <spacer name="horizontalSpacer_6">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>40</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
                         <item row="0" column="0">
-                         <widget class="QLabel" name="label_20">
+                         <widget class="QLabel" name="label_22">
                           <property name="minimumSize">
                            <size>
                             <width>0</width>
@@ -1658,21 +1862,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
                           </property>
                          </widget>
                         </item>
-                        <item row="0" column="1">
-                         <spacer name="horizontalSpacer_5">
-                          <property name="orientation">
-                           <enum>Qt::Horizontal</enum>
-                          </property>
-                          <property name="sizeHint" stdset="0">
-                           <size>
-                            <width>40</width>
-                            <height>20</height>
-                           </size>
-                          </property>
-                         </spacer>
-                        </item>
                         <item row="0" column="2">
-                         <widget class="QLabel" name="label_21">
+                         <widget class="QLabel" name="label_23">
                           <property name="minimumSize">
                            <size>
                             <width>0</width>
@@ -1708,119 +1899,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
                        </layout>
                       </widget>
                      </item>
-                     <item row="3" column="0">
-                      <widget class="QGroupBox" name="groupBox_5">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>100</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>180</height>
-                        </size>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>-1</pointsize>
-                        </font>
-                       </property>
-                       <property name="styleSheet">
-                        <string notr="true"/>
-                       </property>
-                       <property name="title">
-                        <string>Training customization</string>
-                       </property>
-                       <property name="flat">
-                        <bool>true</bool>
-                       </property>
-                       <layout class="QGridLayout" name="gridLayout_15">
-                        <item row="0" column="0">
-                         <widget class="QWidget" name="tableWidgetPruning" native="true">
-                          <layout class="QGridLayout" name="gridLayout_17">
-                           <item row="0" column="0">
-                            <widget class="QTableWidget" name="tableWidget">
-                             <row>
-                              <property name="text">
-                               <string>A</string>
-                              </property>
-                             </row>
-                             <column>
-                              <property name="text">
-                               <string>A</string>
-                              </property>
-                             </column>
-                             <column>
-                              <property name="text">
-                               <string>B</string>
-                              </property>
-                             </column>
-                             <column>
-                              <property name="text">
-                               <string>C</string>
-                              </property>
-                             </column>
-                             <column>
-                              <property name="text">
-                               <string>D</string>
-                              </property>
-                             </column>
-                             <column>
-                              <property name="text">
-                               <string>E</string>
-                              </property>
-                             </column>
-                             <column>
-                              <property name="text">
-                               <string>F</string>
-                              </property>
-                             </column>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                       </layout>
-                      </widget>
-                     </item>
                     </layout>
                    </widget>
-                  </widget>
-                 </item>
-                 <item row="0" column="0">
-                  <widget class="QLabel" name="label_2">
-                   <property name="minimumSize">
-                    <size>
-                     <width>0</width>
-                     <height>70</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>22</pointsize>
-                     <bold>true</bold>
-                    </font>
-                   </property>
-                   <property name="autoFillBackground">
-                    <bool>false</bool>
-                   </property>
-                   <property name="text">
-                    <string>Model</string>
-                   </property>
-                   <property name="alignment">
-                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                   </property>
-                   <property name="wordWrap">
-                    <bool>true</bool>
-                   </property>
                   </widget>
                  </item>
                 </layout>

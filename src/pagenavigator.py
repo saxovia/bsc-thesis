@@ -3,7 +3,6 @@ import PyQt6 as Qt
 class PageNavigator:
     def __init__(self, main_window):
         self.main_window = main_window
-
     def fadeToPage(self, new_page):
         #force it to wait at first - for the padding to apply
         
@@ -73,18 +72,32 @@ class PageNavigator:
             print("Error: No previous page found")
 
     def showModelStartingPage(self):
-        self.fadeToPage(self.main_window.model_starting_page)
+        #self.fadeToPage(self.main_window.model_starting_page)
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_starting_page)
         self.main_window.model_train_button.setText("Continue")
         # if the button has a connnection, destroy it
         if self.main_window.model_train_button.signalsBlocked():
             self.main_window.model_train_button.disconnect()
         self.main_window.model_train_button.clicked.connect(self.showPruningStartPage)
 
-    def showPruningStartPage(self):
-        self.fadeToPage(self.main_window.model_pruning_page)
-        self.main_window.model_train_button.setText("Continue")
-        self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.showModelPage)
 
+    def showPruningStartPage(self):
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_pruning_page)
+        self.main_window.model_train_button.setText("Start Training")
+        # if the button has a connnection, destroy it
+        if self.main_window.model_train_button.signalsBlocked():
+            self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.showModelPruningTablePage)
+
+    def showModelPruningTablePage(self):
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_pruning_table_page)
+        self.main_window.model_train_button.setText("Start Training")
+        # if the button has a connnection, destroy it
+        if self.main_window.model_train_button.signalsBlocked():
+            self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.showModelTrainingPage)
+
+    def showModelTrainingPage(self):
+        print("kys")
 
         
