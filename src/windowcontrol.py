@@ -3,11 +3,13 @@ from PyQt6 import QtWidgets, QtCore
 class WindowControl:
     def __init__(self, window):
         self.window = window
+        self.title_bar = window.title_frame
         self.old_pos = None
         self.mousePressed = False
+        self.title_bar.setMouseTracking(True)
 
     def mousePressEvent(self, event):
-        if event.button()==QtCore.Qt.MouseButton.LeftButton:
+        if event.button()==QtCore.Qt.MouseButton.LeftButton and self.title_bar.underMouse():
             self.mousePressed=True
             self.old_pos=event.globalPosition().toPoint()
 
