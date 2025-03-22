@@ -71,3 +71,20 @@ class PageNavigator:
             self.main_window.settings_button.clicked.connect(self.showDatasetPage)
         else:
             print("Error: No previous page found")
+
+    def showModelStartingPage(self):
+        self.fadeToPage(self.main_window.model_starting_page)
+        self.main_window.model_train_button.setText("Continue")
+        # if the button has a connnection, destroy it
+        if self.main_window.model_train_button.signalsBlocked():
+            self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.showPruningStartPage)
+
+    def showPruningStartPage(self):
+        self.fadeToPage(self.main_window.model_pruning_page)
+        self.main_window.model_train_button.setText("Continue")
+        self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.showModelPage)
+
+
+        

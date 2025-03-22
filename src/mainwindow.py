@@ -1,4 +1,4 @@
-from PyQt6 import QtWidgets, uic, QtCore
+from PyQt6 import QtWidgets, uic, QtCore, QtGui
 import psutil
 import GPUtil
 from src.messagebox import CustomMessageBox
@@ -8,6 +8,7 @@ import numpy as np
 from src.uianimations import UIAnimations
 from src.windowcontrol import WindowControl
 from src.pagenavigator import PageNavigator
+from src.templatetable import ReorderTableView, ReorderTableModel
 #from temp.csvhandler import CSVHandler
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -18,6 +19,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.restart_button.clicked.connect(self.show_warning)
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
 
+        self.shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+        self.shadow.setBlurRadius(17)
+        self.shadow.setXOffset(0)
+        self.shadow.setYOffset(0)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, 150))
+        self.setGraphicsEffect(self.shadow)
         #self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
         self.maximize_button.setCheckable(True)
         #if self.statusBar():
@@ -64,6 +71,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.home_button.clicked.connect(self.navigator.showHomePage)
 
         self.navigator.showHomePage() #this ensures to start at the home page
+        self.navigator.showModelStartingPage()
+        self.showTableWidget()
 
     def applyChangesToDataset(self):
         if self.encoding_input.toPlainText() != "":
@@ -153,11 +162,39 @@ class MainWindow(QtWidgets.QMainWindow):
         ram_total = memory.total / (1024 ** 3)
 
         gpus = GPUtil.getGPUs()
-        gpu_usage = gpus[0].load * 100 if gpus else 0
-        statusbartext = f"RAM: {ram_usage:.2f} GB / {ram_total:.2f} GB | CPU: {psutil.cpu_percent()}% | GPU Usage: {gpu_usage}%"
+        gpu_usage = gpus[0].load * 100 if gpus else "N/A"
+        gpu_usage_string = f"{gpu_usage:.2f}%" if gpus else "N/A"
+        statusbartext = f"RAM: {ram_usage:.2f} GB / {ram_total:.2f} GB | CPU: {psutil.cpu_percent()}% | GPU Usage: {gpu_usage_string}"
         self.statusbar.showMessage(statusbartext)
 
+
     # buttons functions
+    def showTableWidget(self):
+        """Replace tableWidget with ReorderTableView"""
+        # Sample data for the table
+        data = [
+            ["1", "Prune", "Global", "All", "50", "Magnitude based", "-", "-"],
+            ["2", "Retrain", "-", "-", "-", "-", "10", "0.001"],
+        ]
+
+        # Create the reorderable table model
+        model = ReorderTableModel(data, headers=["Step", "Action", "Scope", "Layer(s) Affected", "Pruning %", "Method", "Epochs", "Learning Rate"])
+
+        # Create the table view and set its model
+        self.reorder_table_view = ReorderTableView(self)
+        self.reorder_table_view.setModel(model)
+        self.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
+
+        # Replace the placeholder widget in the UI
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.reorder_table_view)
+
+        # Clear any existing layout and set the new one
+        if self.tableWidgetPruning.layout():
+            QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout())  # Destroy old layout
+        self.tableWidgetPruning.setLayout(layout)
+
+
 
     def load_csv(self):
         # Open file dialog to choose CSV file

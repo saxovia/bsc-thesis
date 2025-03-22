@@ -1,3 +1,4 @@
+
 try:
     from PyQt6 import QtWidgets, uic
     import psutil
@@ -17,6 +18,8 @@ if __name__ == "__main__":
     import sys
     import os
     from PyQt6 import QtWidgets, uic, QtGui, QtCore
+
+
 
     font_path = "./resources/fonts/DMSans-VariableFont_opsz.ttf"
 
