@@ -13,6 +13,8 @@ from src.templatetable import ReorderTableView, ReorderTableModel
 
 GLOBAL_CHOSEN_MODEL = None
 GLOBAL_CHOSEN_DATASET = None
+GLOBAL_CHOSEN_START = None
+GLOBAL_STAGE = 1
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -91,12 +93,65 @@ class MainWindow(QtWidgets.QMainWindow):
         self.navigator.showHomePage() #this ensures to start at the home page
         self.navigator.showModelStartingPage()
         self.showTableWidget()
+
+        self.model_train_button.setEnabled(False)
+        self.listWidget.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget, "GLOBAL_CHOSEN_MODEL"))
+        self.listWidget_2.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget_2, "GLOBAL_CHOSEN_START"))
+
+
+        #Define parameters for the model
+        self.number_of_nodes = 0
+        self.number_of_layers = 0
+        self.activation_function = ""
+        self.optimizer = ""
+        self.loss_function = ""
+        self.epochs = 0
+        self.k = 0
+        self.p = 0
+        self.learning_rate = 0
+        self.batch_size = 0
+        self.validation_split = 0
+
+        #Define parameters for the dataset
+        self.dataset = ""
+
+
+
+
     def toggle_stackedWidget2_page(self):
         """Toggle between page1 and page2 in stackedWidget2.
         current_index = self.stackedWidget_2.currentIndex()
         next_index = 1 if current_index == 0 else 0  # Toggle between 0 and 1
         self.stackedWidget2.setCurrentIndex(next_index)"""
 
+    def on_item_selected(self, list_widget, global_var_name):
+        selected_items = list_widget.selectedItems()
+        if selected_items:
+            selected_value = selected_items[0].text()
+            globals()[global_var_name] = selected_value
+            print(f"Updated {global_var_name}: {selected_value}")
+
+        self.update_button_state()
+
+    def update_button_state(self):
+        global GLOBAL_STAGE
+        if GLOBAL_STAGE == 1:
+            if GLOBAL_CHOSEN_MODEL is not None and GLOBAL_CHOSEN_START is not None:
+                self.model_train_button.setEnabled(True)
+                self.current_model_architecture_label.setText(GLOBAL_CHOSEN_MODEL)
+                self.current_model_architecture_label_2.setText(GLOBAL_CHOSEN_MODEL)
+                self.current_model_architecture_label_3.setText(GLOBAL_CHOSEN_MODEL)
+
+                GLOBAL_STAGE = 2
+            else:
+                self.model_train_button.setEnabled(False)
+            
+        elif GLOBAL_STAGE == 2:
+            if GLOBAL_CHOSEN_MODEL is not None and GLOBAL_CHOSEN_START is not None:
+                self.model_train_button.setEnabled(True)
+                GLOBAL_STAGE = 2
+            else:
+                self.model_train_button.setEnabled(False)
 
     def applyChangesToDataset(self):
         if self.encoding_input.toPlainText() != "":
@@ -197,12 +252,12 @@ class MainWindow(QtWidgets.QMainWindow):
         """Replace tableWidget with ReorderTableView"""
         # Sample data for the table
         data = [
-            ["1", "Prune", "Global", "All", "50", "Magnitude based", "-", "-"],
-            ["2", "Retrain", "-", "-", "-", "-", "10", "0.001"],
+            ["","1", "Prune", "Global", "All", "50", "Magnitude based", "-", "-"],
+            ["","2", "Retrain", "-", "-", "-", "-", "10", "0.001"],
         ]
 
         # Create the reorderable table model
-        model = ReorderTableModel(data, headers=["Step", "Action", "Scope", "Layer(s) Affected", "Pruning %", "Method", "Epochs", "Learning Rate"])
+        model = ReorderTableModel(data, headers=["", "Step", "Action", "Scope", "Layer(s) Affected", "Pruning %", "Method", "Epochs", "Learning Rate"])
 
         # Create the table view and set its model
         self.reorder_table_view = ReorderTableView(self)
