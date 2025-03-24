@@ -1,4 +1,11 @@
 import PyQt6 as Qt
+from src.trainer import Trainer
+from PyQt6.QtGui import QMovie
+import os
+
+from PyQt6.QtCore import Qt
+#import the config file
+
 
 class PageNavigator:
     def __init__(self, main_window):
@@ -78,7 +85,23 @@ class PageNavigator:
         # if the button has a connnection, destroy it
         if self.main_window.model_train_button.signalsBlocked():
             self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.showPruningStartPage)
+        self.main_window.model_train_button.clicked.connect(self.modelTransitioner)
+
+    def modelTransitioner(self):
+        if self.main_window.GLOBAL_CHOSEN_START == "Prune":
+            self.showPruningStartPage()
+            self.showModelTrainingPage()
+        else:
+            self.showModelPriorPage()
+
+
+    def showModelPriorPage(self):
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_prior_start_page)
+        self.main_window.model_train_button.setText("Start Training")
+        # if the button has a connnection, destroy it
+        if self.main_window.model_train_button.signalsBlocked():
+            self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.showModelTrainingPage)
 
 
     def showPruningStartPage(self):
@@ -97,7 +120,49 @@ class PageNavigator:
             self.main_window.model_train_button.disconnect()
         self.main_window.model_train_button.clicked.connect(self.showModelTrainingPage)
 
-    def showModelTrainingPage(self):
-        print("kys")
 
+    def showModelTrainingPage(self):
+        # Create the Trainer instance and connect to the finished signal
+        self.trainer = Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, "MNIST", [6, 6, 6], lr=0.001)
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
+        self.main_window.model_train_button.setText("...")
+        self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)
+
+
+
+        self.main_window.loading_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.main_window.loading_label.setFixedSize(30, 30)
+        movie = QMovie("./resources/icons/loading.gif")
+        print(os.path.abspath("../resources/icons/loading.gif"))
+        self.main_window.loading_label.setMovie(movie)
+        movie.start()
+
+
+        # Disable button until training is done
+        self.main_window.model_train_button.setEnabled(False)
+        self.main_window.model_train_button.setText("Training...")
+
+
+        self.trainer.message.connect(self.updateTrainingProcessLabel)
+    
+        # Connect the finished signal to the onTrainingFinished method
+        self.trainer.finished.connect(self.onTrainingFinished)
+
+        # Start the training thread
+        self.trainer.start()
+
+
+    def updateTrainingProcessLabel(self, message):
+        previous_text = self.main_window.training_process_label.text()
+
+        self.main_window.training_process_label.setText(previous_text + "\n" + message)
+
+    def onTrainingFinished(self):
+        self.main_window.model_train_button.setEnabled(True)
+        self.main_window.model_train_button.setText("Training Completed")
         
+        self.showChooseResultsPage()
+
+        self.trainer.wait()
+        self.trainer = None

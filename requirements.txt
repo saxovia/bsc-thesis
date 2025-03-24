@@ -3,3 +3,4 @@ psutil
 gputil
 pandas
 torch
+torchvision

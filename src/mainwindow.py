@@ -9,12 +9,9 @@ from src.uianimations import UIAnimations
 from src.windowcontrol import WindowControl
 from src.pagenavigator import PageNavigator
 from src.templatetable import ReorderTableView, ReorderTableModel
+
 #from temp.csvhandler import CSVHandler
 
-GLOBAL_CHOSEN_MODEL = None
-GLOBAL_CHOSEN_DATASET = None
-GLOBAL_CHOSEN_START = None
-GLOBAL_STAGE = 1
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -24,6 +21,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.restart_button.clicked.connect(self.show_warning)
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        self.GLOBAL_CHOSEN_MODEL = None
+        self.GLOBAL_CHOSEN_DATASET = None
+        self.GLOBAL_CHOSEN_START = None
+        self.GLOBAL_STAGE = 1
+
 
         """
         self.setCentralWidget(self.centralwidget)
@@ -128,28 +131,29 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_items = list_widget.selectedItems()
         if selected_items:
             selected_value = selected_items[0].text()
-            globals()[global_var_name] = selected_value
+            setattr(self, global_var_name, selected_value)
+        
             print(f"Updated {global_var_name}: {selected_value}")
 
         self.update_button_state()
+        print(self.GLOBAL_CHOSEN_MODEL, self.GLOBAL_CHOSEN_START, self.GLOBAL_STAGE, self.GLOBAL_CHOSEN_DATASET)
 
     def update_button_state(self):
-        global GLOBAL_STAGE
-        if GLOBAL_STAGE == 1:
-            if GLOBAL_CHOSEN_MODEL is not None and GLOBAL_CHOSEN_START is not None:
+        if self.GLOBAL_STAGE == 1:
+            if self.GLOBAL_CHOSEN_MODEL is not None and self.GLOBAL_CHOSEN_START is not None:
                 self.model_train_button.setEnabled(True)
-                self.current_model_architecture_label.setText(GLOBAL_CHOSEN_MODEL)
-                self.current_model_architecture_label_2.setText(GLOBAL_CHOSEN_MODEL)
-                self.current_model_architecture_label_3.setText(GLOBAL_CHOSEN_MODEL)
+                self.current_model_architecture_label.setText(self.GLOBAL_CHOSEN_MODEL)
+                self.current_model_architecture_label_2.setText(self.GLOBAL_CHOSEN_MODEL)
+                self.current_model_architecture_label_3.setText(self.GLOBAL_CHOSEN_MODEL)
 
-                GLOBAL_STAGE = 2
+                self.GLOBAL_STAGE = 2
             else:
                 self.model_train_button.setEnabled(False)
             
-        elif GLOBAL_STAGE == 2:
-            if GLOBAL_CHOSEN_MODEL is not None and GLOBAL_CHOSEN_START is not None:
+        elif self.GLOBAL_STAGE == 2:
+            if self.GLOBAL_CHOSEN_MODEL is not None and self.GLOBAL_CHOSEN_START is not None:
                 self.model_train_button.setEnabled(True)
-                GLOBAL_STAGE = 2
+                self.GLOBAL_STAGE = 2
             else:
                 self.model_train_button.setEnabled(False)
 
