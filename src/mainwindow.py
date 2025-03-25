@@ -37,12 +37,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.shadow.setYOffset(0)
         self.shadow.setColor(QtGui.QColor(0, 0, 0, 150))
 
-        # Main content frame (excluding status bar)
         self.main_frame = QtWidgets.QFrame(self.centralwidget)
         self.main_frame.setStyleSheet("background-color: white; border-radius: 10px;")
         self.main_frame.setGraphicsEffect(self.shadow)
-
-        # Layout for the centralwidget
         self.layout = QtWidgets.QVBoxLayout(self.centralwidget)
         self.layout.setContentsMargins(10, 10, 10, 10)  # Ensure space for the shadow
         self.layout.addWidget(self.main_frame)
@@ -102,7 +99,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.listWidget_2.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget_2, "GLOBAL_CHOSEN_START"))
 
 
-        #Define parameters for the model
         self.number_of_nodes = 0
         self.number_of_layers = 0
         self.activation_function = ""
@@ -110,21 +106,43 @@ class MainWindow(QtWidgets.QMainWindow):
         self.loss_function = ""
         self.epochs = 0
         self.k = 0
-        self.p = 0
-        self.learning_rate = 0
+        self.p = 0.0
+        self.learning_rate = 0.0
         self.batch_size = 0
         self.validation_split = 0
 
-        #Define parameters for the dataset
-        self.dataset = ""
+    def update_variable(self, input_widget, var_value):
+        if isinstance(input_widget, QtWidgets.QLineEdit):
+            text_value = input_widget.text()
+        elif isinstance(input_widget, QtWidgets.QComboBox):
+            text_value = input_widget.currentText()
+        else:
+            print("Unsupported widget")
+            return
+        current_value = getattr(self, var_value, None)
+
+        if isinstance(current_value, int):
+            try:
+                setattr(self, var_value, int(text_value)) 
+            except ValueError:
+                setattr(self, var_value, 0)
+        elif isinstance(current_value, float):
+            try:
+                setattr(self, var_value, float(text_value))
+            except ValueError:
+                setattr(self, var_value, 0.0)
+        else:
+            setattr(self, var_value, text_value)
+
+
 
 
 
 
     def toggle_stackedWidget2_page(self):
-        """Toggle between page1 and page2 in stackedWidget2.
+        """.
         current_index = self.stackedWidget_2.currentIndex()
-        next_index = 1 if current_index == 0 else 0  # Toggle between 0 and 1
+        next_index = 1 if current_index == 0 else 0 
         self.stackedWidget2.setCurrentIndex(next_index)"""
 
     def on_item_selected(self, list_widget, global_var_name):
@@ -211,7 +229,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.is_maximized = True
 
     # Dragging functions
-
     def mousePressEvent(self, event):
         self.window_control.mousePressEvent(event)
 
@@ -238,7 +255,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.typing_timer.stop()
 
 
-    # Update usage of PC's specs - for footer
+    # for footer
     def update_specs_usage(self):
         memory = psutil.virtual_memory()
         ram_usage = memory.used / (1024 ** 3)
@@ -254,33 +271,28 @@ class MainWindow(QtWidgets.QMainWindow):
     # buttons functions
     def showTableWidget(self):
         """Replace tableWidget with ReorderTableView"""
-        # Sample data for the table
+        # sample data
         data = [
             ["","1", "Prune", "Global", "All", "50", "Magnitude based", "-", "-"],
             ["","2", "Retrain", "-", "-", "-", "-", "10", "0.001"],
         ]
 
-        # Create the reorderable table model
         model = ReorderTableModel(data, headers=["", "Step", "Action", "Scope", "Layer(s) Affected", "Pruning %", "Method", "Epochs", "Learning Rate"])
 
-        # Create the table view and set its model
         self.reorder_table_view = ReorderTableView(self)
         self.reorder_table_view.setModel(model)
         self.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
-        # Replace the placeholder widget in the UI
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view)
 
-        # Clear any existing layout and set the new one
         if self.tableWidgetPruning.layout():
-            QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout())  # Destroy old layout
+            QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout()) 
         self.tableWidgetPruning.setLayout(layout)
 
 
-
+    #unused
     def load_csv(self):
-        # Open file dialog to choose CSV file
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select CSV File", "", "CSV Files (*.csv)")
         
         if file_path:
@@ -306,7 +318,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 msg.exec()
         else:
             return
-        
+    #unused
     def save_csv(self, df):
         if self.df is None or self.df.empty:
             #QtWidgets.QMessageBox.warning(self, "Warning", "No data to save.")
@@ -327,11 +339,9 @@ class MainWindow(QtWidgets.QMainWindow):
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save CSV File", self.df_last_file_path, "CSV Files (*.csv);;All Files (*)")
         
         print("runs until here")
-        # If the user cancels
         if not file_path:
             return
 
-        # Ensure it has a .csv extension
         if not file_path.endswith(".csv"):
             file_path += ".csv"
 
@@ -376,17 +386,28 @@ class MainWindow(QtWidgets.QMainWindow):
         #opacity_effect = QtWidgets.QGraphicsOpacityEffect(self)
         #opacity_effect.setOpacity(0.5)  # Set the dimming level (0.0 to 1.0)
         #self.setGraphicsEffect(opacity_effect)
-        # Actions to be taken when the buttons are clicked
+        # actions to be taken when the buttons are clicked
         
         def discard_action():
-            print("User discarded!")
+            print("User reset!")
             self.navigator.showHomePage()
-            self.df = None
+            self.model_train_button.setEnabled(True)
+            self.modify_dataset_button.setEnabled(True)
+            self.model_undo_button.setEnabled(True)
+            self.GLOBAL_CHOSEN_DATASET = None
+            self.GLOBAL_CHOSEN_MODEL = None
+            self.GLOBAL_CHOSEN_START = None
+            self.GLOBAL_STAGE = 1
+            self.model_train_button.setText("Train Model")
+            self.model_train_button.disconnect()
+            self.model_train_button.clicked.connect(self.navigator.showModelStartingPage)
+            self.navigator.trainer.stop()
+
 
         def cancel_action():
             print("User canceled.")
 
-        # Create the message box
+        # create the message box
         msg = CustomMessageBox(
             "Restart Action",
             "Warning!\nAre you sure you want to restart? Your progress will be lost.",
@@ -396,6 +417,6 @@ class MainWindow(QtWidgets.QMainWindow):
             ],
             self
         )
-        # Run the message box
+        # run the message box
         msg.exec()
         self.setGraphicsEffect(None)

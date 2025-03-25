@@ -7,12 +7,10 @@ import networkx as nx
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-# Generate Watts-Strogatz Graph
 
-def generate_ws_graph(nodes, k=2, p=0.05):  # Adjusted p to match small-world properties
+def generate_ws_graph(nodes, k=2, p=0.05): 
     return nx.watts_strogatz_graph(nodes, k, p)
 
-# Convert WS Graph to DAG
 
 def ws_to_dag(G):
     adj_matrix = nx.to_numpy_array(G)
@@ -50,7 +48,7 @@ def create_mlp(structure):
             layers.append(nn.ReLU())
     return nn.Sequential(*layers)
 
-# Define LSTM Model from WS Prior
+
 def ws_to_lstm_structure(G):
     layers = max(nx.get_node_attributes(G, 'layer').values()) + 1
     hidden_sizes = [sum(1 for _, data in G.nodes(data=True) if data['layer'] == l) for l in range(layers)]
@@ -79,7 +77,7 @@ class LSTMNet(nn.Module):
             x, _ = lstm(x)
         return self.fc(x[:, -1, :])
 
-# Magnitude-Based Pruning (IH, HH, HO, FULL)
+
 def magnitude_prune(model, prune_ratio, mode="FULL"):
     for name, param in model.named_parameters():
         if 'weight' in name:
@@ -87,7 +85,6 @@ def magnitude_prune(model, prune_ratio, mode="FULL"):
             mask = param.abs() > threshold
             param.data *= mask.to(param.device).float()
 
-# Training Function
 def train(model, train_loader, epochs=30, lr=0.001):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -124,12 +121,10 @@ test_dataset = datasets.MNIST(root="./data", train=False, transform=transform, d
 test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 print("LSTM Pruning1st")
-# Train Fully Connected LSTM Before Pruning
 lstm_full_model = LSTMNet(hidden_sizes=[128, 64, 32])
 train(lstm_full_model, train_loader, epochs=3, lr=0.01)
 
 print("LSTM Pruning2nd")
-# Apply LSTM-Specific Pruning in Steps
 prune_steps_lstm = np.arange(0, 1.1, 0.1)
 for prune_ratio in prune_steps_lstm:
     magnitude_prune(lstm_full_model, prune_ratio, mode="IH")
@@ -139,19 +134,14 @@ for prune_ratio in prune_steps_lstm:
     train(lstm_full_model, train_loader, epochs=5, lr=0.01)
     print("HH Iteration complete for: ", prune_ratio)
 
-# Load Data
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-train_dataset = datasets.MNIST(root="./data", train=True, transform=transform, download=True)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+
 print("MLP PRIOR")
-# Create and Train MLP with WS Prior
 ws_graph = generate_ws_graph(250, k=2, p=0.05)
 dag_graph = ws_to_dag(ws_graph)
 mlp_structure = match_ws_to_mlp(dag_graph)
 mlp_prior_model = MLPNet(mlp_structure)
 train(mlp_prior_model, train_loader, epochs=30, lr=0.001)
 print("LSTM PRIOR")
-# Create and Train LSTM from WS Prior
 lstm_structure = ws_to_lstm_structure(dag_graph)
 lstm_prior_model = LSTMNet(hidden_sizes=lstm_structure)
 train(lstm_prior_model, train_loader, epochs=30, lr=0.01)
@@ -159,11 +149,10 @@ train(lstm_prior_model, train_loader, epochs=30, lr=0.01)
 
 
 print("MLP Pruning 1st")
-# Train Fully Connected MLP Before Pruning
 mlp_full_model = create_mlp([784, 256, 128, 64, 32, 10])
 train(mlp_full_model, train_loader, epochs=3, lr=0.001)
 print("MLP Pruning 2nd")
-# Prune and Train Again
+
 prune_steps = np.arange(0, 1.05, 0.05)
 for prune_ratio in prune_steps:
     magnitude_prune(mlp_full_model, prune_ratio, mode="FULL")

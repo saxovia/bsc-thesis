@@ -3,7 +3,7 @@ import sys, os, subprocess
 def check_python_version():
     major, minor, _ = sys.version_info[:3]
     if major==3 and minor>9:
-        print("Your Python version is too new. This script requires Python 3.9 due to PyQt6's libraries' unfixed bugs.")
+        print("OLD BUG -Your Python version is too new. This script requires Python 3.9 due to PyQt6's libraries' unfixed bugs.")
         sys.exit(1)
 
 def install(package):

@@ -11,51 +11,92 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 
 class Trainer(QThread):
-    progress = pyqtSignal(int)  # Signal to update progress bar
-    finished = pyqtSignal()  # Signal when training is complete
-    message = pyqtSignal(str)  # Status messages
+    progress = pyqtSignal(int)
+    finished = pyqtSignal()
+    message = pyqtSignal(str)
 
 
-    def __init__(self, model_type, dataset_type, hidden_sizes=None, lr=0.001):
+    def __init__(self, model_type, dataset_type, hidden_sizes=None, lr=0.001, loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05):
         super().__init__()
         if model_type == "MLP":
             self.model = MLPNet(hidden_sizes)
         elif model_type == "LSTM":
             self.model = LSTMNet(hidden_sizes)
         self.lr = lr
+        self.epochs = epochs
+        self.optimizer = optimizer
+        self.k = k
+        self.p = p
         self.dataset_type = dataset_type
         #self.train_loader, self.test_loader = self.load_data()
 
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.criterion = nn.CrossEntropyLoss()
+        #loss function
+        if loss == "CrossEntropy":
+            self.criterion = nn.CrossEntropyLoss()
+        else: #for now default to MSELoss
+            self.criterion = nn.MSELoss()
+
+
         self.running = True
 
-    def run(self):  # This method runs in a separate thread when `.start()` is called
-        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-        train_dataset = datasets.MNIST(root="./data", train=True, transform=transform, download=True)
+    def run(self):
+        if self.dataset_type == "MNIST":
+            transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+            train_dataset = datasets.MNIST(root="./data", train=True, transform=transform, download=True)
+            test_dataset = datasets.MNIST(root="./data", train=False, transform=transform, download=True)
+        elif self.dataset_type == "CIFAR-10":
+            transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+            train_dataset = datasets.CIFAR10(root="./data", train=True, transform=transform, download=True)
+            test_dataset = datasets.CIFAR10(root="./data", train=False, transform=transform, download=True)
+        elif self.dataset_type == "CIFAR-100":
+            transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+            train_dataset = datasets.CIFAR100(root="./data", train=True, transform=transform, download=True)
+            test_dataset = datasets.CIFAR100(root="./data", train=False, transform=transform, download=True)
+        else:
+            raise ValueError("Invalid dataset type")
+
         train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-
-        ws_graph = self.generate_ws_graph(250, k=2, p=0.05)
+        test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+        ws_graph = self.generate_ws_graph(250, k=self.k, p=self.p)
         dag_graph = self.ws_to_dag(ws_graph)
-        mlp_structure = self.match_ws_to_mlp(dag_graph)
-        self.model = MLPNet(mlp_structure).to(self.device)
+        if self.model.__class__.__name__ == "LSTMNet":
+            lstm_structure = self.ws_to_lstm_structure(dag_graph)
+            self.model = LSTMNet(lstm_structure).to(self.device)
+        else:
+            mlp_structure = self.match_ws_to_mlp(dag_graph)
+            self.model = MLPNet(mlp_structure).to(self.device)
 
-        self.train(self.model, train_loader, epochs=30, lr=self.lr)
-        self.finished.emit()  # Notify GUI when training is complete
+        self.train(self.model, train_loader, self.epochs, lr=self.lr)
+        self.finished.emit()  # notify gui when done
 
     
     def stop(self):
         """Method to stop training from the GUI"""
         self.running = False
+        self.finished.emit()
+        
 
     def generate_ws_graph(self, nodes, k=2, p=0.05):
         return nx.watts_strogatz_graph(nodes, k, p)
 
     def train(self, model, train_loader, epochs=30, lr=0.001):
         model.to(self.device)
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=lr)
+        criterion = self.criterion
+        if self.optimizer == "Adam":
+            optimizer = optim.Adam(model.parameters(), lr=lr)
+        elif self.optimizer == "SGD":
+            optimizer = optim.SGD(model.parameters(), lr=lr)
+        elif self.optimizer == "RMSprop":
+            optimizer = optim.RMSprop(model.parameters(), lr=lr)
+        elif self.optimizer == "Adadelta":
+            optimizer = optim.Adadelta(model.parameters(), lr=lr)
+        elif self.optimizer == "Adagrad":
+            optimizer = optim.Adagrad(model.parameters(), lr=lr)
+        else:  # Default to Adam
+            optimizer = optim.Adam(model.parameters(), lr=lr)
+
         model.train()
 
         for epoch in range(epochs):
@@ -72,16 +113,24 @@ class Trainer(QThread):
                     images = images.view(images.shape[0], -1)
                 optimizer.zero_grad()
                 outputs = model(images)
-                loss = criterion(outputs, labels)
+
+                if isinstance(criterion, nn.MSELoss):
+                    labels_one_hot = torch.zeros(labels.size(0), 10).to(self.device)
+                    labels_one_hot.scatter_(1, labels.unsqueeze(1), 1) 
+                    loss = criterion(outputs, labels_one_hot)
+                else:
+                    loss = criterion(outputs, labels)
+
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item()
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
-            print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%")
-            progress_message = f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%"
-            self.message.emit(progress_message) 
+            
+            print(f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%")
+            progress_message = f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%"
+            self.message.emit(progress_message)
 
 
     def match_ws_to_mlp(self, G, layers=6):
