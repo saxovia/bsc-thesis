@@ -1,0 +1,7 @@
+
+def test_dummy = {
+  val a = 1
+  val b = 2
+  val c = a + b
+  assert(c == 3)
+}
