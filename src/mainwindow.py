@@ -26,7 +26,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.GLOBAL_CHOSEN_DATASET = None
         self.GLOBAL_CHOSEN_START = None
         self.GLOBAL_STAGE = 1
-
+        for widget in self.findChildren(QtWidgets.QPushButton):
+            widget.installEventFilter(self)
 
         """
         self.setCentralWidget(self.centralwidget)
@@ -54,7 +55,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.minimize_button.clicked.connect(self.showMinimized)
         self.maximize_button.clicked.connect(self.toggle_maximize_restore)
         self.close_button.clicked.connect(self.close)
-        self.home_dataset_button.clicked.connect(self.navigator.showDatasetPage)
+        #self.home_dataset_button.clicked.connect(self.navigator.showDatasetPage)
         self.home_model_button.clicked.connect(self.navigator.showModelPage)
         self.home_results_button.clicked.connect(self.navigator.showChooseResultsPage)
         self.modify_dataset_button.clicked.connect(self.navigator.showDatasetPage)
@@ -98,8 +99,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.listWidget.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget, "GLOBAL_CHOSEN_MODEL"))
         self.listWidget_2.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget_2, "GLOBAL_CHOSEN_START"))
 
+        #use array instead for all this input
+        self.neural_networks = []
+        self.neural_networks.append({ # example
+            "number_of_nodes": [],
+            "number_of_layers": 0,
+            "activation_function": "",
+            "optimizer": "",
+            "loss_function": "",
+            "epochs": 0,
+            "k": 0,
+            "p": 0.0,
+            "learning_rate": 0.0,
+            "batch_size": 0,
+            "validation_split": 0
+        })
 
-        self.number_of_nodes = 0
+        self.number_of_nodes = []
         self.number_of_layers = 0
         self.activation_function = ""
         self.optimizer = ""
@@ -119,11 +135,17 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             print("Unsupported widget")
             return
+
         current_value = getattr(self, var_value, None)
+
+        if ',' in text_value:
+            node_values = [int(value.strip()) for value in text_value.split(',') if value.strip()]
+            setattr(self, var_value, node_values)
+            return
 
         if isinstance(current_value, int):
             try:
-                setattr(self, var_value, int(text_value)) 
+                setattr(self, var_value, int(text_value))
             except ValueError:
                 setattr(self, var_value, 0)
         elif isinstance(current_value, float):
@@ -137,7 +159,34 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 
+    def eventFilter(self, obj, event):
+        if isinstance(obj, QtWidgets.QPushButton):
+            if event.type() == QtCore.QEvent.Type.Enter:
+                self.highlight_button(obj, True)  # Hover In
+            elif event.type() == QtCore.QEvent.Type.Leave:
+                self.highlight_button(obj, False)  # Hover Out
+            elif event.type() == QtCore.QEvent.Type.MouseButtonPress:
+                self.flash_color(obj)  # Click effect
+        return super().eventFilter(obj, event)
 
+    def highlight_button(self, button, hover):
+        """Change button color slightly on hover using QSS"""
+        #if hover:
+        #    button.setStyleSheet("background-color: rgb(230, 230, 230); border: none;")
+        #else:
+        #    button.setStyleSheet("")  # Reset to default
+        pass
+
+
+
+    def flash_color(self, button):
+        """Click effect: briefly change color when clicked"""
+        #previous_style = button.styleSheet()
+        #button.setStyleSheet("background-color: rgb(200, 200, 200); border: none;")
+        #QtCore.QTimer.singleShot(100, lambda: button.setStyleSheet("background-color: rgb(230, 230, 230); border: none;"))  
+
+        #button.setStyleSheet(previous_style)
+        pass
 
     def toggle_stackedWidget2_page(self):
         """.
@@ -153,27 +202,9 @@ class MainWindow(QtWidgets.QMainWindow):
         
             print(f"Updated {global_var_name}: {selected_value}")
 
-        self.update_button_state()
+        self.navigator.update_button_state()
         print(self.GLOBAL_CHOSEN_MODEL, self.GLOBAL_CHOSEN_START, self.GLOBAL_STAGE, self.GLOBAL_CHOSEN_DATASET)
 
-    def update_button_state(self):
-        if self.GLOBAL_STAGE == 1:
-            if self.GLOBAL_CHOSEN_MODEL is not None and self.GLOBAL_CHOSEN_START is not None:
-                self.model_train_button.setEnabled(True)
-                self.current_model_architecture_label.setText(self.GLOBAL_CHOSEN_MODEL)
-                self.current_model_architecture_label_2.setText(self.GLOBAL_CHOSEN_MODEL)
-                self.current_model_architecture_label_3.setText(self.GLOBAL_CHOSEN_MODEL)
-
-                self.GLOBAL_STAGE = 2
-            else:
-                self.model_train_button.setEnabled(False)
-            
-        elif self.GLOBAL_STAGE == 2:
-            if self.GLOBAL_CHOSEN_MODEL is not None and self.GLOBAL_CHOSEN_START is not None:
-                self.model_train_button.setEnabled(True)
-                self.GLOBAL_STAGE = 2
-            else:
-                self.model_train_button.setEnabled(False)
 
     def applyChangesToDataset(self):
         if self.encoding_input.toPlainText() != "":
@@ -289,6 +320,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.tableWidgetPruning.layout():
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout()) 
         self.tableWidgetPruning.setLayout(layout)
+        #to get the data call self.reorder_table_view.model().data()
 
 
     #unused
@@ -381,8 +413,6 @@ class MainWindow(QtWidgets.QMainWindow):
             msg.exec()
 
     def show_warning(self):
-
-
         #opacity_effect = QtWidgets.QGraphicsOpacityEffect(self)
         #opacity_effect.setOpacity(0.5)  # Set the dimming level (0.0 to 1.0)
         #self.setGraphicsEffect(opacity_effect)
@@ -401,7 +431,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.model_train_button.setText("Train Model")
             self.model_train_button.disconnect()
             self.model_train_button.clicked.connect(self.navigator.showModelStartingPage)
-            self.navigator.trainer.stop()
+            if self.navigator.trainer is not None:
+                self.navigator.trainer.running = False
+                self.navigator.trainer.wait()
+                self.navigator.trainer.join() # Wait for the thread to finish
+                self.navigator.trainer = None
+            self.neural_networks = []
 
 
         def cancel_action():

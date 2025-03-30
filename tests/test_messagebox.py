@@ -1,23 +1,9 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+#sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 #this doesnt work as of now
-"""
-__________________________ ERROR collecting tests/test_messagebox.py __________________________ 
-ImportError while importing test module 'C:\Users\Weebmachine\Desktop\bsc-thesis\tests\test_messagebox.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-F:\Programs\Anaconda\Lib\importlib\__init__.py:90: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-tests\test_messagebox.py:7: in <module>
-    from PyQt6 import QtCore, QtWidgets
-E   ImportError: DLL load failed while importing QtCore: The specified procedure could not be found.
-=================================== short test summary info =================================== 
-ERROR tests/test_messagebox.py
-!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!
-"""
 from PyQt6 import QtCore, QtWidgets
 from src.messagebox import CustomMessageBox
 import pytest
@@ -45,6 +31,9 @@ def test_init(messagebox : CustomMessageBox):
     assert messagebox.text() == 'message'
     assert messagebox.windowFlags() == QtCore.Qt.WindowType.FramelessWindowHint | QtCore.Qt.WindowType.Dialog"""
 
+
+
+"""
 @pytest.fixture(scope="module", autouse=True)
 def app():
     if not QtWidgets.QApplication.instance():
@@ -132,3 +121,4 @@ def test_messagebox_styling(messagebox):
     assert "background-color: #c42b1c !important;" in stylesheet
 
 
+"""

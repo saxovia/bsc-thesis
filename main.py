@@ -25,6 +25,7 @@ if __name__ == "__main__":
 
     import os
     app = QtWidgets.QApplication(sys.argv)
+    
 
     font_id = QtGui.QFontDatabase.addApplicationFont(font_path)
     if font_id == -1:

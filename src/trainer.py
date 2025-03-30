@@ -56,6 +56,9 @@ class Trainer(QThread):
             test_dataset = datasets.CIFAR100(root="./data", train=False, transform=transform, download=True)
         else:
             raise ValueError("Invalid dataset type")
+        print(f"Loaded {self.dataset_type} dataset.")
+        progress_message = f"Loaded {self.dataset_type} dataset."
+        self.message.emit(progress_message)
 
         train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
         test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
@@ -64,9 +67,24 @@ class Trainer(QThread):
         if self.model.__class__.__name__ == "LSTMNet":
             lstm_structure = self.ws_to_lstm_structure(dag_graph)
             self.model = LSTMNet(lstm_structure).to(self.device)
+            print("LSTM NN created.")
+            progress_message = "LSTM NN created."
+            self.message.emit(progress_message)
         else:
             mlp_structure = self.match_ws_to_mlp(dag_graph)
             self.model = MLPNet(mlp_structure).to(self.device)
+            print("MLP NN created.")
+            progress_message = "MLP NN created."
+            self.message.emit(progress_message)
+
+        print(f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset.")
+        progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset."
+        self.message.emit(progress_message)
+
+
+        print("Starting the training process...")
+        progress_message = "Starting the training process..."
+        self.message.emit(progress_message)
 
         self.train(self.model, train_loader, self.epochs, lr=self.lr)
         self.finished.emit()  # notify gui when done
@@ -76,7 +94,7 @@ class Trainer(QThread):
         """Method to stop training from the GUI"""
         self.running = False
         self.finished.emit()
-        
+
 
     def generate_ws_graph(self, nodes, k=2, p=0.05):
         return nx.watts_strogatz_graph(nodes, k, p)
@@ -94,43 +112,53 @@ class Trainer(QThread):
             optimizer = optim.Adadelta(model.parameters(), lr=lr)
         elif self.optimizer == "Adagrad":
             optimizer = optim.Adagrad(model.parameters(), lr=lr)
-        else:  # Default to Adam
+        else:  
             optimizer = optim.Adam(model.parameters(), lr=lr)
 
         model.train()
 
-        for epoch in range(epochs):
-            if not self.running:
-                break
+        epoch = 0  # Track epoch manually
+        while self.running and epoch < epochs:  # Stop instantly when self.running is False
             total_loss = 0
             correct = 0
             total = 0
+
             for images, labels in train_loader:
+                if not self.running:  # **Exit immediately if stop() is called**
+                    print("Stopping training early...")
+                    return  
+
                 images, labels = images.to(self.device), labels.to(self.device)
                 if isinstance(model, LSTMNet):
                     images = images.view(-1, 28, 28)
                 else:
                     images = images.view(images.shape[0], -1)
+
                 optimizer.zero_grad()
                 outputs = model(images)
 
                 if isinstance(criterion, nn.MSELoss):
                     labels_one_hot = torch.zeros(labels.size(0), 10).to(self.device)
-                    labels_one_hot.scatter_(1, labels.unsqueeze(1), 1) 
+                    labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
                     loss = criterion(outputs, labels_one_hot)
                 else:
                     loss = criterion(outputs, labels)
 
                 loss.backward()
                 optimizer.step()
+
                 total_loss += loss.item()
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
-            
+
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%")
-            progress_message = f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%"
-            self.message.emit(progress_message)
+            self.message.emit(f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%")
+            
+            epoch += 1  # Increment epoch counter manually
+
+        print("Training complete.")
+        self.message.emit("Training complete.")
 
 
     def match_ws_to_mlp(self, G, layers=6):
