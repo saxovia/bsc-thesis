@@ -22,7 +22,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        self.GLOBAL_CHOSEN_MODEL = None
+        self.GLOBAL_CHOSEN_MODEL = None #TODO remove these and make them more generic to self.trainer = []. its not global but specific to a trainer model
         self.GLOBAL_CHOSEN_START = None
         self.GLOBAL_STAGE = 1
         for widget in self.findChildren(QtWidgets.QPushButton):
@@ -93,6 +93,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.navigator.showHomePage() #this ensures to start at the home page
         self.navigator.showModelStartingPage()
         self.showTableWidget()
+        self.showTableWidget2()
 
         self.model_train_button.setEnabled(False)
         self.listWidget.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget, "GLOBAL_CHOSEN_MODEL"))
@@ -123,9 +124,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.k = 0
         self.p = 0.0
         self.learning_rate = 0.0
-        self.batch_size = 0
+        self.batch_size = 0 #TODO clean up default values assignment because ghjrgh It is all over the place
 
-    def update_variable(self, input_widget, var_value):
+    def update_variable(self, input_widget, var_value): #TODO rewrite this to be more generic and not throw exceptions when debugging
         if isinstance(input_widget, QtWidgets.QLineEdit):
             text_value = input_widget.text()
         elif isinstance(input_widget, QtWidgets.QComboBox):
@@ -293,6 +294,27 @@ class MainWindow(QtWidgets.QMainWindow):
         gpu_usage_string = f"{gpu_usage:.2f}%" if gpus else "N/A"
         statusbartext = f"RAM: {ram_usage:.2f} GB / {ram_total:.2f} GB | CPU: {psutil.cpu_percent()}% | GPU Usage: {gpu_usage_string}"
         self.statusbar.showMessage(statusbartext)
+
+
+    def showTableWidget2(self):
+        # sample data
+        data = [
+            ["", "1", "LSTM", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.05, 64,0.001],
+            ["", "2", "MLP", "Prune", "CIFAR-10", "6", "CrossEntropy", "Adam", "10", "", "", 32, 0.01],
+        ]
+
+        model = ReorderTableModel(data, headers=["", "Edit", "Model Type", "Start", "Dataset", "Hidden sizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch Size", "Learning Rate"])
+
+        self.reorder_table_view = ReorderTableView(self)
+        self.reorder_table_view.setModel(model)
+        self.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.reorder_table_view)
+
+        if self.tableWidgetPruning_2.layout(): #TODO rename this. rename dataset pages
+            QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
+        self.tableWidgetPruning_2.setLayout(layout)
 
 
     def showTableWidget(self):

@@ -5,7 +5,7 @@ from PyQt6.QtGui import QMovie
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QTimer
 
-
+#TODO To make this class less complicated, seperate the trainings into a new class later. This class is too long and complicated. The new class name should be something like MasterModelTrainer or ModelTrainingHandler.
 class PageNavigator:
     def __init__(self, main_window):
         self.main_window = main_window
@@ -140,7 +140,7 @@ class PageNavigator:
 
 
 
-
+        #TODO make a functionality for Undo button between model stages
 
         if self.main_window.GLOBAL_CHOSEN_START == "Prior":
             self.main_window.update_variable(self.main_window.input_prior_numofnodes, 'number_of_nodes')
@@ -319,7 +319,7 @@ class PageNavigator:
 
 
     
-    def update_button_state(self):
+    def update_button_state(self): #TODO make other mechanism for this!!!
         if self.main_window.GLOBAL_STAGE == 1: # havent started training yet and the model is not chosen yet
             if self.main_window.GLOBAL_CHOSEN_MODEL is not None and self.main_window.GLOBAL_CHOSEN_START is not None:
                 self.main_window.model_train_button.setEnabled(True)

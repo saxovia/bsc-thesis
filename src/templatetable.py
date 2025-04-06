@@ -1,6 +1,9 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot
 
+#TODO add selection groups. when multiple things are selected move them all at once. to the desired place.
+#TODO add multiplication of selected items. to desired number of times.
+#TODO add a funcitonality to remove selected items. The main window can have a button to remove selected items.
 class ReorderTableModel(QtCore.QAbstractTableModel):
 
     def __init__(self, data, headers=None, editable=True, parent=None):

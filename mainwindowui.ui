@@ -650,7 +650,7 @@ QTableWidget, QTableView {
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>2</number>
+             <number>1</number>
             </property>
             <widget class="QWidget" name="home_page">
              <property name="autoFillBackground">
@@ -1018,7 +1018,7 @@ Alternatively, import an already trained model and customize the pruning process
               <item row="4" column="0">
                <widget class="QPushButton" name="dataset_choose_model_button">
                 <property name="text">
-                 <string>Choose model</string>
+                 <string>REMOVE THIS</string>
                 </property>
                </widget>
               </item>
@@ -1046,6 +1046,9 @@ Alternatively, import an already trained model and customize the pruning process
                     <enum>Qt::Horizontal</enum>
                    </property>
                   </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QTableWidget" name="tableWidgetPruning_2"/>
                  </item>
                 </layout>
                </widget>
@@ -1205,7 +1208,7 @@ Alternatively, import an already trained model and customize the pruning process
                  <item row="3" column="0" colspan="2">
                   <widget class="QStackedWidget" name="stackedWidget_2">
                    <property name="currentIndex">
-                    <number>1</number>
+                    <number>2</number>
                    </property>
                    <widget class="QWidget" name="model_starting_page">
                     <layout class="QGridLayout" name="gridLayout_23">
