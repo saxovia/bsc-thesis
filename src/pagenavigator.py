@@ -1,11 +1,9 @@
 import PyQt6 as Qt
 from src.trainer import Trainer
 from PyQt6.QtGui import QMovie
-import os
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QTimer
-#import the config file
 
 
 class PageNavigator:
@@ -120,6 +118,30 @@ class PageNavigator:
         self.main_window.modify_dataset_button.setEnabled(False)
         self.main_window.model_undo_button.setEnabled(False)
         self.main_window.GLOBAL_CHOSEN_DATASET = self.main_window.input_dataset.currentText()
+
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
+        self.main_window.model_train_button.setText("...")
+        self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)
+
+        self.main_window.loading_label.setFixedSize(30, 30)
+        movie = QMovie("./resources/icons/loading.gif")
+        self.main_window.loading_label.setVisible(True)
+        self.main_window.loading_label.raise_()  # Ensure it's on top so it wont disappear behind other widgets
+
+        self.main_window.loading_label.setMovie(movie)
+        movie.start()
+        self.main_window.loading_label.show()
+
+
+        # Show the label and refresh UI
+        self.main_window.loading_label.show()
+        self.main_window.repaint()
+
+
+
+
+
         if self.main_window.GLOBAL_CHOSEN_START == "Prior":
             self.main_window.update_variable(self.main_window.input_prior_numofnodes, 'number_of_nodes')
             self.main_window.update_variable(self.main_window.input_prior_numoflayer, 'number_of_layers')
@@ -132,7 +154,6 @@ class PageNavigator:
             
             num_layers = int(self.main_window.number_of_layers)
 
-            # Check if number_of_nodes is an array or single value
             if isinstance(self.main_window.number_of_nodes, list):
                 layer_sizes = self.main_window.number_of_nodes
             elif isinstance(self.main_window.number_of_nodes, int):
@@ -141,31 +162,55 @@ class PageNavigator:
                 layer_sizes_input = self.main_window.number_of_nodes.strip()
                 if ',' in layer_sizes_input:
                     layer_sizes = [int(node) for node in layer_sizes_input.split(',') if node.strip()]
+                elif layer_sizes_input == "":
+                    layer_sizes = [6, 6, 6] #default value for the model
+                    num_layers = 3
+                    self.main_window.number_of_layers = 3
+                    self.main_window.number_of_nodes = 250
                 else:
                     layer_sizes = [int(layer_sizes_input)] * num_layers
             # error!
             if len(layer_sizes) != num_layers:
                 raise ValueError(f"Number of nodes ({len(layer_sizes)}) does not match the number of layers ({num_layers}).")
 
-            layer_sizes = [int(self.main_window.number_of_nodes) for _ in range(int(self.main_window.number_of_layers))]
+            self.main_window.hidden_sizes = [int(self.main_window.number_of_nodes) for _ in range(int(self.main_window.number_of_layers))]
             learning_rate = self.main_window.learning_rate
             
+            if isinstance(self.main_window.input_prior_epochs, str) and self.main_window.input_prior_epochs.strip() != '':
+                self.main_window.epochs = int(self.main_window.input_prior_epochs)
+            else:
+                self.main_window.epochs = 10
+
             if isinstance(learning_rate, str) and learning_rate.strip() != '':
                 learning_rate = float(learning_rate)
             else:
                 learning_rate = 0.001 
 
-            # Handle the value of 'p'
             p_value = self.main_window.p
             if isinstance(p_value, str) and p_value.strip() != '':
                 p_value = float(p_value)
             else:
                 p_value = 0.5
+            if self.main_window.k == "":
+                self.main_window.k = 2
+            if isinstance(self.main_window.k, str) and self.main_window.k.strip() != '':
+                self.main_window.k = int(self.main_window.k)
+            else:
+                self.main_window.k = 2
 
             self.trainers = []
             #for i in range(self.main_window.k):
             #    self.trainers.append(Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.GLOBAL_CHOSEN_DATASET, layer_sizes, lr=learning_rate, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, k=self.main_window.k, p=p_value))
-            self.trainer = Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.GLOBAL_CHOSEN_DATASET, layer_sizes, lr=learning_rate, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, k=self.main_window.k, p=p_value)
+            self.trainer = Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.GLOBAL_CHOSEN_DATASET, hidden_sizes=layer_sizes, lr=learning_rate, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, k=self.main_window.k, p=p_value, graph_type="WS", N=self.main_window.number_of_nodes)
+            self.trainer.load_data_and_create_graph()
+            # start training 
+            self.trainer.start()
+
+
+            self.trainer.message.connect(self.updateTrainingProcessLabel)
+            self.trainer.finished.connect(self.onTrainingFinished)
+
+
 
         elif self.main_window.GLOBAL_CHOSEN_START == "Full":
             self.main_window.update_variable(self.main_window.input_prior_numofnodes_2, 'number_of_nodes')
@@ -174,44 +219,29 @@ class PageNavigator:
             self.main_window.update_variable(self.main_window.input_prior_lr_2, 'learning_rate')
             self.main_window.update_variable(self.main_window.input_prior_epochs_2, 'epochs')
             self.main_window.update_variable(self.main_window.input_prior_loss_2, 'loss_function')
+
+            num_layers = int(self.main_window.number_of_layers)
+            if isinstance(self.main_window.number_of_nodes, list):
+                self.main_window.number_of_nodes = int(self.main_window.number_of_nodes.strip())
+
+            layer_sizes_input = self.main_window.number_of_nodes
+            if layer_sizes_input == "":
+                self.main_window.hidden_sizes = [6, 6, 6] #default value for the model
+            else:
+                self.main_window.hidden_sizes = [int(self.main_window.number_of_nodes)] * num_layers
+            #self.main_window.hidden_sizes = [int(self.main_window.number_of_nodes) for _ in range(int(self.main_window.number_of_layers))]
+
+
+            print(self.main_window.hidden_sizes) # [6,6,6]
+
             #will need to go over teh pruning settings of the model and add them here
-            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data())
+            self.trainer = Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.GLOBAL_CHOSEN_DATASET,  hidden_sizes=self.main_window.hidden_sizes, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, graph_type=self.main_window.GLOBAL_CHOSEN_START)
+            self.trainer.load_data_and_create_graph()
 
-        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
-        self.main_window.model_train_button.setText("...")
-        self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)
-
-        self.main_window.loading_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.main_window.loading_label.setFixedSize(30, 30)
-        movie = QMovie("./resources/icons/loading.gif")
-
-        if not movie.isValid():
-            print("Error: Failed to load GIF")  # Debugging info
-        else:
-            self.main_window.loading_label.setMovie(movie)
-            movie.start()
-
-        # Ensure the label is in a layout
-        layout = self.main_window.layout()
-        if layout is None:
-            layout = Qt.QtCore.QVBoxLayout(self.main_window)
-            self.main_window.setLayout(layout)
-
-        layout.addWidget(self.main_window.loading_label)
-
-        # Show the label and refresh UI
-        self.main_window.loading_label.show()
-        self.main_window.repaint()
+            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), self.trainer.model)
 
 
 
-
-        self.trainer.message.connect(self.updateTrainingProcessLabel)
-        self.trainer.finished.connect(self.onTrainingFinished)
-
-        # start training 
-        self.trainer.start()
 
 
     def updateTrainingProcessLabel(self, message):
@@ -220,12 +250,46 @@ class PageNavigator:
         self.main_window.training_process_label.setText(previous_text + "\n" + message)
 
 
-    def handleReadingPruningTable(self, data):
-        # Handle the data from the pruning table
+    def handleReadingPruningTable(self, data, model):
         print("Data from pruning table:", data)
-
-        # Assuming you want to set this data to some variable in the main window
         self.main_window.pruning_data = data
+        # TODO change the page too
+        
+
+        for row in data:
+            action = row[0]
+
+
+            if action == "Prune": 
+                scope = row[1]
+                layer = row[2]
+                prune_ratio = float(row[3])
+                prune_method = row[4]
+                print(f"Pruning {layer} with ratio {prune_ratio}% using {prune_method} method.")
+                if prune_method == "Magnitude": #TODO make sure this goes over the methods of all prunings by classes of pruner.py
+                    print("Magnitude Pruning")
+                    self.trainer.magnitude_prune(prune_ratio, layer)
+
+                elif prune_method == "Random":
+                    print("Random Pruning")
+            elif action == "Retrain":
+                epochs = row[5]
+                learning_rate = row[6]
+                print(f"Training {layer} for {epochs} epochs with learning rate {learning_rate}.")
+                self.trainer.epochs = int(epochs)
+                self.trainer.lr = float(learning_rate)
+                self.trainer.optimizer = self.main_window.optimizer
+                print(self.trainer.lr, self.trainer.optimizer, self.trainer.epochs)
+                self.trainer.message.connect(self.updateTrainingProcessLabel)
+                self.trainer.start()
+                #self.trainer.finished.connect(self.onTrainingFinished)
+
+
+
+
+                    
+            
+
 
     def onTrainingFinished(self):
         print("Training Finished")
@@ -236,8 +300,6 @@ class PageNavigator:
         self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)
         self.main_window.modify_dataset_button.setEnabled(True)
         
-
-
         self.trainer.wait()
         self.trainer = None
 

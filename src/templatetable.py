@@ -1,32 +1,15 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot
 
-class MoveRowTask(QtCore.QRunnable):
-    """Handles row move operation in a separate thread."""
-    def __init__(self, model, row_source, row_target, table_view):
-        super().__init__()
-        self.model = model # Model to be updated
-        self.row_source = row_source # Source row index
-        self.row_target = row_target # Target row index
-        self.table_view = table_view # Table view to unlock dragging
-
-    def run(self):
-        if self.row_source == self.row_target or self.row_source < 0 or self.row_target < 0:
-            return
-        print(f"Moving row {self.row_source} to {self.row_target}")
-        QtCore.QMetaObject.invokeMethod(self.model, "relocateRow", QtCore.Qt.ConnectionType.QueuedConnection,
-                                        QtCore.Q_ARG(int, self.row_source), QtCore.Q_ARG(int, self.row_target)) # Move the row in the model
-        QtCore.QMetaObject.invokeMethod(self.table_view, "unlockDragging", QtCore.Qt.ConnectionType.QueuedConnection) # Unlock dragging in the table view
-
 class ReorderTableModel(QtCore.QAbstractTableModel):
 
     def __init__(self, data, headers=None, editable=True, parent=None):
         super().__init__(parent)
-        self._data = [[False] + list(row) for row in data]  # Add checkmark column
+        self._data = [[False] + list(row) for row in data] 
         self._headers = ["Select"] + (headers if headers else [f"Column {i+1}" for i in range(len(self._data[0]) - 1)])
         self._is_moving = False
         self._editable = editable
-        self.thread_pool = QtCore.QThreadPool.globalInstance()
+        self._data.append([False] + [''] * (len(self._headers) - 1))
 
     def columnCount(self, parent=None) -> int:
         return len(self._headers)
@@ -35,28 +18,24 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return len(self._data)
     
     def get_table_data(self):
-        return [row[1:] for row in self._data]  # Exclude the first column (checkbox)
-
+        return [row[3:] for row in self._data] 
 
     def headerData(self, column: int, orientation, role: QtCore.Qt.ItemDataRole):
         if role == QtCore.Qt.ItemDataRole.DisplayRole and orientation == QtCore.Qt.Orientation.Horizontal:
             return self._headers[column]
         return None
-
+    
     def data(self, index: QtCore.QModelIndex, role: QtCore.Qt.ItemDataRole):
         if not index.isValid():
             return None
         
         row, col = index.row(), index.column()
-        
-        # Handle checkbox column (first column)
         if col == 0:
-            if role == QtCore.Qt.ItemDataRole.CheckStateRole: # Check state role
-                 return QtCore.Qt.CheckState.Checked if self._data[row][col] else QtCore.Qt.CheckState.Unchecked # Check if the checkbox is checked or not
-        
-        # Handle text data
-        if role in {QtCore.Qt.ItemDataRole.DisplayRole, QtCore.Qt.ItemDataRole.EditRole}: # Display and edit roles
-            return self._data[row][col]  # Return the data for the specified row and column
+            if role == QtCore.Qt.ItemDataRole.CheckStateRole:
+                 return QtCore.Qt.CheckState.Checked if self._data[row][col] else QtCore.Qt.CheckState.Unchecked 
+
+        if role in {QtCore.Qt.ItemDataRole.DisplayRole, QtCore.Qt.ItemDataRole.EditRole}:
+            return self._data[row][col]
 
         return None
 
@@ -66,24 +45,19 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         
         row, col = index.row(), index.column()
 
-        # Handle checkbox interaction
-        # Handle checkbox interaction
         if col == 0 and role == QtCore.Qt.ItemDataRole.CheckStateRole:
-
-            if value == int(QtCore.Qt.CheckState.Checked.value):
-                print(f"Checkbox at row {row} checked")
-                self._data[row][col] = True
-            else:
-                print(f"Checkbox at row {row} unchecked")
-                self._data[row][col] = False
-
+            self._data[row][col] = (value == int(QtCore.Qt.CheckState.Checked.value))
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.CheckStateRole])
             return True
         
-        # Handle text editing (if editable)
         if role == QtCore.Qt.ItemDataRole.EditRole and col > 0 and self._editable:
             self._data[row][col] = value
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.EditRole])
+            # Should the last row be edited, add one
+            if row == len(self._data) - 1:
+                self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
+                self._data.append([False] + [''] * (len(self._headers) - 1))
+                self.endInsertRows()
             return True
         
         return False
@@ -95,36 +69,37 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
 
         col = index.column()
 
-        # Checkbox column: enable checking/unchecking
         if col == 0:
             return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable | QtCore.Qt.ItemFlag.ItemIsSelectable
 
-        # Other columns: allow editing if enabled
         flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDragEnabled | QtCore.Qt.ItemFlag.ItemIsDropEnabled
-        print (f"Flags for column {col}: {flags}")
         if self._editable:
-            flags |= QtCore.Qt.ItemFlag.ItemIsEditable  # Allow editing only if _editable is True
+            flags |= QtCore.Qt.ItemFlag.ItemIsEditable 
         
         return flags
 
 
-    @pyqtSlot(int, int)
-    def relocateRow(self, row_source, row_target) -> None:
-        print(f"Moving row {row_source} to {row_target}")
+    def relocateRow(self, row_source, row_target):
         if self._is_moving or row_source == row_target or row_source < 0 or row_target < 0:
             return
 
+        if row_target >= self.rowCount():
+            row_target = self.rowCount() - 1 
+
+        if row_source >= self.rowCount():
+            return  # Don't move a non-existent row!!
+
         self._is_moving = True
+        if row_target > row_source:
+            # If moving row ddown
+            row_target += 1
+
         self.beginMoveRows(QtCore.QModelIndex(), row_source, row_source, QtCore.QModelIndex(), row_target)
-        self._data.insert(row_target, self._data.pop(row_source))
+
+        self._data.insert(row_target if row_target > row_source else row_target, self._data.pop(row_source))
+
         self.endMoveRows()
         self._is_moving = False
-
-    def queueMove(self, row_source, row_target, table_view):
-        print(f"Queueing move from {row_source} to {row_target}")
-        if not self._is_moving:
-            self.thread_pool.start(MoveRowTask(self, row_source, row_target, table_view))
-
 
     def supportedDropActions(self):
         return QtCore.Qt.DropAction.MoveAction
@@ -136,7 +111,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         """Serialize data when dragging."""
         data = QtCore.QMimeData()
         stream = QtCore.QDataStream(QtCore.QByteArray(), QtCore.QIODevice.OpenModeFlag.WriteOnly)
-        stream.writeInt(indexes[0].row())  # Store the row index
+        stream.writeInt(indexes[0].row()) 
         data.setData("application/x-qabstractitemmodeldatalist", stream.device().data())
         return data
 
@@ -155,7 +130,6 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
 class ReorderTableView(QtWidgets.QTableView):
     def __init__(self, parent):
         super().__init__(parent)
-        #self.verticalHeader().hide()
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         self.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.InternalMove)
@@ -163,7 +137,6 @@ class ReorderTableView(QtWidgets.QTableView):
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
         self.setDropIndicatorShown(True)
-        self.is_moving = False
 
     def dragEnterEvent(self, event):
         if event.source() is self:
@@ -174,40 +147,35 @@ class ReorderTableView(QtWidgets.QTableView):
     def dragMoveEvent(self, event):
         event.acceptProposedAction()
 
-    @pyqtSlot()  # Expose unlockDragging to the QMetaObject system
+    @pyqtSlot() 
     def unlockDragging(self):
-        print(f"Unlocking dragging")
         self.is_moving = False
 
     def dropEvent(self, event):
-        print(f"Drop event triggered")
-        if event.source() is not self or self.is_moving or self.model()._is_moving:
+        if not self.model(): # Need this here to prevent access violations!
             event.ignore()
             return
 
         from_index = self.selectionModel().currentIndex().row()
         to_index = self.indexAt(event.position().toPoint()).row()
 
-        if 0 <= from_index < self.model().rowCount() and 0 <= to_index < self.model().rowCount() and from_index != to_index: # Check if the indices are valid and not the same
-            self.is_moving = True
-            print(f"Moving from {from_index} to {to_index}")
-            self.model().queueMove(from_index, to_index, self)
+        if 0 <= from_index < self.model().rowCount() and 0 <= to_index < self.model().rowCount() and from_index != to_index:
+            self.model().relocateRow(from_index, to_index)
             event.acceptProposedAction()
         else:
             event.ignore()
 
 
-
-class Testing(QtWidgets.QMainWindow):
+class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
     def __init__(self, editable=True):
         super().__init__()
         data = [
-            ("Regex 1", "Category A", "Extra 1", "extra"),
-            ("Regex 2", "Category B", "Extra 2", "extra"),
-            ("Regex 3", "Category C", "Extra 3", "extra"),
-            ("Regex 4", "Category D", "Extra 4", "extra"),
+            ("1","A","Extra 1"),
+            ("2","B","Extra 2"),
+            ("3","C","Extra 3"),
+            ("4","D","Extra 4"),
         ]
-        headers = ["Regex", "Category", "Additional Info", "Extra"]
+        headers = ["Numbers", "ABCD", "Extra"]
 
         view = ReorderTableView(self)
         model = ReorderTableModel(data, headers, editable)
@@ -224,5 +192,5 @@ class Testing(QtWidgets.QMainWindow):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    window = Testing(editable=True)  # Change to False to disable editing
+    window = Testing(editable=True) 
     sys.exit(app.exec())

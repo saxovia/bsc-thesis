@@ -642,7 +642,7 @@ QTableWidget, QTableView {
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>2</number>
             </property>
             <widget class="QWidget" name="home_page">
              <property name="autoFillBackground">
@@ -709,22 +709,6 @@ QTableWidget, QTableView {
                  <property name="verticalSpacing">
                   <number>30</number>
                  </property>
-                 <item row="0" column="1">
-                  <spacer name="verticalSpacer_5">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
                  <item row="2" column="1" colspan="2">
                   <widget class="QWidget" name="widget_6" native="true">
                    <property name="minimumSize">
@@ -740,6 +724,21 @@ QTableWidget, QTableView {
                     </size>
                    </property>
                    <layout class="QGridLayout" name="gridLayout_25">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
                     <item row="0" column="0">
                      <widget class="QLabel" name="home_text">
                       <property name="minimumSize">
@@ -756,7 +755,7 @@ QTableWidget, QTableView {
                       </property>
                       <property name="font">
                        <font>
-                        <pointsize>12</pointsize>
+                        <pointsize>10</pointsize>
                        </font>
                       </property>
                       <property name="styleSheet">
@@ -809,15 +808,18 @@ Alternatively, import an already trained model and customize the pruning process
                    </widget>
                   </widget>
                  </item>
-                 <item row="3" column="1">
-                  <spacer name="verticalSpacer_4">
+                 <item row="0" column="1">
+                  <spacer name="verticalSpacer_5">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Preferred</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>30</height>
+                     <height>100</height>
                     </size>
                    </property>
                   </spacer>
@@ -839,7 +841,7 @@ Alternatively, import an already trained model and customize the pruning process
                    <property name="font">
                     <font>
                      <pointsize>28</pointsize>
-                     <bold>true</bold>
+                     <bold>false</bold>
                     </font>
                    </property>
                    <property name="styleSheet">
@@ -855,6 +857,19 @@ Alternatively, import an already trained model and customize the pruning process
                     <bool>true</bool>
                    </property>
                   </widget>
+                 </item>
+                 <item row="3" column="1">
+                  <spacer name="verticalSpacer_4">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>25</height>
+                    </size>
+                   </property>
+                  </spacer>
                  </item>
                 </layout>
                </widget>
@@ -892,22 +907,6 @@ Alternatively, import an already trained model and customize the pruning process
                  <property name="verticalSpacing">
                   <number>20</number>
                  </property>
-                 <item row="4" column="0">
-                  <spacer name="verticalSpacer_3">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Fixed</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
                  <item row="3" column="0">
                   <widget class="QPushButton" name="home_results_button">
                    <property name="minimumSize">
@@ -931,19 +930,6 @@ Alternatively, import an already trained model and customize the pruning process
                    </property>
                   </widget>
                  </item>
-                 <item row="0" column="0">
-                  <spacer name="verticalSpacer_2">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>40</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
                  <item row="2" column="0">
                   <widget class="QPushButton" name="home_model_button">
                    <property name="minimumSize">
@@ -966,6 +952,38 @@ Alternatively, import an already trained model and customize the pruning process
                      <normaloff>resources/icons/tech.png</normaloff>resources/icons/tech.png</iconset>
                    </property>
                   </widget>
+                 </item>
+                 <item row="4" column="0">
+                  <spacer name="verticalSpacer_3">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>130</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="0" column="0">
+                  <spacer name="verticalSpacer_2">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>350</height>
+                    </size>
+                   </property>
+                  </spacer>
                  </item>
                 </layout>
                </widget>
@@ -1041,11 +1059,11 @@ Alternatively, import an already trained model and customize the pruning process
                 <property name="font">
                  <font>
                   <pointsize>22</pointsize>
-                  <bold>true</bold>
+                  <bold>false</bold>
                  </font>
                 </property>
                 <property name="text">
-                 <string>Dataset settings</string>
+                 <string>Process Timeline</string>
                 </property>
                </widget>
               </item>
@@ -1110,27 +1128,18 @@ Alternatively, import an already trained model and customize the pruning process
               <property name="verticalSpacing">
                <number>10</number>
               </property>
-              <item row="3" column="1">
-               <spacer name="horizontalSpacer_4">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="3" column="0">
-               <widget class="QPushButton" name="modify_dataset_button">
+              <item row="3" column="3">
+               <widget class="QPushButton" name="model_undo_button">
                 <property name="text">
-                 <string>Modify Dataset</string>
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>resources/icons/undo.png</normaloff>resources/icons/undo.png</iconset>
                 </property>
                </widget>
               </item>
-              <item row="2" column="0" colspan="4">
+              <item row="2" column="0" colspan="5">
                <widget class="QWidget" name="model_page_handler" native="true">
                 <property name="maximumSize">
                  <size>
@@ -1168,7 +1177,7 @@ Alternatively, import an already trained model and customize the pruning process
                    <property name="font">
                     <font>
                      <pointsize>22</pointsize>
-                     <bold>true</bold>
+                     <bold>false</bold>
                     </font>
                    </property>
                    <property name="autoFillBackground">
@@ -1188,7 +1197,7 @@ Alternatively, import an already trained model and customize the pruning process
                  <item row="3" column="0" colspan="2">
                   <widget class="QStackedWidget" name="stackedWidget_2">
                    <property name="currentIndex">
-                    <number>1</number>
+                    <number>3</number>
                    </property>
                    <widget class="QWidget" name="model_starting_page">
                     <layout class="QGridLayout" name="gridLayout_23">
@@ -1496,18 +1505,92 @@ Alternatively, import an already trained model and customize the pruning process
                        </layout>
                       </widget>
                      </item>
-                     <item row="2" column="0">
-                      <widget class="QGroupBox" name="groupBox_4">
+                     <item row="1" column="0">
+                      <widget class="QFrame" name="frame_13">
                        <property name="minimumSize">
                         <size>
                          <width>0</width>
-                         <height>100</height>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="frameShape">
+                        <enum>QFrame::StyledPanel</enum>
+                       </property>
+                       <property name="frameShadow">
+                        <enum>QFrame::Raised</enum>
+                       </property>
+                       <layout class="QGridLayout" name="gridLayout_27">
+                        <item row="3" column="0">
+                         <widget class="QComboBox" name="input_dataset_2">
+                          <item>
+                           <property name="text">
+                            <string>MNIST</string>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>CIFAR-10</string>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>CIFAR-100</string>
+                           </property>
+                          </item>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QWidget" name="widget_7" native="true">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                          <layout class="QGridLayout" name="gridLayout_28">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="horizontalSpacing">
+                            <number>0</number>
+                           </property>
+                           <property name="verticalSpacing">
+                            <number>10</number>
+                           </property>
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="label_50">
+                             <property name="text">
+                              <string>Dataset</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item row="2" column="0">
+                      <widget class="QGroupBox" name="groupBox_7">
+                       <property name="minimumSize">
+                        <size>
+                         <width>150</width>
+                         <height>80</height>
                         </size>
                        </property>
                        <property name="maximumSize">
                         <size>
                          <width>16777215</width>
-                         <height>250</height>
+                         <height>16777215</height>
                         </size>
                        </property>
                        <property name="font">
@@ -1519,50 +1602,239 @@ Alternatively, import an already trained model and customize the pruning process
                         <string notr="true"/>
                        </property>
                        <property name="title">
-                        <string>Initial edit</string>
+                        <string/>
                        </property>
                        <property name="flat">
                         <bool>true</bool>
                        </property>
-                       <layout class="QGridLayout" name="gridLayout_5">
-                        <item row="1" column="0">
-                         <widget class="QLabel" name="label_15">
-                          <property name="text">
-                           <string>Number of layers:</string>
+                       <layout class="QGridLayout" name="gridLayout_35">
+                        <property name="leftMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>50</number>
+                        </property>
+                        <property name="horizontalSpacing">
+                         <number>25</number>
+                        </property>
+                        <property name="verticalSpacing">
+                         <number>0</number>
+                        </property>
+                        <item row="0" column="0">
+                         <widget class="QFrame" name="frame_14">
+                          <property name="minimumSize">
+                           <size>
+                            <width>500</width>
+                            <height>100</height>
+                           </size>
                           </property>
-                         </widget>
-                        </item>
-                        <item row="2" column="0">
-                         <widget class="QLineEdit" name="lineEdit"/>
-                        </item>
-                        <item row="3" column="0">
-                         <widget class="QLabel" name="label_16">
-                          <property name="text">
-                           <string>Nodes per Layer (seperate with ',' or ' ' in case of differing nodes per layer)</string>
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
                           </property>
-                         </widget>
-                        </item>
-                        <item row="6" column="0">
-                         <widget class="QLineEdit" name="lineEdit_5"/>
-                        </item>
-                        <item row="4" column="0">
-                         <widget class="QLineEdit" name="lineEdit_2"/>
-                        </item>
-                        <item row="7" column="0">
-                         <widget class="QLabel" name="label_31">
-                          <property name="text">
-                           <string>Loss function</string>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
                           </property>
-                         </widget>
-                        </item>
-                        <item row="8" column="0">
-                         <widget class="QLineEdit" name="lineEdit_6"/>
-                        </item>
-                        <item row="5" column="0">
-                         <widget class="QLabel" name="label_30">
-                          <property name="text">
-                           <string>Optimizer</string>
-                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_5">
+                           <property name="spacing">
+                            <number>60</number>
+                           </property>
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <spacer name="horizontalSpacer_12">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>35</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_15">
+                             <property name="minimumSize">
+                              <size>
+                               <width>300</width>
+                               <height>100</height>
+                              </size>
+                             </property>
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QVBoxLayout" name="verticalLayout_9">
+                              <item>
+                               <widget class="QLabel" name="label_47">
+                                <property name="text">
+                                 <string>Number of Nodes</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLineEdit" name="input_prior_numofnodes_2">
+                                <property name="placeholderText">
+                                 <string>Seperate with , or give a single value ([6,6,6] or 6)</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="label_52">
+                                <property name="text">
+                                 <string>Number of Layers</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLineEdit" name="input_prior_numoflayer_2">
+                                <property name="placeholderText">
+                                 <string>3</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_16">
+                             <property name="minimumSize">
+                              <size>
+                               <width>300</width>
+                               <height>100</height>
+                              </size>
+                             </property>
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QVBoxLayout" name="verticalLayout_10">
+                              <item>
+                               <widget class="QLabel" name="label_55">
+                                <property name="text">
+                                 <string>Optimizer</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QComboBox" name="input_prior_optimizer_2">
+                                <item>
+                                 <property name="text">
+                                  <string>Adam</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>SGD</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>RMSprop</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>Adadelta</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>Adagrad</string>
+                                 </property>
+                                </item>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="label_56">
+                                <property name="text">
+                                 <string>Loss function</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QComboBox" name="input_prior_loss_2">
+                                <item>
+                                 <property name="text">
+                                  <string>CrossEntropy</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>MSE</string>
+                                 </property>
+                                </item>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="label_57">
+                                <property name="text">
+                                 <string>Epochs</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLineEdit" name="input_prior_epochs_2">
+                                <property name="placeholderText">
+                                 <string>30</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="label_58">
+                                <property name="text">
+                                 <string>Learning Rate</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLineEdit" name="input_prior_lr_2">
+                                <property name="text">
+                                 <string/>
+                                </property>
+                                <property name="placeholderText">
+                                 <string>0.001</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <spacer name="horizontalSpacer_13">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                          </layout>
                          </widget>
                         </item>
                        </layout>
@@ -1573,43 +1845,7 @@ Alternatively, import an already trained model and customize the pruning process
                    <widget class="QWidget" name="model_pruning_table_page">
                     <layout class="QGridLayout" name="gridLayout_15">
                      <item row="1" column="0">
-                      <widget class="QTableWidget" name="tableWidgetPruning">
-                       <row>
-                        <property name="text">
-                         <string>A</string>
-                        </property>
-                       </row>
-                       <column>
-                        <property name="text">
-                         <string>A</string>
-                        </property>
-                       </column>
-                       <column>
-                        <property name="text">
-                         <string>B</string>
-                        </property>
-                       </column>
-                       <column>
-                        <property name="text">
-                         <string>C</string>
-                        </property>
-                       </column>
-                       <column>
-                        <property name="text">
-                         <string>D</string>
-                        </property>
-                       </column>
-                       <column>
-                        <property name="text">
-                         <string>E</string>
-                        </property>
-                       </column>
-                       <column>
-                        <property name="text">
-                         <string>F</string>
-                        </property>
-                       </column>
-                      </widget>
+                      <widget class="QTableWidget" name="tableWidgetPruning"/>
                      </item>
                      <item row="0" column="0">
                       <widget class="QWidget" name="widget_4" native="true">
@@ -2031,7 +2267,7 @@ Alternatively, import an already trained model and customize the pruning process
                               <item>
                                <widget class="QLabel" name="label_39">
                                 <property name="text">
-                                 <string>Number of Nodes</string>
+                                 <string>N</string>
                                 </property>
                                </widget>
                               </item>
@@ -2039,20 +2275,6 @@ Alternatively, import an already trained model and customize the pruning process
                                <widget class="QLineEdit" name="input_prior_numofnodes">
                                 <property name="placeholderText">
                                  <string>Seperate with , or give a single value ([6,6,6] or 6)</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QLabel" name="label_46">
-                                <property name="text">
-                                 <string>Number of Layers</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QLineEdit" name="input_prior_numoflayer">
-                                <property name="placeholderText">
-                                 <string>3</string>
                                 </property>
                                </widget>
                               </item>
@@ -2216,6 +2438,36 @@ Alternatively, import an already trained model and customize the pruning process
                    </widget>
                    <widget class="QWidget" name="model_training_page">
                     <layout class="QGridLayout" name="gridLayout_17">
+                     <item row="2" column="0">
+                      <widget class="QFrame" name="frame_8">
+                       <property name="minimumSize">
+                        <size>
+                         <width>100</width>
+                         <height>30</height>
+                        </size>
+                       </property>
+                       <property name="frameShape">
+                        <enum>QFrame::StyledPanel</enum>
+                       </property>
+                       <property name="frameShadow">
+                        <enum>QFrame::Raised</enum>
+                       </property>
+                       <layout class="QHBoxLayout" name="horizontalLayout_3">
+                        <property name="leftMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>20</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>20</number>
+                        </property>
+                       </layout>
+                      </widget>
+                     </item>
                      <item row="0" column="0">
                       <widget class="QWidget" name="widget_3" native="true">
                        <property name="minimumSize">
@@ -2306,8 +2558,8 @@ Alternatively, import an already trained model and customize the pruning process
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>86</width>
-                             <height>542</height>
+                             <width>820</width>
+                             <height>550</height>
                             </rect>
                            </property>
                            <property name="autoFillBackground">
@@ -2402,52 +2654,6 @@ Alternatively, import an already trained model and customize the pruning process
                        </layout>
                       </widget>
                      </item>
-                     <item row="2" column="0">
-                      <widget class="QFrame" name="frame_8">
-                       <property name="minimumSize">
-                        <size>
-                         <width>100</width>
-                         <height>30</height>
-                        </size>
-                       </property>
-                       <property name="frameShape">
-                        <enum>QFrame::StyledPanel</enum>
-                       </property>
-                       <property name="frameShadow">
-                        <enum>QFrame::Raised</enum>
-                       </property>
-                       <layout class="QHBoxLayout" name="horizontalLayout_3">
-                        <property name="leftMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="topMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="rightMargin">
-                         <number>20</number>
-                        </property>
-                        <property name="bottomMargin">
-                         <number>20</number>
-                        </property>
-                        <item>
-                         <widget class="QLabel" name="loading_label">
-                          <property name="minimumSize">
-                           <size>
-                            <width>30</width>
-                            <height>30</height>
-                           </size>
-                          </property>
-                          <property name="text">
-                           <string/>
-                          </property>
-                          <property name="alignment">
-                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                          </property>
-                         </widget>
-                        </item>
-                       </layout>
-                      </widget>
-                     </item>
                     </layout>
                    </widget>
                   </widget>
@@ -2455,7 +2661,14 @@ Alternatively, import an already trained model and customize the pruning process
                 </layout>
                </widget>
               </item>
-              <item row="3" column="3">
+              <item row="3" column="0">
+               <widget class="QPushButton" name="modify_dataset_button">
+                <property name="text">
+                 <string>Process Timeline</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="4">
                <widget class="QPushButton" name="model_train_button">
                 <property name="enabled">
                  <bool>true</bool>
@@ -2465,14 +2678,38 @@ Alternatively, import an already trained model and customize the pruning process
                 </property>
                </widget>
               </item>
+              <item row="3" column="1">
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
               <item row="3" column="2">
-               <widget class="QPushButton" name="model_undo_button">
+               <widget class="QLabel" name="loading_label">
+                <property name="minimumSize">
+                 <size>
+                  <width>50</width>
+                  <height>50</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>50</width>
+                  <height>50</height>
+                 </size>
+                </property>
                 <property name="text">
                  <string/>
                 </property>
-                <property name="icon">
-                 <iconset>
-                  <normaloff>resources/icons/undo.png</normaloff>resources/icons/undo.png</iconset>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
                </widget>
               </item>
@@ -2514,7 +2751,7 @@ Alternatively, import an already trained model and customize the pruning process
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../../.designer/backup/resources/icons/restart.png</normaloff>../../.designer/backup/resources/icons/restart.png</iconset>
+                <normaloff>../.designer/backup/resources/icons/restart.png</normaloff>../.designer/backup/resources/icons/restart.png</iconset>
               </property>
              </widget>
             </widget>
@@ -2543,7 +2780,7 @@ Alternatively, import an already trained model and customize the pruning process
               <property name="font">
                <font>
                 <pointsize>22</pointsize>
-                <bold>true</bold>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">

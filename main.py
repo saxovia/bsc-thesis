@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     font_family = QtGui.QFontDatabase.applicationFontFamilies(font_id)[0]
     custom_font = QtGui.QFont(font_family, 12)
-    app.setWindowIcon(QtGui.QIcon("icon.ico"))
+    app.setWindowIcon(QtGui.QIcon("./icon.ico"))
 
     app.setFont(custom_font)
 

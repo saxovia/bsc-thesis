@@ -161,3 +161,57 @@ for prune_ratio in prune_steps:
 
 
 
+
+
+
+
+##### MAYBE
+
+def get_prune_mask(weight_tensor, prune_percent):
+    weight_np = weight_tensor.cpu().detach().numpy().flatten()
+    threshold = np.percentile(np.abs(weight_np), prune_percent)
+    mask = (torch.abs(weight_tensor) > threshold).float()
+    return mask
+
+def magnitude_prune(model, prune_percent, mode="FULL"):
+    if isinstance(model, LSTMNet):
+        # LSTM pruning logic
+        for name, param in model.named_parameters():
+            if "weight" in name:  # Ignore biases
+                if mode == "FULL":
+                    mask = get_prune_mask(param, prune_percent)
+                    param.data.mul_(mask)
+                elif mode == "IH" and "weight_ih" in name:
+                    mask = get_prune_mask(param, prune_percent)
+                    param.data.mul_(mask)
+                elif mode == "HH" and "weight_hh" in name:
+                    mask = get_prune_mask(param, prune_percent)
+                    param.data.mul_(mask)
+                elif mode == "HTO" and hasattr(model, "fc") and "fc.weight" in name:
+                    mask = get_prune_mask(param, prune_percent)
+                    param.data.mul_(mask)
+
+    elif isinstance(model, MLPNet) or isinstance(model, nn.Sequential):
+        # MLP pruning logic
+        layers = [module for module in model.modules() if isinstance(module, nn.Linear)]
+        
+        if mode == "FULL":
+            for layer in layers:
+                mask = get_prune_mask(layer.weight, prune_percent)
+                layer.weight.data.mul_(mask)
+        
+        elif mode == "IH" and len(layers) > 0:
+            # Prune only the first layer
+            mask = get_prune_mask(layers[0].weight, prune_percent)
+            layers[0].weight.data.mul_(mask)
+
+        elif mode == "HH" and len(layers) > 2:
+            # Prune hidden layers (all except first and last)
+            for layer in layers[1:-1]:
+                mask = get_prune_mask(layer.weight, prune_percent)
+                layer.weight.data.mul_(mask)
+
+        elif mode == "HTO" and len(layers) > 0:
+            # Prune only the last layer
+            mask = get_prune_mask(layers[-1].weight, prune_percent)
+            layers[-1].weight.data.mul_(mask)

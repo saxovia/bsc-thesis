@@ -170,7 +170,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return super().eventFilter(obj, event)
 
     def highlight_button(self, button, hover):
-        """Change button color slightly on hover using QSS"""
         #if hover:
         #    button.setStyleSheet("background-color: rgb(230, 230, 230); border: none;")
         #else:
@@ -180,7 +179,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def flash_color(self, button):
-        """Click effect: briefly change color when clicked"""
         #previous_style = button.styleSheet()
         #button.setStyleSheet("background-color: rgb(200, 200, 200); border: none;")
         #QtCore.QTimer.singleShot(100, lambda: button.setStyleSheet("background-color: rgb(230, 230, 230); border: none;"))  
@@ -299,13 +297,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusbar.showMessage(statusbartext)
 
 
-    # buttons functions
     def showTableWidget(self):
-        """Replace tableWidget with ReorderTableView"""
         # sample data
         data = [
-            ["","1", "Prune", "Global", "All", "50", "Magnitude based", "-", "-"],
-            ["","2", "Retrain", "-", "-", "-", "-", "10", "0.001"],
+            ["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"],
+            ["2", "Retrain", "-", "-", "-", "-", "10", "0.001"],
         ]
 
         model = ReorderTableModel(data, headers=["", "Step", "Action", "Scope", "Layer(s) Affected", "Pruning %", "Method", "Epochs", "Learning Rate"])
@@ -320,10 +316,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.tableWidgetPruning.layout():
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout()) 
         self.tableWidgetPruning.setLayout(layout)
-        #to get the data call self.reorder_table_view.model().data()
 
-
-    #unused
+    #unused but will be used later for project loading, et.c
     def load_csv(self):
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select CSV File", "", "CSV Files (*.csv)")
         
@@ -434,15 +428,15 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.navigator.trainer is not None:
                 self.navigator.trainer.running = False
                 self.navigator.trainer.wait()
-                self.navigator.trainer.join() # Wait for the thread to finish
+                self.navigator.trainer.join() # Wait for the thread to finish!
                 self.navigator.trainer = None
             self.neural_networks = []
+            self.navigator.showModelStartingPage()
 
 
         def cancel_action():
             print("User canceled.")
 
-        # create the message box
         msg = CustomMessageBox(
             "Restart Action",
             "Warning!\nAre you sure you want to restart? Your progress will be lost.",
@@ -452,6 +446,5 @@ class MainWindow(QtWidgets.QMainWindow):
             ],
             self
         )
-        # run the message box
         msg.exec()
         self.setGraphicsEffect(None)

@@ -7,6 +7,7 @@ import networkx as nx
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from PyQt6.QtCore import QThread, pyqtSignal
+from src.pruner import MagnitudePruner, RandomPruner, L1Pruner
 # Define the Trainer class
 
 
@@ -16,8 +17,15 @@ class Trainer(QThread):
     message = pyqtSignal(str)
 
 
-    def __init__(self, model_type, dataset_type, hidden_sizes=None, lr=0.001, loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05):
+    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250):
+
         super().__init__()
+        if hidden_sizes == '':
+            self.hidden_sizes = [6, 6, 6]
+        elif isinstance(hidden_sizes, str):
+            self.hidden_sizes = [int(x) for x in hidden_sizes.split(",")]
+        else:
+            self.hidden_sizes = hidden_sizes
         if model_type == "MLP":
             self.model = MLPNet(hidden_sizes)
         elif model_type == "LSTM":
@@ -28,9 +36,15 @@ class Trainer(QThread):
         self.k = k
         self.p = p
         self.dataset_type = dataset_type
+        self.graph_type = graph_type
+        self.N = int(N)
         #self.train_loader, self.test_loader = self.load_data()
 
-
+        self.prune_self = {
+            "Magnitude": MagnitudePruner(),
+            "Random": RandomPruner(),
+            "L1": L1Pruner()
+        }
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         #loss function
         if loss == "CrossEntropy":
@@ -40,8 +54,7 @@ class Trainer(QThread):
 
 
         self.running = True
-
-    def run(self):
+    def load_data_and_create_graph(self):
         if self.dataset_type == "MNIST":
             transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
             train_dataset = datasets.MNIST(root="./data", train=True, transform=transform, download=True)
@@ -60,46 +73,95 @@ class Trainer(QThread):
         progress_message = f"Loaded {self.dataset_type} dataset."
         self.message.emit(progress_message)
 
-        train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
-        ws_graph = self.generate_ws_graph(250, k=self.k, p=self.p)
-        dag_graph = self.ws_to_dag(ws_graph)
+        self.train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+        self.test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+        dag_graph = None
+        if self.graph_type == "WS":
+            ws_graph = self.generate_ws_graph(self.N, k=self.k, p=self.p)
+            dag_graph = self.ws_to_dag(ws_graph)
+        elif self.graph_type == "Full":
+            dag_graph = self.generate_fully_connected_graph(self.hidden_sizes[0])
+
+
+        # Convert DAG to neural network structure
         if self.model.__class__.__name__ == "LSTMNet":
             lstm_structure = self.ws_to_lstm_structure(dag_graph)
             self.model = LSTMNet(lstm_structure).to(self.device)
             print("LSTM NN created.")
-            progress_message = "LSTM NN created."
-            self.message.emit(progress_message)
+            self.message.emit("LSTM NN created.")
         else:
-            mlp_structure = self.match_ws_to_mlp(dag_graph)
+            mlp_structure = self.ws_to_mlp_structure(dag_graph)
             self.model = MLPNet(mlp_structure).to(self.device)
             print("MLP NN created.")
-            progress_message = "MLP NN created."
-            self.message.emit(progress_message)
-
-        print(f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset.")
-        progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset."
+            self.message.emit("MLP NN created.")
+        if self.lr != None:
+            print(f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.N} N.")
+        else: 
+            print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.N} N.")
+        progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.N} N."
         self.message.emit(progress_message)
 
 
+
+    def run(self):
+        """Main method to run the training process"""
         print("Starting the training process...")
         progress_message = "Starting the training process..."
         self.message.emit(progress_message)
 
-        self.train(self.model, train_loader, self.epochs, lr=self.lr)
+        self.train(self.model, self.train_loader, self.epochs, lr=self.lr)
         self.finished.emit()  # notify gui when done
+
 
     
     def stop(self):
         """Method to stop training from the GUI"""
         self.running = False
         self.finished.emit()
+    def generate_fully_connected_graph(self, nodes):
+        """
+        Generates a fully connected directed acyclic graph (DAG).
 
+        Args:
+            nodes (int): Number of nodes in the graph.
+
+        Returns:
+            nx.DiGraph: A fully connected DAG.
+        """
+        G = nx.complete_graph(nodes, create_using=nx.DiGraph)
+        
+        # Ensure the graph is acyclic by directing edges from smaller index to larger index
+        for u, v in list(G.edges):
+            if u > v:
+                G.remove_edge(u, v)
+        
+        layers = {node: node for node in G.nodes()}  # Simple layer assignment
+        nx.set_node_attributes(G, layers, 'layer')
+
+        return G
+
+    def prune_self(self, layer,  prune_ratio, prune_type):
+        for prune_types in self.prune_handler:
+            if prune_type == "Magnitude":
+                self.magnitude_prune(self.model, prune_ratio=0.5, mode="FULL")
+            elif prune_type == "Random":
+                self.random_prune(self.model, prune_ratio=0.5)
+            elif prune_type == "Structured":
+                self.structured_prune(self.model, prune_ratio=0.5)
+    
+    def magnitude_prune(self, prune_ratio, mode="FULL"):
+        print(f"!!!Applying {mode} magnitude pruning with ratio: {prune_ratio}")
+
+        pruner = MagnitudePruner()
+        pruner.apply_pruning(self.model, prune_ratio * 100, mode=mode)
 
     def generate_ws_graph(self, nodes, k=2, p=0.05):
         return nx.watts_strogatz_graph(nodes, k, p)
 
     def train(self, model, train_loader, epochs=30, lr=0.001):
+        print("Training started...")
+        print(self.lr, lr)
         model.to(self.device)
         criterion = self.criterion
         if self.optimizer == "Adam":
@@ -117,8 +179,8 @@ class Trainer(QThread):
 
         model.train()
 
-        epoch = 0  # Track epoch manually
-        while self.running and epoch < epochs:  # Stop instantly when self.running is False
+        epoch = 0 
+        while self.running and int(epoch) < int(epochs):
             total_loss = 0
             correct = 0
             total = 0
@@ -154,18 +216,24 @@ class Trainer(QThread):
 
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%")
             self.message.emit(f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%")
-            
-            epoch += 1  # Increment epoch counter manually
+            epoch += 1 
 
         print("Training complete.")
         self.message.emit("Training complete.")
 
 
-    def match_ws_to_mlp(self, G, layers=6):
+    def ws_to_mlp_structure(self, G, layers, input_size, output_size):
         num_nodes = len(G.nodes)
-        nodes_per_layer = np.array_split(sorted(G.nodes), layers)
-        layer_sizes = [len(layer) for layer in nodes_per_layer]
-        return [784] + layer_sizes + [10]
+        layers = np.array_split(sorted(G.nodes), len(self.hidden_sizes))
+        layer_sizes = [len(layer) for layer in layers]
+        return [input_size] + layer_sizes + [output_size]
+    
+    def ws_to_lstm_structure(self, dag, input_size, output_size):
+        node_layers = nx.get_node_attributes(dag, 'layer')
+        max_layer = max(node_layers.values()) if node_layers else 0
+        layer_sizes = [sum(1 for _ in filter(lambda x: x == l, node_layers.values())) for l in range(max_layer + 1)]
+
+        return [input_size] + layer_sizes + [output_size]
 
 
     def ws_to_dag(self, G):
