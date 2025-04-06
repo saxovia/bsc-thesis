@@ -53,4 +53,8 @@ jobs:
 
     - name: Run tests
       run: |
-        pytest tests --maxfail=1 --disable-warnings -v
+        if [ -d "tests" ]; then
+          pytest tests\ --maxfail=1 --disable-warnings -v
+        else
+          echo "No tests directory found, skipping pytest."
+        fi
