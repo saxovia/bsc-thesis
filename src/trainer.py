@@ -17,7 +17,7 @@ class Trainer(QThread):
     message = pyqtSignal(str)
 
 
-    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250):
+    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250, batch_size=64):
 
         super().__init__()
         if hidden_sizes == '':
@@ -38,6 +38,7 @@ class Trainer(QThread):
         self.dataset_type = dataset_type
         self.graph_type = graph_type
         self.N = int(N)
+        self.batch_size = batch_size
         #self.train_loader, self.test_loader = self.load_data()
 
         self.prune_self = {
@@ -55,43 +56,65 @@ class Trainer(QThread):
 
         self.running = True
     def load_data_and_create_graph(self):
-        if self.dataset_type == "MNIST":
-            transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-            train_dataset = datasets.MNIST(root="./data", train=True, transform=transform, download=True)
-            test_dataset = datasets.MNIST(root="./data", train=False, transform=transform, download=True)
-        elif self.dataset_type == "CIFAR-10":
-            transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-            train_dataset = datasets.CIFAR10(root="./data", train=True, transform=transform, download=True)
-            test_dataset = datasets.CIFAR10(root="./data", train=False, transform=transform, download=True)
-        elif self.dataset_type == "CIFAR-100":
-            transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-            train_dataset = datasets.CIFAR100(root="./data", train=True, transform=transform, download=True)
-            test_dataset = datasets.CIFAR100(root="./data", train=False, transform=transform, download=True)
-        else:
-            raise ValueError("Invalid dataset type")
+        dataset_info = {
+            "MNIST": {
+                "dataset": datasets.MNIST,
+                "input_size": 28 * 28,
+                "num_classes": 10,
+                "transform": transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]),
+                "default_batch_size": 64
+            },
+            "CIFAR-10": {
+                "dataset": datasets.CIFAR10,
+                "input_size": 3 * 32 * 32,
+                "num_classes": 10,
+                "transform": transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]),
+                "default_batch_size": 32
+            },
+            "CIFAR-100": {
+                "dataset": datasets.CIFAR100,
+                "input_size": 3 * 32 * 32,
+                "num_classes": 100,
+                "transform": transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]),
+                "default_batch_size": 128 #TODO Adjust every default value assignment because it is all over the place
+            }
+        }
+
+        dataset_config = dataset_info[self.dataset_type]
+        input_size = dataset_config["input_size"]
+        num_classes = dataset_config["num_classes"]
+        transform = dataset_config["transform"]
+        default_batch_size = dataset_config["default_batch_size"]
+        batch_size = self.batch_size if self.batch_size is not None else default_batch_size
+
+
+        train_dataset = dataset_config["dataset"](root="./data", train=True, transform=transform, download=True)
+        test_dataset = dataset_config["dataset"](root="./data", train=False, transform=transform, download=True)
+
+        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+
+
         print(f"Loaded {self.dataset_type} dataset.")
         progress_message = f"Loaded {self.dataset_type} dataset."
         self.message.emit(progress_message)
-
-        self.train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-        self.test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
         dag_graph = None
         if self.graph_type == "WS":
             ws_graph = self.generate_ws_graph(self.N, k=self.k, p=self.p)
             dag_graph = self.ws_to_dag(ws_graph)
         elif self.graph_type == "Full":
-            dag_graph = self.generate_fully_connected_graph(self.hidden_sizes[0])
+            dag_graph = self.generate_fully_connected_graph(self.hidden_sizes[0]) #TODO Change later!!
 
 
-        # Convert DAG to neural network structure
+        # Convert DAG to NN
         if self.model.__class__.__name__ == "LSTMNet":
-            lstm_structure = self.ws_to_lstm_structure(dag_graph)
+            lstm_structure = self.dag_to_lstm_structure(dag_graph, input_size, num_classes)
             self.model = LSTMNet(lstm_structure).to(self.device)
             print("LSTM NN created.")
             self.message.emit("LSTM NN created.")
         else:
-            mlp_structure = self.ws_to_mlp_structure(dag_graph)
+            mlp_structure = self.dag_to_mlp_structure(dag_graph, input_size, num_classes)
             self.model = MLPNet(mlp_structure).to(self.device)
             print("MLP NN created.")
             self.message.emit("MLP NN created.")
@@ -105,7 +128,6 @@ class Trainer(QThread):
 
 
     def run(self):
-        """Main method to run the training process"""
         print("Starting the training process...")
         progress_message = "Starting the training process..."
         self.message.emit(progress_message)
@@ -116,7 +138,6 @@ class Trainer(QThread):
 
     
     def stop(self):
-        """Method to stop training from the GUI"""
         self.running = False
         self.finished.emit()
     def generate_fully_connected_graph(self, nodes):
@@ -161,7 +182,6 @@ class Trainer(QThread):
 
     def train(self, model, train_loader, epochs=30, lr=0.001):
         print("Training started...")
-        print(self.lr, lr)
         model.to(self.device)
         criterion = self.criterion
         if self.optimizer == "Adam":
@@ -222,13 +242,13 @@ class Trainer(QThread):
         self.message.emit("Training complete.")
 
 
-    def ws_to_mlp_structure(self, G, layers, input_size, output_size):
+    def dag_to_mlp_structure(self, G, input_size, output_size):
         num_nodes = len(G.nodes)
         layers = np.array_split(sorted(G.nodes), len(self.hidden_sizes))
         layer_sizes = [len(layer) for layer in layers]
         return [input_size] + layer_sizes + [output_size]
     
-    def ws_to_lstm_structure(self, dag, input_size, output_size):
+    def dag_to_lstm_structure(self, dag, input_size, output_size):
         node_layers = nx.get_node_attributes(dag, 'layer')
         max_layer = max(node_layers.values()) if node_layers else 0
         layer_sizes = [sum(1 for _ in filter(lambda x: x == l, node_layers.values())) for l in range(max_layer + 1)]

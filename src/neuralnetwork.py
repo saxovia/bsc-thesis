@@ -16,7 +16,11 @@ class MLPNet(nn.Module):
 class LSTMNet(nn.Module):
     def __init__(self, hidden_sizes, output_dim=10):
         super().__init__()
-        self.lstms = nn.ModuleList([nn.LSTM(hidden_sizes[i - 1] if i > 0 else 28, hidden_sizes[i], batch_first=True) for i in range(len(hidden_sizes))])
+        self.lstms = nn.ModuleList([nn.LSTM(
+            hidden_sizes[i - 1] if i > 0 else 28, 
+            hidden_sizes[i], 
+            batch_first=True) 
+            for i in range(len(hidden_sizes))])
         self.fc = nn.Linear(hidden_sizes[-1], output_dim)
 
     def forward(self, x):

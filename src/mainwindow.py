@@ -23,7 +23,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
 
         self.GLOBAL_CHOSEN_MODEL = None
-        self.GLOBAL_CHOSEN_DATASET = None
         self.GLOBAL_CHOSEN_START = None
         self.GLOBAL_STAGE = 1
         for widget in self.findChildren(QtWidgets.QPushButton):
@@ -117,7 +116,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.number_of_nodes = []
         self.number_of_layers = 0
-        self.activation_function = ""
+        self.activation_function = "" #..?
         self.optimizer = ""
         self.loss_function = ""
         self.epochs = 0
@@ -125,7 +124,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.p = 0.0
         self.learning_rate = 0.0
         self.batch_size = 0
-        self.validation_split = 0
 
     def update_variable(self, input_widget, var_value):
         if isinstance(input_widget, QtWidgets.QLineEdit):
@@ -201,7 +199,7 @@ class MainWindow(QtWidgets.QMainWindow):
             print(f"Updated {global_var_name}: {selected_value}")
 
         self.navigator.update_button_state()
-        print(self.GLOBAL_CHOSEN_MODEL, self.GLOBAL_CHOSEN_START, self.GLOBAL_STAGE, self.GLOBAL_CHOSEN_DATASET)
+        print(self.GLOBAL_CHOSEN_MODEL, self.GLOBAL_CHOSEN_START, self.GLOBAL_STAGE)
 
 
     def applyChangesToDataset(self):
@@ -413,25 +411,32 @@ class MainWindow(QtWidgets.QMainWindow):
         # actions to be taken when the buttons are clicked
         
         def discard_action():
-            print("User reset!")
+            #print("User reset!")
+            
+            self.loading_label.hide()
             self.navigator.showHomePage()
             self.model_train_button.setEnabled(True)
             self.modify_dataset_button.setEnabled(True)
             self.model_undo_button.setEnabled(True)
-            self.GLOBAL_CHOSEN_DATASET = None
             self.GLOBAL_CHOSEN_MODEL = None
             self.GLOBAL_CHOSEN_START = None
             self.GLOBAL_STAGE = 1
             self.model_train_button.setText("Train Model")
             self.model_train_button.disconnect()
             self.model_train_button.clicked.connect(self.navigator.showModelStartingPage)
+            self.model_train_button.setEnabled(True)
             if self.navigator.trainer is not None:
                 self.navigator.trainer.running = False
+                self.navigator.trainer.quit()
                 self.navigator.trainer.wait()
-                self.navigator.trainer.join() # Wait for the thread to finish!
-                self.navigator.trainer = None
+                #self.navigator.trainer.join() # Wait for the thread to finish! doesnt work
             self.neural_networks = []
             self.navigator.showModelStartingPage()
+            self.listWidget.clearSelection()
+            self.listWidget_2.clearSelection()
+            self.navigator.updateTrainingProcessLabel("")
+            self.training_process_label.setText("")
+
 
 
         def cancel_action():

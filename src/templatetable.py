@@ -18,7 +18,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return len(self._data)
     
     def get_table_data(self):
-        return [row[3:] for row in self._data] 
+        return [row[2:] for row in self._data] 
 
     def headerData(self, column: int, orientation, role: QtCore.Qt.ItemDataRole):
         if role == QtCore.Qt.ItemDataRole.DisplayRole and orientation == QtCore.Qt.Orientation.Horizontal:
@@ -108,7 +108,6 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return ["application/x-qabstractitemmodeldatalist"]
 
     def mimeData(self, indexes):
-        """Serialize data when dragging."""
         data = QtCore.QMimeData()
         stream = QtCore.QDataStream(QtCore.QByteArray(), QtCore.QIODevice.OpenModeFlag.WriteOnly)
         stream.writeInt(indexes[0].row()) 
@@ -116,7 +115,6 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return data
 
     def dropMimeData(self, data, action, row, column, parent):
-        """Deserialize data when dropping."""
         if not data.hasFormat("application/x-qabstractitemmodeldatalist"):
             return False
         stream = QtCore.QDataStream(data.data("application/x-qabstractitemmodeldatalist"), QtCore.QIODevice.OpenModeFlag.ReadOnly)
