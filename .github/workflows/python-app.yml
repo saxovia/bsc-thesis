@@ -21,6 +21,9 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
@@ -59,7 +62,7 @@ jobs:
         echo "Contents of the ./tests directory (if it exists):"
         ls -la ./tests || echo "No tests directory found"
 
-        
+
     - name: Run tests
       run: |
         if [ -d "./tests" ]; then
