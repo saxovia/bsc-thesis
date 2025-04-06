@@ -50,7 +50,16 @@ jobs:
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Debug directory structure
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Contents of the current directory:"
+        ls -la
+        echo "Contents of the ./tests directory (if it exists):"
+        ls -la ./tests || echo "No tests directory found"
 
+        
     - name: Run tests
       run: |
         if [ -d "./tests" ]; then
