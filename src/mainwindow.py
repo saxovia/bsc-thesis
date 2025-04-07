@@ -305,12 +305,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         model = ReorderTableModel(data, headers=["", "Edit", "Model Type", "Start", "Dataset", "Hidden sizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch Size", "Learning Rate"])
 
-        self.reorder_table_view = ReorderTableView(self)
-        self.reorder_table_view.setModel(model)
-        self.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
+        self.reorder_table_view2 = ReorderTableView(self)
+        self.reorder_table_view2.setModel(model)
+        self.reorder_table_view2.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.reorder_table_view)
+        layout.addWidget(self.reorder_table_view2)
 
         if self.tableWidgetPruning_2.layout(): #TODO rename this. rename dataset pages
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 

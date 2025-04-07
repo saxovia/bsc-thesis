@@ -42,6 +42,79 @@ class PageNavigator:
         self.main_window.current_page = "Dataset"
         self.main_window.restart_button.show()
         self.resetSettingsButton()
+        #If i press that the training button, read through the table OR the self.main_window.neural_networks and parse through it to train. save progress! save model should it get interrupted
+        self.main_window.model_train_button.setText("Start Training")
+        self.main_window.model_train_button.clicked.connect(self.parseThroughProcessesTable)
+
+    def parseThroughProcessesTable(self):
+        data = self.main_window.reorder_table_view2.model().get_table_data()
+        print("Data from pruning table:", data)
+
+
+        for row in data:
+            pass
+    
+
+
+    def mainTrainLoop(self):
+        self.main_window.model_train_button.setEnabled(False)
+        self.main_window.modify_dataset_button.setEnabled(False)
+        self.main_window.model_undo_button.setEnabled(False)
+        
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
+        self.main_window.model_train_button.setText("...")
+        self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)# ????
+        
+        self.main_window.loading_label.setFixedSize(50, 50)
+        movie = QMovie("./resources/icons/loading.gif")
+        self.main_window.loading_label.setVisible(True)
+        self.main_window.loading_label.raise_() #TODO simplify later
+        self.main_window.loading_label.setMovie(movie)
+        movie.start()
+        self.main_window.loading_label.show()
+        self.main_window.loading_label.show()
+        self.main_window.repaint()
+
+        # The NN gets filled at the stage of clicking on "Done", in place of the previous training button. It redirects to the process timeline
+        for row in self.main_window.neural_network:
+            self.trainOneModel(row)
+
+
+
+
+    def trainOneModel(self, modelrow): # Already have the data. Its job is not to format the data to the interpretable type for the trainer. Nor give default values
+        #Paste this here later. I suggest going through the pages first, the rest will come to you later
+        model = modelrow[0] # Will not be correct by ordering because of templatetable
+        start =  modelrow[1]
+        dataset = modelrow[2]
+        N = modelrow[3]
+        loss = modelrow[4]
+        optimizer = modelrow[5]
+        epochs = modelrow[6]
+        k = modelrow[7]
+        p = modelrow[8]
+        batch_size = modelrow[9]
+        learning_rate = modelrow[10]
+        graph_type = modelrow[11]
+        
+        if start == "Prior":
+            #Dont forget to make number of layers or number of nodes or N the same
+            # self.trainer???
+            trainer = Trainer(model, dataset, hidden_sizes= N, loss=loss, optimizer=optimizer, epochs=epochs, k=k, p=p, batch_size=batch_size, learning_rate=learning_rate, graph_type=graph_type)
+            trainer.message.connect(self.updateTrainingProcessLabel)
+            trainer.load_data_and_create_graph()
+            trainer.start()
+            trainer.finished.connect(self.onTrainingFinished)
+        else:
+            trainer = Trainer(model, dataset, hidden_sizes=N, loss=loss, optimizer=optimizer, epochs=epochs, graph_type=graph_type, batch_size=batch_size)
+            trainer.message.connect(self.updateTrainingProcessLabel)
+            trainer.load_data_and_create_graph()
+            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), trainer.model)
+
+        #TODO make a functionality for Undo button between model stages
+
+
 
     def showModelPage(self):
         self.fadeToPage(self.main_window.model_page)
@@ -204,7 +277,6 @@ class PageNavigator:
                 self.main_window.batch_size = 32
 
 
-            self.trainers = []
             #for i in range(self.main_window.k):
             #    self.trainers.append(Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.GLOBAL_CHOSEN_DATASET, layer_sizes, lr=learning_rate, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, k=self.main_window.k, p=p_value))
             self.trainer = Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.chosen_dataset, hidden_sizes=layer_sizes, lr=learning_rate, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, k=self.main_window.k, p=p_value, graph_type="WS", N=self.main_window.number_of_nodes, batch_size=self.main_window.batch_size)
@@ -268,17 +340,15 @@ class PageNavigator:
         self.main_window.pruning_data = data
         # TODO change the page too
         
-
         for row in data:
             action = row[0]
-
-
             if action == "Prune": 
                 scope = row[1]
                 layer = row[2]
                 prune_ratio = float(row[3]) / 100
                 prune_method = row[4]
                 print(f"Pruning {layer} with ratio {prune_ratio}% using {prune_method} method.")
+
                 if prune_method == "Magnitude": #TODO make sure this goes over the methods of all prunings by classes of pruner.py
                     print("Magnitude Pruning")
                     self.trainer.magnitude_prune(prune_ratio, layer)
@@ -293,11 +363,6 @@ class PageNavigator:
                 self.trainer.lr = float(learning_rate)
                 self.trainer.optimizer = self.main_window.optimizer
                 self.trainer.start()
-                #self.trainer.finished.connect(self.onTrainingFinished)
-
-
-
-
                     
             
 
@@ -311,7 +376,7 @@ class PageNavigator:
         
         if self.main_window.GLOBAL_CHOSEN_START == None:
             self.main_window.model_train_button.disconnect()
-            self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)
+            #self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)
         self.main_window.modify_dataset_button.setEnabled(True)
         
         self.trainer.wait()
@@ -320,20 +385,22 @@ class PageNavigator:
 
     
     def update_button_state(self): #TODO make other mechanism for this!!!
-        if self.main_window.GLOBAL_STAGE == 1: # havent started training yet and the model is not chosen yet
-            if self.main_window.GLOBAL_CHOSEN_MODEL is not None and self.main_window.GLOBAL_CHOSEN_START is not None:
-                self.main_window.model_train_button.setEnabled(True)
-                self.main_window.current_model_architecture_label.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
-                self.main_window.current_model_architecture_label_2.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
-                self.main_window.current_model_architecture_label_3.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
+        #if self.main_window.GLOBAL_STAGE == 1: # havent started training yet and the model is not chosen yet
+        if self.main_window.GLOBAL_CHOSEN_MODEL is not None and self.main_window.GLOBAL_CHOSEN_START is not None:
+            self.main_window.model_train_button.setEnabled(True)
+            self.main_window.current_model_architecture_label.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
+            self.main_window.current_model_architecture_label_2.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
+            self.main_window.current_model_architecture_label_3.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
 
-                self.main_window.GLOBAL_STAGE = 2
-            else: # unless the model is chosen, disable the button
-                self.main_window.model_train_button.setEnabled(False)
-            
-        elif self.main_window.GLOBAL_STAGE == 2:
+            #self.main_window.GLOBAL_STAGE = 2
+        else: # unless the model is chosen, disable the button
+            self.main_window.model_train_button.setEnabled(False)
+        
+        # elif self.main_window.GLOBAL_STAGE == 2:
+        """
             if self.main_window.GLOBAL_CHOSEN_MODEL is not None and self.main_window.GLOBAL_CHOSEN_START is not None:
                 self.main_window.model_train_button.setEnabled(True)
                 self.GLOBAL_STAGE = 2
             else:
                 self.main_window.model_train_button.setEnabled(False)
+        """
