@@ -81,18 +81,23 @@ class Trainer(QThread):
             channels = 1
         else:  # CIFAR-10 or CIFAR-100
             channels = 3
+
         dataset_config = dataset_info[self.dataset_type]
-        input_size = dataset_config["input_size"]
-        num_classes = dataset_config["num_classes"]
-        transform = dataset_config["transform"]
-        default_batch_size = dataset_config["default_batch_size"]
-        batch_size = self.batch_size if self.batch_size is not None else default_batch_size #? TODO
         input_size_flatten = dataset_config["input_size"]
         channels = 1 if self.dataset_type == "MNIST" else 3
         sequence_length = int((input_size_flatten / channels) ** 0.5)
         feature_size = sequence_length * channels
         self.sequence_length = sequence_length
         self.feature_size = feature_size
+        if self.dataset_type == "MNIST":
+            self.feature_size = 28  # For MNIST: 28 features (28x1)
+        elif self.dataset_type.startswith("CIFAR"):
+            self.feature_size = 32*3  # For CIFAR: 96 features (32x3)
+        input_size = dataset_config["input_size"]
+        num_classes = dataset_config["num_classes"]
+        transform = dataset_config["transform"]
+        default_batch_size = dataset_config["default_batch_size"]
+        batch_size = self.batch_size if self.batch_size is not None else default_batch_size #? TODO
 
         train_dataset = dataset_config["dataset"](root="./data", train=True, transform=transform, download=True)
         test_dataset = dataset_config["dataset"](root="./data", train=False, transform=transform, download=True)
@@ -132,7 +137,7 @@ class Trainer(QThread):
             elif self.model == "LSTM":
                 dag_graph = self.generate_fully_connected_graph(self.hidden_sizes[0])
                 lstm_structure = self.dag_to_lstm_structure(dag_graph, input_size, num_classes)
-                self.model = LSTMNet(lstm_structure).to(self.device)
+                self.model = LSTMNet(input_size=self.feature_size, hidden_sizes=self.hidden_sizes, output_dim=num_classes).to(self.device)
                 print("LSTM NN created.")
                 self.message.emit("LSTM NN created.")
 
@@ -181,6 +186,7 @@ class Trainer(QThread):
         pruner = MagnitudePruner()
         pruner.apply_pruning(self.model, prune_ratio * 100, mode=mode)
 
+
     def train(self, model, train_loader, epochs=30, lr=0.001):
         print("Training started...")
         model.to(self.device)
@@ -207,20 +213,18 @@ class Trainer(QThread):
             total = 0
 
             for images, labels in train_loader:
-                if not self.running:  # **Exit immediately if stop() is called**
+                if not self.running:  # Exit immediately if stop() is called
                     print("Stopping training early...")
                     return  
 
                 images, labels = images.to(self.device), labels.to(self.device)
                 if isinstance(model, (LSTMNet, SparseLSTMNet)):
-                    if self.graph_type == "Full":
-                        images = images.view(images.size(0), self.sequence_length, self.feature_size)
-                    else:
-                        images = images.view(
-                            images.size(0), 
-                            self.sequence_length, 
-                            self.feature_size
-                        )
+                    if self.dataset_type == "MNIST":
+                        # For MNIST: (batch_size, 28, 28)
+                        images = images.view(images.size(0), 28, 28)
+                    elif self.dataset_type.startswith("CIFAR"):
+                        # For CIFAR: (batch_size, 32, 32*3) since CIFAR has 32x32 images with 3 channels
+                        images = images.view(images.size(0), 32, 32*3)
                 else:
                     images = images.view(images.size(0), -1)
 

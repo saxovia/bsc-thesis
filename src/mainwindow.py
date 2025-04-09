@@ -151,29 +151,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def eventFilter(self, obj, event):
         if isinstance(obj, QtWidgets.QPushButton):
             if event.type() == QtCore.QEvent.Type.Enter:
-                self.highlight_button(obj, True)  # Hover In
+                #self.highlight_button(obj, True)  # Hover In
+                pass
             elif event.type() == QtCore.QEvent.Type.Leave:
-                self.highlight_button(obj, False)  # Hover Out
+                ##self.highlight_button(obj, False)  # Hover Out
+                pass
             elif event.type() == QtCore.QEvent.Type.MouseButtonPress:
-                self.flash_color(obj)  # Click effect
+                pass
+                #self.flash_color(obj)  # Click effect
         return super().eventFilter(obj, event)
 
-    def highlight_button(self, button, hover):
-        #if hover:
-        #    button.setStyleSheet("background-color: rgb(230, 230, 230); border: none;")
-        #else:
-        #    button.setStyleSheet("")  # Reset to default
-        pass
-
-
-
-    def flash_color(self, button):
-        #previous_style = button.styleSheet()
-        #button.setStyleSheet("background-color: rgb(200, 200, 200); border: none;")
-        #QtCore.QTimer.singleShot(100, lambda: button.setStyleSheet("background-color: rgb(230, 230, 230); border: none;"))  
-
-        #button.setStyleSheet(previous_style)
-        pass
 
     def toggle_stackedWidget2_page(self):
         """.
@@ -289,9 +276,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def showTableWidget2(self):
         # sample data
         data = [
-            ["", "3", "LSTM", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
-            ["", "1", "LSTM", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.7, 64,0.001, "WS"],
+            
             ["", "2", "LSTM", "Prune", "CIFAR-10", "6", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
+            ["", "3", "LSTM", "Prune", "MLP", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
+            ["", "1", "LSTM", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.7, 64,0.001, "WS"],
         ]
 
         model = ReorderTableModel(data, headers=["", "Edit", "Model Type", "Start", "Dataset", "Hidden sizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch Size", "Learning Rate", "Graph Type"])

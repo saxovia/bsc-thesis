@@ -2,15 +2,11 @@ from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtGui import QIcon
 
-#TODO add selection groups. when multiple things are selected move them all at once. to the desired place.
-#TODO add multiplication of selected items. to desired number of times.
-#TODO add a funcitonality to remove selected items. The main window can have a button to remove selected items.
 class ReorderTableModel(QtCore.QAbstractTableModel):
     def __init__(self, data, headers=None, editable=True, parent=None):
         super().__init__(parent)
         self._data = [[False] + list(row) + ['', ''] for row in data]
         self._headers = [''] + (headers if headers else [f"Column {i+1}" for i in range(len(self._data[0]) - 3)]) + ['', '']
-        self._is_moving = False
         self._editable = editable
         self._data.append([False] + [''] * (len(self._headers) - 3) + ['', ''])
 
@@ -53,9 +49,32 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
 
         return None
 
-
-
-    def setData(self, index: QtCore.QModelIndex, value, role: QtCore.Qt.ItemDataRole) -> bool:
+    def multiply_selected_items(self, count):
+        selected_rows = [i for i, row in enumerate(self._data[:-1]) if row[0]]
+        
+        if not selected_rows:
+            return False
+        self.beginResetModel()
+        
+        for rowi in reversed(selected_rows):
+            row_data = self._data[rowi].copy()
+            for _ in range(count - 1):
+                self._data.insert(rowi + 1, row_data.copy())
+        
+        self.endResetModel()
+        return True
+    
+    def remove_selected_items(self):
+        selected_rows = [i for i, row in enumerate(self._data[:-1]) if row[0]] 
+        if not selected_rows:
+            return False
+        
+        for rowi in sorted(selected_rows, reverse=True):
+            self.beginRemoveRows(QtCore.QModelIndex(), rowi, rowi)
+            self._data.pop(rowi)
+            self.endRemoveRows()
+        return True
+    def setData(self, index: QtCore.QModelIndex, value, role: QtCore.Qt.ItemDataRole):
         if not index.isValid():
             return False
         
@@ -85,15 +104,24 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.ItemFlag.ItemIsDropEnabled
 
         col = index.column()
+        row = index.row()
+        if row == self.rowCount() - 1:
+            flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable
+            if col == 0:
+                flags |= QtCore.Qt.ItemFlag.ItemIsUserCheckable
+            if self._editable and col > 0 and col < len(self._headers) - 2:
+                flags |= QtCore.Qt.ItemFlag.ItemIsEditable
+            return flags
 
         if col == 0:
             return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable | QtCore.Qt.ItemFlag.ItemIsSelectable
         if col >= len(self._headers) - 2:
-            return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable
+            return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDropEnabled
+
 
         flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDragEnabled | QtCore.Qt.ItemFlag.ItemIsDropEnabled
         if self._editable:
-            flags |= QtCore.Qt.ItemFlag.ItemIsEditable 
+            flags |= QtCore.Qt.ItemFlag.ItemIsEditable
         
         return flags
 
@@ -129,32 +157,63 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
     def mimeData(self, indexes):
         data = QtCore.QMimeData()
         stream = QtCore.QDataStream(QtCore.QByteArray(), QtCore.QIODevice.OpenModeFlag.WriteOnly)
-        stream.writeInt(indexes[0].row()) 
+        rows = sorted(set(index.row() for index in indexes)) #unique rows only
+        stream.writeInt32(len(rows))
+        for row in rows:
+            stream.writeInt32(row)
+
         data.setData("application/x-qabstractitemmodeldatalist", stream.device().data())
         return data
 
     def dropMimeData(self, data, action, row, column, parent):
         if not data.hasFormat("application/x-qabstractitemmodeldatalist"):
+            print("Format not supported")
             return False
+            
         stream = QtCore.QDataStream(data.data("application/x-qabstractitemmodeldatalist"), QtCore.QIODevice.OpenModeFlag.ReadOnly)
-        from_index = stream.readInt()
-        if from_index < 0 or from_index >= self.rowCount():
-            return False
-        self.queueMove(from_index, row, parent)
+        count = stream.readInt32()
+        from_rows = [stream.readInt32() for _ in range(count)]
+        
+        from_rows = [r for r in from_rows if 0 <= r < self.rowCount() - 1]
+        if not from_rows:
+            print("  No valid rows to move")
+            return False        
+        
+        moved_data = []
+        for r in sorted(from_rows, reverse=True):
+            moved_data.insert(0, self._data.pop(r))
+            self.beginRemoveRows(QtCore.QModelIndex(), r, r)
+            self.endRemoveRows()
+
+        if row == -1:
+            row = self.rowCount()
+        adjusted_row = row - sum(1 for r in from_rows if r < row)
+        adjusted_row = max(0, min(adjusted_row, self.rowCount()))
+        
+        if moved_data:
+            self.beginInsertRows(QtCore.QModelIndex(), adjusted_row, adjusted_row + len(moved_data) - 1)
+            for i, item in enumerate(moved_data):
+                self._data.insert(adjusted_row + i, item)
+            self.endInsertRows()
+
         return True
+    
+    def supportedDropActions(self):
+        return QtCore.Qt.DropAction.MoveAction
 
 
 class ReorderTableView(QtWidgets.QTableView):
     def __init__(self, parent):
         super().__init__(parent)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
-        self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
         self.setDropIndicatorShown(True)
         self.clicked.connect(self.on_click) # Click signal
+
         header = self.horizontalHeader()
         header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
@@ -186,6 +245,7 @@ class ReorderTableView(QtWidgets.QTableView):
             
         elif col == model.columnCount() - 2 and row < model.rowCount() - 1:
             print(f"Edit row {row}")
+            self.editClicked.emit(row)
 
     def dragEnterEvent(self, event):
         if event.source() is self:
@@ -194,22 +254,20 @@ class ReorderTableView(QtWidgets.QTableView):
             event.ignore()
 
     def dragMoveEvent(self, event):
-        event.acceptProposedAction()
+        pos = self.indexAt(event.position().toPoint())      
+        if pos.isValid() and pos.row() == self.model().rowCount() - 1:
+            event.ignore()
+        else:
+            event.acceptProposedAction()
 
     def unlockDragging(self):
         self.is_moving = False
 
     def dropEvent(self, event):
-        if not self.model(): # Need this here to prevent access violations!
-            event.ignore()
-            return
-
-        from_index = self.selectionModel().currentIndex().row()
-        to_index = self.indexAt(event.position().toPoint()).row()
-
-        if 0 <= from_index < self.model().rowCount() and 0 <= to_index < self.model().rowCount() and from_index != to_index:
-            self.model().relocateRow(from_index, to_index)
-            event.acceptProposedAction()
+        if event.source() is self:
+            event.setDropAction(QtCore.Qt.DropAction.MoveAction)
+            super().dropEvent(event)  # Let QTableView handle the drop
+            event.accept()
         else:
             event.ignore()
 
@@ -226,16 +284,40 @@ class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
         headers = ["Numbers", "ABCD", "Extra"]
 
         view = ReorderTableView(self)
-        model = ReorderTableModel(data, headers, editable)
-        view.setModel(model)
+        self.model = ReorderTableModel(data, headers, editable)
+        view.setModel(self.model)
 
         if editable:
             view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
         else:
             view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        toolbar = self.addToolBar("Tools")
+        multiply_action = QtGui.QAction("Multiply Selected", self)
+        multiply_action.triggered.connect(self.multiply_items)
+        toolbar.addAction(multiply_action)
+        delete_action = QtGui.QAction("Delete Selected", self)
+        delete_action.triggered.connect(self.delete_items)
+        toolbar.addAction(delete_action)
         self.setCentralWidget(view)
         self.show()
+
+    def multiply_items(self):
+        count, ok = QtWidgets.QInputDialog.getInt(
+            self, "Multiply Items", "How many copies?", 2, 1, 100, 1
+        )
+        if ok:
+            self.model.multiply_selected_items(count)
+    def delete_items(self):
+        reply = QtWidgets.QMessageBox.question(
+            self, 'Delete Items',
+            'Are you sure?',
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No
+        )
+        
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            self.model.remove_selected_items()
 
 if __name__ == "__main__":
     import sys

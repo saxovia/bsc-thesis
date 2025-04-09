@@ -1083,6 +1083,32 @@ Alternatively, import an already trained model and customize the pruning process
                  <item row="0" column="0">
                   <widget class="QTableWidget" name="tableWidgetPruning_2"/>
                  </item>
+                 <item row="1" column="0">
+                  <widget class="QWidget" name="widget_10" native="true">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>30</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_7">
+                    <item>
+                     <widget class="QPushButton" name="multiply_rows_timeline_button">
+                      <property name="text">
+                       <string>Multiply rows</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="delete_rows_timeline_button">
+                      <property name="text">
+                       <string>Delete Rows</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>
@@ -1905,6 +1931,32 @@ Alternatively, import an already trained model and customize the pruning process
                      <item row="1" column="0">
                       <widget class="QTableWidget" name="tableWidgetPruning"/>
                      </item>
+                     <item row="2" column="0">
+                      <widget class="QWidget" name="widget_9" native="true">
+                       <property name="minimumSize">
+                        <size>
+                         <width>0</width>
+                         <height>30</height>
+                        </size>
+                       </property>
+                       <layout class="QHBoxLayout" name="horizontalLayout_6">
+                        <item>
+                         <widget class="QPushButton" name="multiply_rows_pruning_button">
+                          <property name="text">
+                           <string>Multiply Rows</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QPushButton" name="delete_rows_pruning_button">
+                          <property name="text">
+                           <string>Delete Rows</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
                      <item row="0" column="0">
                       <widget class="QWidget" name="widget_4" native="true">
                        <property name="minimumSize">
@@ -2633,7 +2685,7 @@ Alternatively, import an already trained model and customize the pruning process
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>100</width>
+                             <width>820</width>
                              <height>550</height>
                             </rect>
                            </property>

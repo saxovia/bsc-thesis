@@ -19,10 +19,10 @@ class MLPNet(nn.Module):
         return self.network(x)
     
 class LSTMNet(nn.Module):
-    def __init__(self, hidden_sizes, output_dim=10):
+    def __init__(self, input_size, hidden_sizes, output_dim=10):
         super().__init__()
         self.lstms = nn.ModuleList([nn.LSTM(
-            hidden_sizes[i - 1] if i > 0 else 28, 
+            hidden_sizes[i - 1] if i > 0 else input_size,
             hidden_sizes[i], 
             batch_first=True) 
             for i in range(len(hidden_sizes))])
