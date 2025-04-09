@@ -68,44 +68,36 @@ QScrollArea {
 	border: none;
 }
 
-
 QScrollBar:vertical, QScrollBar:horizontal {
-	background-color: transparent;
-	width: 8px;
-	height: 8px;
-	border-radius: 5px;
+    background: transparent;
+    width: 14px;
+    height: 14px;
+    margin: 2px;
 }
 
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-	background-color: #494dca;
-	border-radius: 5px;
-	width: 15px;
+    background-color: #494dca;
+    min-height: 20px;
+    border-radius: 6px;
 }
 
 QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
-	background-color: #6562d1;
+    background-color: #6562d1;
 }
 
-QScrollBar::add-page:vertical,
-QTextEdit QScrollBar::sub-page:vertical,
 QScrollBar::add-line:vertical,
-QTextEdit QScrollBar::sub-line:vertical,
+QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    height: 0;
+    width: 0;
+}
+
 QScrollBar::add-page:vertical,
 QScrollBar::sub-page:vertical,
-
 QScrollBar::add-page:horizontal,
-QTextEdit QScrollBar::sub-page:horizontal,
-QScrollBar::add-line:horizontal,
-QTextEdit QScrollBar::sub-line:horizontal,
-QScrollBar::add-page:horizontal,
-QScrollBar::sub-page:horizontal
- {
-	background-color: transparent;
-	border: none
-}
-
-QScrollBar {
-	border: none
+QScrollBar::sub-page:horizontal {
+    background: none;
 }
 
 QScrollArea QWidget {
@@ -161,6 +153,26 @@ QPushButton:disabled {
 	min-height: 40px;
 	max-height:40px;
 	border-radius: 15px;
+}
+
+
+QCheckBox {
+    spacing: 8px;
+    background-color: transparent;
+    color: white;
+    font-size: 14px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border: 2px solid white;
+    border-radius: 6px;  /* Rounded corners */
+    background-color: transparent;
+}
+
+QCheckBox::indicator:checked {
+    background-color: white;
 }
 
 
@@ -330,17 +342,21 @@ QListWidget::item:selected {
     color: white;
     font-weight: bold;
 }
-
 QTableWidget, QTableView {
-    border: 1px solid #181621;  /* Border around the entire table */
-    border-radius: 10px;  /* Round the corners of the table */
-    padding: 5px;
-    background-color: #181621;
-outline: none;
+    background-color: #1e1e1e;
+    border: 2px solid #444;
+    border-radius: 10px;
+    gridline-color: #2a2a2a;
+    color: #f0f0f0;
+    font-size: 13px;
+    selection-background-color: #3d6cad;
+    selection-color: white;
+    padding: 4px;
+    outline: none;
 }
 
 QTableWidget::item, QTableView::item {
-    border: none;  /* No border for each item */
+    border: none;
     padding: 10px;
     background-color: #2d2b36;
 }
@@ -354,15 +370,18 @@ QTableWidget QTableCornerButton::section, QTableView QTableCornerButton::section
 
 QTableWidget QHeaderView::section, 
 QTableView QHeaderView::section {
-    background-color: #2d2b36;
-    border: 1px solid #181621;
-    padding: 10px;
+    background-color: #2b2b2b;
+    color: #dcdcdc;
+    padding: 6px;
+    border: none;
+    border-bottom: 1px solid #444;
     font-weight: bold;
 }
 
 QTableWidget QTableView::item, 
 QTableView::item {
-    border-bottom: 1px solid #ddd;  /* Bottom border for rows */
+      border: none;
+    padding: 6px;
 }
 
 QTableWidget::horizontalHeader, QTableWidget::verticalHeader, QTableView::horizontalHeader, QTableView::verticalHeader {
@@ -376,8 +395,7 @@ QTableWidget, QTableView {
     border-collapse: collapse;
     margin-top: 10px;
 	color: #DDD;			
-}
-</string>
+}</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="enabled">
@@ -650,7 +668,7 @@ QTableWidget, QTableView {
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>2</number>
             </property>
             <widget class="QWidget" name="home_page">
              <property name="autoFillBackground">
@@ -1037,6 +1055,21 @@ Alternatively, import an already trained model and customize the pruning process
                  <enum>QFrame::Raised</enum>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_10">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="horizontalSpacing">
+                  <number>0</number>
+                 </property>
                  <item row="3" column="0">
                   <widget class="Line" name="line">
                    <property name="styleSheet">
@@ -1058,18 +1091,18 @@ Alternatively, import an already trained model and customize the pruning process
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
-                  <height>70</height>
+                  <height>50</height>
                  </size>
                 </property>
                 <property name="maximumSize">
                  <size>
                   <width>16777215</width>
-                  <height>100</height>
+                  <height>70</height>
                  </size>
                 </property>
                 <property name="font">
                  <font>
-                  <pointsize>22</pointsize>
+                  <pointsize>20</pointsize>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -2600,7 +2633,7 @@ Alternatively, import an already trained model and customize the pruning process
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>820</width>
+                             <width>100</width>
                              <height>550</height>
                             </rect>
                            </property>

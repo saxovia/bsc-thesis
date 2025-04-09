@@ -70,6 +70,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.view_header_button.clicked.connect(self.viewDataset)
         self.settings_button.clicked.connect(self.navigator.showSettingsPage)
 
+        self.dataset_start_training_button.clicked.connect(self.navigator.parseThroughProcessesTable)
+
         self.old_pos = self.pos()
         self.is_maximized = False
         
@@ -101,19 +103,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         #use array instead for all this input
         self.neural_networks = []
-        self.neural_networks.append({ # example
-            "number_of_nodes": [],
-            "number_of_layers": 0,
-            "activation_function": "",
-            "optimizer": "",
-            "loss_function": "",
-            "epochs": 0,
-            "k": 0,
-            "p": 0.0,
-            "learning_rate": 0.0,
-            "batch_size": 0,
-            "validation_split": 0
-        })
+        # There is no option to use activation function, It is hardcoded in the model
 
         self.number_of_nodes = []
         self.number_of_layers = 0
@@ -299,11 +289,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def showTableWidget2(self):
         # sample data
         data = [
-            ["", "1", "LSTM", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.05, 64,0.001],
-            ["", "2", "MLP", "Prune", "CIFAR-10", "6", "CrossEntropy", "Adam", "10", "", "", 32, 0.01],
+            ["", "3", "LSTM", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
+            ["", "1", "LSTM", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.7, 64,0.001, "WS"],
+            ["", "2", "LSTM", "Prune", "CIFAR-10", "6", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
         ]
 
-        model = ReorderTableModel(data, headers=["", "Edit", "Model Type", "Start", "Dataset", "Hidden sizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch Size", "Learning Rate"])
+        model = ReorderTableModel(data, headers=["", "Edit", "Model Type", "Start", "Dataset", "Hidden sizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch Size", "Learning Rate", "Graph Type"])
 
         self.reorder_table_view2 = ReorderTableView(self)
         self.reorder_table_view2.setModel(model)
@@ -315,6 +306,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.tableWidgetPruning_2.layout(): #TODO rename this. rename dataset pages
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
         self.tableWidgetPruning_2.setLayout(layout)
+        self.tableWidgetPruning_2.resizeColumnsToContents()
+
 
 
     def showTableWidget(self):
@@ -336,6 +329,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.tableWidgetPruning.layout():
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout()) 
         self.tableWidgetPruning.setLayout(layout)
+        self.tableWidgetPruning.resizeColumnsToContents()
 
     #unused but will be used later for project loading, et.c
     def load_csv(self):

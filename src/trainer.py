@@ -1,4 +1,4 @@
-from src.neuralnetwork import MLPNet, LSTMNet
+from src.neuralnetwork import MLPNet, LSTMNet, SparseMLPNet, SparseLSTMNet
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,6 +8,8 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from PyQt6.QtCore import QThread, pyqtSignal
 from src.pruner import MagnitudePruner, RandomPruner, L1Pruner
+from collections import defaultdict
+
 # Define the Trainer class
 
 
@@ -17,19 +19,15 @@ class Trainer(QThread):
     message = pyqtSignal(str)
 
 
-    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250, batch_size=64):
+    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250, batch_size=64, layer_count=5):
 
         super().__init__()
-        if hidden_sizes == '':
-            self.hidden_sizes = [6, 6, 6]
-        elif isinstance(hidden_sizes, str):
-            self.hidden_sizes = [int(x) for x in hidden_sizes.split(",")]
-        else:
-            self.hidden_sizes = hidden_sizes
-        if model_type == "MLP":
-            self.model = MLPNet(hidden_sizes)
-        elif model_type == "LSTM":
-            self.model = LSTMNet(hidden_sizes)
+        self.hidden_sizes = hidden_sizes
+        #if model_type == "MLP":
+        #    self.model = MLPNet(hidden_sizes)
+        #elif model_type == "LSTM":
+        #    self.model = LSTMNet(hidden_sizes)
+        self.model = model_type
         self.lr = lr
         self.epochs = epochs
         self.optimizer = optimizer
@@ -37,9 +35,9 @@ class Trainer(QThread):
         self.p = p
         self.dataset_type = dataset_type
         self.graph_type = graph_type
-        self.N = int(N)
+        #self.N = int(N)
         self.batch_size = batch_size
-        #self.train_loader, self.test_loader = self.load_data()
+        self.layer_count = layer_count
 
         self.prune_self = {
             "Magnitude": MagnitudePruner(),
@@ -79,14 +77,22 @@ class Trainer(QThread):
                 "default_batch_size": 128 #TODO Adjust every default value assignment because it is all over the place
             }
         }
-
+        if self.dataset_type == "MNIST":
+            channels = 1
+        else:  # CIFAR-10 or CIFAR-100
+            channels = 3
         dataset_config = dataset_info[self.dataset_type]
         input_size = dataset_config["input_size"]
         num_classes = dataset_config["num_classes"]
         transform = dataset_config["transform"]
         default_batch_size = dataset_config["default_batch_size"]
-        batch_size = self.batch_size if self.batch_size is not None else default_batch_size
-
+        batch_size = self.batch_size if self.batch_size is not None else default_batch_size #? TODO
+        input_size_flatten = dataset_config["input_size"]
+        channels = 1 if self.dataset_type == "MNIST" else 3
+        sequence_length = int((input_size_flatten / channels) ** 0.5)
+        feature_size = sequence_length * channels
+        self.sequence_length = sequence_length
+        self.feature_size = feature_size
 
         train_dataset = dataset_config["dataset"](root="./data", train=True, transform=transform, download=True)
         test_dataset = dataset_config["dataset"](root="./data", train=False, transform=transform, download=True)
@@ -101,28 +107,38 @@ class Trainer(QThread):
 
         dag_graph = None
         if self.graph_type == "WS":
-            ws_graph = self.generate_ws_graph(self.N, k=self.k, p=self.p)
-            dag_graph = self.ws_to_dag(ws_graph)
+            #ws_graph = self.generate_ws_graph(self.hidden_sizes, k=self.k, p=self.p)
+            #dag_graph = self.ws_to_dag(ws_graph)
+            dag_graph = self.generate_ws_dag(nodes=self.hidden_sizes, k=self.k, p=self.p, target_layers=self.layer_count )
+            if self.model == "MLP":
+                mlp_structure = self.dag_to_mlp_structure(dag_graph, input_size, num_classes)
+                self.model = SparseMLPNet(mlp_structure).to(self.device)
+                print("MLP NN created.")
+                self.message.emit("MLP NN created.")
+            elif self.model == "LSTM":
+                lstm_structure = self.dag_to_lstm_structure(dag_graph)
+                self.model = SparseLSTMNet(input_size=self.feature_size, hidden_sizes=self.hidden_sizes, output_dim=num_classes).to(self.device)
+                print("LSTM NN created.")
+                self.message.emit("LSTM NN created.")
+
+
         elif self.graph_type == "Full":
-            dag_graph = self.generate_fully_connected_graph(self.hidden_sizes[0]) #TODO Change later!!
+            if self.model == "MLP":
+                dag_graph = self.generate_fully_connected_graph(sum(self.hidden_sizes))
+                mlp_structure = self.dag_to_mlp_structure(dag_graph, input_size, num_classes)
+                self.model = MLPNet(mlp_structure).to(self.device)
+                print("MLP NN created.")
+                self.message.emit("MLP NN created.")
+            elif self.model == "LSTM":
+                dag_graph = self.generate_fully_connected_graph(self.hidden_sizes[0])
+                lstm_structure = self.dag_to_lstm_structure(dag_graph, input_size, num_classes)
+                self.model = LSTMNet(lstm_structure).to(self.device)
+                print("LSTM NN created.")
+                self.message.emit("LSTM NN created.")
 
 
-        # Convert DAG to NN
-        if self.model.__class__.__name__ == "LSTMNet":
-            lstm_structure = self.dag_to_lstm_structure(dag_graph, input_size, num_classes)
-            self.model = LSTMNet(lstm_structure).to(self.device)
-            print("LSTM NN created.")
-            self.message.emit("LSTM NN created.")
-        else:
-            mlp_structure = self.dag_to_mlp_structure(dag_graph, input_size, num_classes)
-            self.model = MLPNet(mlp_structure).to(self.device)
-            print("MLP NN created.")
-            self.message.emit("MLP NN created.")
-        if self.lr != None:
-            print(f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.N} N.")
-        else: 
-            print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.N} N.")
-        progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.N} N."
+        print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
+        progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
         self.message.emit(progress_message)
 
 
@@ -134,30 +150,18 @@ class Trainer(QThread):
 
         self.train(self.model, self.train_loader, self.epochs, lr=self.lr)
         self.finished.emit()  # notify gui when done
-
-
     
     def stop(self):
         self.running = False
         self.finished.emit()
+
     def generate_fully_connected_graph(self, nodes):
-        """
-        Generates a fully connected directed acyclic graph (DAG).
-
-        Args:
-            nodes (int): Number of nodes in the graph.
-
-        Returns:
-            nx.DiGraph: A fully connected DAG.
-        """
         G = nx.complete_graph(nodes, create_using=nx.DiGraph)
-        
-        # Ensure the graph is acyclic by directing edges from smaller index to larger index
-        for u, v in list(G.edges):
+        for u,v in list(G.edges):
             if u > v:
                 G.remove_edge(u, v)
         
-        layers = {node: node for node in G.nodes()}  # Simple layer assignment
+        layers = {node: node for node in G.nodes()}
         nx.set_node_attributes(G, layers, 'layer')
 
         return G
@@ -176,9 +180,6 @@ class Trainer(QThread):
 
         pruner = MagnitudePruner()
         pruner.apply_pruning(self.model, prune_ratio * 100, mode=mode)
-
-    def generate_ws_graph(self, nodes, k=2, p=0.05):
-        return nx.watts_strogatz_graph(nodes, k, p)
 
     def train(self, model, train_loader, epochs=30, lr=0.001):
         print("Training started...")
@@ -211,10 +212,17 @@ class Trainer(QThread):
                     return  
 
                 images, labels = images.to(self.device), labels.to(self.device)
-                if isinstance(model, LSTMNet):
-                    images = images.view(-1, 28, 28)
+                if isinstance(model, (LSTMNet, SparseLSTMNet)):
+                    if self.graph_type == "Full":
+                        images = images.view(images.size(0), self.sequence_length, self.feature_size)
+                    else:
+                        images = images.view(
+                            images.size(0), 
+                            self.sequence_length, 
+                            self.feature_size
+                        )
                 else:
-                    images = images.view(images.shape[0], -1)
+                    images = images.view(images.size(0), -1)
 
                 optimizer.zero_grad()
                 outputs = model(images)
@@ -241,21 +249,90 @@ class Trainer(QThread):
         print("Training complete.")
         self.message.emit("Training complete.")
 
-
+    def generate_ws_graph(self, nodes, k=2, p=0.05):
+        return nx.watts_strogatz_graph(nodes, k, p)
+    def generate_ws_dag(self, nodes, k=2, p=0.7, target_layers=5):
+        # Try to generate a Ws graph until it is connected
+        while True:
+            ws = nx.watts_strogatz_graph(nodes, k, p)
+            if nx.is_connected(ws):
+                break
+        #DAG
+        dag = nx.DiGraph()
+        dag.add_nodes_from(range(nodes))
+        for u, v in ws.edges():
+            if u > v: #lower triangular part of the graph
+                dag.add_edge(u, v)
+        
+        # Getbalanced distribution
+        nodes_per_layer = nodes // target_layers
+        layers = {}
+        for i, node in enumerate(dag.nodes()):
+            layers[node] = min(i // nodes_per_layer, target_layers - 1)
+        
+        # This is here so that edges only go forward
+        for u, v in list(dag.edges()):
+            if layers[u] >= layers[v]:
+                dag.remove_edge(u, v)
+        
+        nx.set_node_attributes(dag, layers, 'layer')
+        return dag
     def dag_to_mlp_structure(self, G, input_size, output_size):
-        num_nodes = len(G.nodes)
-        layers = np.array_split(sorted(G.nodes), len(self.hidden_sizes))
-        layer_sizes = [len(layer) for layer in layers]
-        return [input_size] + layer_sizes + [output_size]
-    
-    def dag_to_lstm_structure(self, dag, input_size, output_size):
+        if isinstance(self.hidden_sizes, list):
+            return [input_size] + self.hidden_sizes + [output_size]
+        else:
+            layers = nx.get_node_attributes(G, 'layer')
+            layer_sizes = []
+            max_layer = max(layers.values()) if layers else 0
+            for l in range(max_layer + 1):
+                layer_sizes.append(sum(1 for n in layers if layers[n] == l))
+
+            # Must do layer adjustment in case of mismatches. Probably not the proper way to do this
+            if layer_sizes and layer_sizes[0] != input_size:
+                layer_sizes[0] = input_size
+            if layer_sizes and layer_sizes[-1] != output_size:
+                layer_sizes[-1] = output_size
+                
+            return [input_size] + layer_sizes + [output_size]
+        
+    def dag_to_lstm_structure(self, dag, input_size=None, output_size=None):
+        if self.graph_type == "Full":
+            return self.hidden_sizes
+        
         node_layers = nx.get_node_attributes(dag, 'layer')
         max_layer = max(node_layers.values()) if node_layers else 0
-        layer_sizes = [sum(1 for _ in filter(lambda x: x == l, node_layers.values())) for l in range(max_layer + 1)]
+        layer_sizes = []
 
-        return [input_size] + layer_sizes + [output_size]
+        for l in range(max_layer + 1):
+            count = 0
+            for layer in node_layers.values():
+                if layer==l:
+                    count+=1
+            layer_sizes.append(count)
+
+        if input_size is not None and output_size is not None:
+            return [input_size] + layer_sizes + [output_size]
+        else:
+            return layer_sizes
 
 
+
+    def get_layer_adjacency(self, dag):
+        layer_adj = defaultdict(list)
+        for u, v in dag.edges():
+            u_layer = dag.nodes[u]['layer']
+            v_layer = dag.nodes[v]['layer']
+            if u_layer < v_layer and u_layer not in layer_adj[v_layer]:
+                layer_adj[v_layer].append(u_layer)
+        max_layer = max(layer_adj.keys(), default=-1)
+        layer_connections = {}
+        for layer in range(max_layer + 1):
+            predecessors = sorted(layer_adj.get(layer, []))
+            layer_connections[layer] = predecessors
+        return layer_connections
+    
+
+    #UNUSED FUNCTION
     def ws_to_dag(self, G):
         adj_matrix = nx.to_numpy_array(G)
         n = adj_matrix.shape[0]

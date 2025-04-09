@@ -1,18 +1,18 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtGui import QIcon
 
 #TODO add selection groups. when multiple things are selected move them all at once. to the desired place.
 #TODO add multiplication of selected items. to desired number of times.
 #TODO add a funcitonality to remove selected items. The main window can have a button to remove selected items.
 class ReorderTableModel(QtCore.QAbstractTableModel):
-
     def __init__(self, data, headers=None, editable=True, parent=None):
         super().__init__(parent)
-        self._data = [[False] + list(row) for row in data] 
-        self._headers = ["Select"] + (headers if headers else [f"Column {i+1}" for i in range(len(self._data[0]) - 1)])
+        self._data = [[False] + list(row) + ['', ''] for row in data]
+        self._headers = [''] + (headers if headers else [f"Column {i+1}" for i in range(len(self._data[0]) - 3)]) + ['', '']
         self._is_moving = False
         self._editable = editable
-        self._data.append([False] + [''] * (len(self._headers) - 1))
+        self._data.append([False] + [''] * (len(self._headers) - 3) + ['', ''])
 
     def columnCount(self, parent=None) -> int:
         return len(self._headers)
@@ -21,7 +21,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return len(self._data)
     
     def get_table_data(self):
-        return [row[2:] for row in self._data] 
+        return [row[2:] for row in self._data[:-1]]
 
     def headerData(self, column: int, orientation, role: QtCore.Qt.ItemDataRole):
         if role == QtCore.Qt.ItemDataRole.DisplayRole and orientation == QtCore.Qt.Orientation.Horizontal:
@@ -33,14 +33,27 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             return None
         
         row, col = index.row(), index.column()
-        if col == 0:
-            if role == QtCore.Qt.ItemDataRole.CheckStateRole:
-                 return QtCore.Qt.CheckState.Checked if self._data[row][col] else QtCore.Qt.CheckState.Unchecked 
+
+        if col==0:
+            if role==QtCore.Qt.ItemDataRole.CheckStateRole:
+                return QtCore.Qt.CheckState.Checked if self._data[row][col] else QtCore.Qt.CheckState.Unchecked
+            if role==QtCore.Qt.ItemDataRole.DisplayRole:
+                return None  # Hide the True/False text
+
+        if col >= len(self._headers) - 2:
+            if role == QtCore.Qt.ItemDataRole.DecorationRole:
+                if col == len(self._headers) - 2:
+                    return QIcon("./resources/icons/edit.png")
+                elif col == len(self._headers) - 1:
+                    return QIcon("./resources/icons/delete.png")
+            return None
 
         if role in {QtCore.Qt.ItemDataRole.DisplayRole, QtCore.Qt.ItemDataRole.EditRole}:
             return self._data[row][col]
 
         return None
+
+
 
     def setData(self, index: QtCore.QModelIndex, value, role: QtCore.Qt.ItemDataRole) -> bool:
         if not index.isValid():
@@ -48,15 +61,16 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         
         row, col = index.row(), index.column()
 
-        if col == 0 and role == QtCore.Qt.ItemDataRole.CheckStateRole:
+        if col == 0 and role == QtCore.Qt.ItemDataRole.CheckStateRole: # Selection column
             self._data[row][col] = (value == int(QtCore.Qt.CheckState.Checked.value))
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.CheckStateRole])
             return True
-        
+        if col >= len(self._headers) - 2: #no editing on edit or delete columns
+            return False
         if role == QtCore.Qt.ItemDataRole.EditRole and col > 0 and self._editable:
             self._data[row][col] = value
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.EditRole])
-            # Should the last row be edited, add one
+            # Should the last row be edited, add one, this ensures theres no need for extra buttons for adding more rows
             if row == len(self._data) - 1:
                 self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
                 self._data.append([False] + [''] * (len(self._headers) - 1))
@@ -74,6 +88,8 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
 
         if col == 0:
             return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable | QtCore.Qt.ItemFlag.ItemIsSelectable
+        if col >= len(self._headers) - 2:
+            return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable
 
         flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDragEnabled | QtCore.Qt.ItemFlag.ItemIsDropEnabled
         if self._editable:
@@ -138,6 +154,38 @@ class ReorderTableView(QtWidgets.QTableView):
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
         self.setDropIndicatorShown(True)
+        self.clicked.connect(self.on_click) # Click signal
+        header = self.horizontalHeader()
+        header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
+        header.setStretchLastSection(False)
+
+    def setModel(self, model):
+        super().setModel(model)
+        if model:
+            self.setColumnWidth(0, 20)
+            self.setColumnWidth(model.columnCount() - 2, 30)  #Edit col
+            self.setColumnWidth(model.columnCount() - 1, 30)  #Delete col
+            self.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Fixed)
+            self.horizontalHeader().setSectionResizeMode(model.columnCount() - 2, QtWidgets.QHeaderView.ResizeMode.Fixed)
+            self.horizontalHeader().setSectionResizeMode(model.columnCount() - 1, QtWidgets.QHeaderView.ResizeMode.Fixed)
+            for col in range(1, model.columnCount() - 2):
+                self.resizeColumnToContents(col)
+
+    def on_click(self, index):
+        if not index.isValid():
+            return
+            
+        row, col = index.row(), index.column()
+        model = self.model()
+        
+        if col == model.columnCount() - 1 and row < model.rowCount() - 1: 
+            model.beginRemoveRows(QtCore.QModelIndex(), row, row)
+            model._data.pop(row)
+            model.endRemoveRows()
+            
+        elif col == model.columnCount() - 2 and row < model.rowCount() - 1:
+            print(f"Edit row {row}")
 
     def dragEnterEvent(self, event):
         if event.source() is self:
@@ -148,7 +196,6 @@ class ReorderTableView(QtWidgets.QTableView):
     def dragMoveEvent(self, event):
         event.acceptProposedAction()
 
-    @pyqtSlot() 
     def unlockDragging(self):
         self.is_moving = False
 

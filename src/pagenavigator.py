@@ -4,12 +4,15 @@ from PyQt6.QtGui import QMovie
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QTimer
+from uuid import uuid4
 
 #TODO To make this class less complicated, seperate the trainings into a new class later. This class is too long and complicated. The new class name should be something like MasterModelTrainer or ModelTrainingHandler.
 class PageNavigator:
     def __init__(self, main_window):
         self.main_window = main_window
         self.trainer = None
+        self.trainers = []
+        
     def fadeToPage(self, new_page):
         #force it to wait at first - for the padding to apply
         
@@ -50,15 +53,54 @@ class PageNavigator:
         data = self.main_window.reorder_table_view2.model().get_table_data()
         print("Data from pruning table:", data)
 
-
         for row in data:
-            pass
+            index = row[0]
+            model = row[1] if row[1] != "" else "MLP"
+            start = row[2] if row[2] != "" else "Prior"
+            dataset = row[3] if row[3] != "" else "MNIST"
+            if row[4] == "":
+                if start == "Prune":
+                    N = [6,6,6]
+                else:
+                    N = 250
+            else: 
+                if start == "Prune":
+                    #N can be "[6,6,6]" or 6,6,6 or 6
+                    if "[" in row[4] and "]" in row[4]:
+                        N = [int(i) for i in row[4][1:-1].split(",") if i.strip() != ""]
+                    elif "," in row[4]: 
+                       N = [int(i) for i in row[4].split(",") if i.strip() != ""]
+                    else:
+                        N = [int(row[4])] * int(row[4])
+                else:
+                    N = int(row[4])
+
+
+
+            #N = int(row[4]) if row[4] != "" else 250
+            loss = row[5] if row[5] != "" else "CrossEntropy"
+            optimizer = row[6] if row[6] != "" else "Adam"
+            epochs = int(row[7]) if row[7] != "" else 30
+            k = int(row[8]) if row[8] != "" else 2 
+            p = float(row[9]) if row[9] != "" else 0.5 
+            batch_size = int(row[10]) if row[10] != "" else 64 
+            learning_rate = float(row[11]) if row[11] != "" else 0.001
+            graph_type = row[12] if row[12] != "" else "WS"
+            uuid = str(uuid4())
+
+            #If the model is not in the list already by uuid, add it to the NN list?? Have to check if it is changed too. Perhaps a hidden flag should suffice when it is done.
+           # if not any(item[13] == uuid for item in self.main_window.neural_networks):
+            self.main_window.neural_networks.append([index, model, start, dataset, N, loss, optimizer, epochs, k, p, batch_size, learning_rate, graph_type, uuid])
+
+        self.current_model_index = 0
+        self.mainTrainLoop()
+
     
 
 
     def mainTrainLoop(self):
+        self.showModelPage()
         self.main_window.model_train_button.setEnabled(False)
-        self.main_window.modify_dataset_button.setEnabled(False)
         self.main_window.model_undo_button.setEnabled(False)
         
         self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
@@ -68,49 +110,50 @@ class PageNavigator:
         
         self.main_window.loading_label.setFixedSize(50, 50)
         movie = QMovie("./resources/icons/loading.gif")
-        self.main_window.loading_label.setVisible(True)
-        self.main_window.loading_label.raise_() #TODO simplify later
+        self.main_window.loading_label.setVisible(True) #TODO simplify later
         self.main_window.loading_label.setMovie(movie)
         movie.start()
         self.main_window.loading_label.show()
-        self.main_window.loading_label.show()
-        self.main_window.repaint()
-
+        #self.main_window.repaint()
         # The NN gets filled at the stage of clicking on "Done", in place of the previous training button. It redirects to the process timeline
-        for row in self.main_window.neural_network:
-            self.trainOneModel(row)
+        
+        if self.current_model_index < len(self.main_window.neural_networks):
+            self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
+            
 
 
 
 
     def trainOneModel(self, modelrow): # Already have the data. Its job is not to format the data to the interpretable type for the trainer. Nor give default values
         #Paste this here later. I suggest going through the pages first, the rest will come to you later
-        model = modelrow[0] # Will not be correct by ordering because of templatetable
-        start =  modelrow[1]
-        dataset = modelrow[2]
-        N = modelrow[3]
-        loss = modelrow[4]
-        optimizer = modelrow[5]
-        epochs = modelrow[6]
-        k = modelrow[7]
-        p = modelrow[8]
-        batch_size = modelrow[9]
-        learning_rate = modelrow[10]
-        graph_type = modelrow[11]
+        index = modelrow[0]
+        model = modelrow[1]
+        start =  modelrow[2]
+        dataset = modelrow[3]
+        N = modelrow[4]
+        loss = modelrow[5]
+        optimizer = modelrow[6]
+        epochs = modelrow[7]
+        k = modelrow[8]
+        p = modelrow[9]
+        batch_size = modelrow[10]
+        learning_rate = modelrow[11]
+        graph_type = modelrow[12]
         
         if start == "Prior":
             #Dont forget to make number of layers or number of nodes or N the same
-            # self.trainer???
-            trainer = Trainer(model, dataset, hidden_sizes= N, loss=loss, optimizer=optimizer, epochs=epochs, k=k, p=p, batch_size=batch_size, learning_rate=learning_rate, graph_type=graph_type)
-            trainer.message.connect(self.updateTrainingProcessLabel)
-            trainer.load_data_and_create_graph()
-            trainer.start()
-            trainer.finished.connect(self.onTrainingFinished)
+            self.trainer = Trainer(model, dataset, hidden_sizes= N, loss=loss, optimizer=optimizer, epochs=epochs, k=k, p=p, batch_size=batch_size, lr=learning_rate, graph_type=graph_type)
+            self.trainer.message.connect(self.updateTrainingProcessLabel)
+            self.trainer.load_data_and_create_graph()
+            self.trainer.start()
+            self.trainer.finished.connect(self.onTrainingFinished)
+
         else:
-            trainer = Trainer(model, dataset, hidden_sizes=N, loss=loss, optimizer=optimizer, epochs=epochs, graph_type=graph_type, batch_size=batch_size)
-            trainer.message.connect(self.updateTrainingProcessLabel)
-            trainer.load_data_and_create_graph()
-            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), trainer.model)
+            self.trainer = Trainer(model, dataset, hidden_sizes=N, loss=loss, optimizer=optimizer, epochs=epochs, graph_type=graph_type, batch_size=batch_size)
+            self.trainer.message.connect(self.updateTrainingProcessLabel)
+            self.trainer.load_data_and_create_graph()
+            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), self.trainer.model)
+            #self.onTrainingFinished()
 
         #TODO make a functionality for Undo button between model stages
 
@@ -368,18 +411,20 @@ class PageNavigator:
 
 
     def onTrainingFinished(self):
-        print("Training Finished")
-        
-        self.main_window.loading_label.hide()
-        self.main_window.model_train_button.setEnabled(True)
-        self.main_window.model_train_button.setText("Training Completed")
-        
-        if self.main_window.GLOBAL_CHOSEN_START == None:
-            self.main_window.model_train_button.disconnect()
-            #self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)
-        self.main_window.modify_dataset_button.setEnabled(True)
-        
-        self.trainer.wait()
+        print(f"Training for model {self.current_model_index + 1} finished")
+        self.current_model_index += 1
+
+        if self.current_model_index < len(self.main_window.neural_networks):
+            self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
+        else:
+            print("All models training completed")
+            self.main_window.loading_label.hide()
+            self.main_window.model_train_button.setEnabled(True)
+            self.main_window.model_train_button.setText("Training Completed")
+            self.main_window.modify_dataset_button.setEnabled(True)
+
+            if hasattr(self, 'trainer'): #Just in case
+                self.trainer.deleteLater()
 
 
 
