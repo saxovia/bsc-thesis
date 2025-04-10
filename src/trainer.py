@@ -19,7 +19,7 @@ class Trainer(QThread):
     message = pyqtSignal(str)
 
 
-    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250, batch_size=64, layer_count=5):
+    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250, batch_size=64, layer_count=5, index=None):
 
         super().__init__()
         self.hidden_sizes = hidden_sizes
@@ -38,6 +38,7 @@ class Trainer(QThread):
         #self.N = int(N)
         self.batch_size = batch_size
         self.layer_count = layer_count
+        self.index = index
 
         self.prune_self = {
             "Magnitude": MagnitudePruner(),
@@ -117,7 +118,7 @@ class Trainer(QThread):
             dag_graph = self.generate_ws_dag(nodes=self.hidden_sizes, k=self.k, p=self.p, target_layers=self.layer_count )
             if self.model == "MLP":
                 mlp_structure = self.dag_to_mlp_structure(dag_graph, input_size, num_classes)
-                self.model = SparseMLPNet(mlp_structure).to(self.device)
+                self.model = SparseMLPNet(mlp_structure, hidden_sizes=self.hidden_sizes).to(self.device)
                 print("MLP NN created.")
                 self.message.emit("MLP NN created.")
             elif self.model == "LSTM":
@@ -135,11 +136,25 @@ class Trainer(QThread):
                 print("MLP NN created.")
                 self.message.emit("MLP NN created.")
             elif self.model == "LSTM":
-                dag_graph = self.generate_fully_connected_graph(self.hidden_sizes[0])
+                dag_graph = self.generate_fully_connected_graph(sum(self.hidden_sizes))
                 lstm_structure = self.dag_to_lstm_structure(dag_graph, input_size, num_classes)
                 self.model = LSTMNet(input_size=self.feature_size, hidden_sizes=self.hidden_sizes, output_dim=num_classes).to(self.device)
                 print("LSTM NN created.")
                 self.message.emit("LSTM NN created.")
+
+        elif self.graph_type == "BA":
+            dag_graph = self.generate_ba_dag(nodes=self.hidden_sizes, edges_per_node=self.k, target_layers=self.layer_count)
+            if self.model == "MLP":
+                mlp_structure = self.dag_to_mlp_structure(dag_graph, input_size, num_classes)
+                self.model = SparseMLPNet(mlp_structure).to(self.device)
+                print("MLP NN created.")
+                self.message.emit("MLP NN created.")
+            elif self.model == "LSTM":
+                lstm_structure = self.dag_to_lstm_structure(dag_graph)
+                self.model = SparseLSTMNet(input_size=self.feature_size, hidden_sizes=self.hidden_sizes, output_dim=num_classes).to(self.device)
+                print("LSTM NN created.")
+                self.message.emit("LSTM NN created.")
+        
 
 
         print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
@@ -265,10 +280,16 @@ class Trainer(QThread):
         dag = nx.DiGraph()
         dag.add_nodes_from(range(nodes))
         for u, v in ws.edges():
-            if u > v: #lower triangular part of the graph
+            if u < v: #lower triangular part of the graph
                 dag.add_edge(u, v)
         
         # Getbalanced distribution
+        """     
+        layers = {}
+        for i, node in enumerate(nx.topological_sort(dag)):
+            layers[node] = i // (len(dag.nodes) // target_layers)
+        return layers
+        """
         nodes_per_layer = nodes // target_layers
         layers = {}
         for i, node in enumerate(dag.nodes()):
@@ -281,23 +302,43 @@ class Trainer(QThread):
         
         nx.set_node_attributes(dag, layers, 'layer')
         return dag
+    def generate_ba_dag(self, nodes, edges_per_node, target_layers=5):
+        ba_graph = nx.barabasi_albert_graph(nodes, edges_per_node)
+        dag = nx.DiGraph()
+        dag.add_nodes_from(ba_graph.nodes)
+        for u, v in ba_graph.edges():
+            if u < v:
+                dag.add_edge(u, v)
+
+        nodes_per_layer = nodes // target_layers
+        layers = {}
+        for i, node in enumerate(dag.nodes()):
+            layers[node] = min(i // nodes_per_layer, target_layers - 1)
+
+        for u, v in list(dag.edges()):
+            if layers[u] >= layers[v]:
+                dag.remove_edge(u, v)
+
+        nx.set_node_attributes(dag, layers, 'layer')
+        return dag
+
     def dag_to_mlp_structure(self, G, input_size, output_size):
-        if isinstance(self.hidden_sizes, list):
+        if isinstance(self.hidden_sizes, list) and len(self.hidden_sizes) > 0:
             return [input_size] + self.hidden_sizes + [output_size]
         else:
             layers = nx.get_node_attributes(G, 'layer')
-            layer_sizes = []
-            max_layer = max(layers.values()) if layers else 0
-            for l in range(max_layer + 1):
-                layer_sizes.append(sum(1 for n in layers if layers[n] == l))
-
-            # Must do layer adjustment in case of mismatches. Probably not the proper way to do this
-            if layer_sizes and layer_sizes[0] != input_size:
+            if not layers:
+                return [input_size, output_size]
+            layer_counts = defaultdict(int)
+            for node, layer in layers.items():
+                layer_counts[layer] += 1
+            layer_sizes = [layer_counts[l] for l in sorted(layer_counts)]
+            
+            if layer_sizes:
                 layer_sizes[0] = input_size
-            if layer_sizes and layer_sizes[-1] != output_size:
                 layer_sizes[-1] = output_size
-                
-            return [input_size] + layer_sizes + [output_size]
+            
+            return layer_sizes
         
     def dag_to_lstm_structure(self, dag, input_size=None, output_size=None):
         if self.graph_type == "Full":

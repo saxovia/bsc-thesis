@@ -343,10 +343,10 @@ QListWidget::item:selected {
     font-weight: bold;
 }
 QTableWidget, QTableView {
-    background-color: #1e1e1e;
+    background-color: #1c1b21;
     border: 2px solid #444;
     border-radius: 10px;
-    gridline-color: #2a2a2a;
+    gridline-color: #1c1b21;
     color: #f0f0f0;
     font-size: 13px;
     selection-background-color: #3d6cad;
@@ -358,7 +358,7 @@ QTableWidget, QTableView {
 QTableWidget::item, QTableView::item {
     border: none;
     padding: 10px;
-    background-color: #2d2b36;
+    background-color: #1c1b21;
 }
 
 
@@ -389,7 +389,10 @@ QTableWidget::horizontalHeader, QTableWidget::verticalHeader, QTableView::horizo
     border: none;
 }
 
-
+QTableWidget::item:selected, QTableView::item:selected {
+    background-color:#4c4b70 ;
+    color: #ffffff;
+}
 
 QTableWidget, QTableView {
     border-collapse: collapse;
@@ -1033,13 +1036,6 @@ Alternatively, import an already trained model and customize the pruning process
               <property name="verticalSpacing">
                <number>10</number>
               </property>
-              <item row="4" column="0">
-               <widget class="QPushButton" name="dataset_choose_model_button">
-                <property name="text">
-                 <string>REMOVE THIS</string>
-                </property>
-               </widget>
-              </item>
               <item row="3" column="0" colspan="4">
                <widget class="QFrame" name="dataset_main_content_frame">
                 <property name="sizePolicy">
@@ -1070,7 +1066,7 @@ Alternatively, import an already trained model and customize the pruning process
                  <property name="horizontalSpacing">
                   <number>0</number>
                  </property>
-                 <item row="3" column="0">
+                 <item row="4" column="0">
                   <widget class="Line" name="line">
                    <property name="styleSheet">
                     <string notr="true">color: transparent; border:none;</string>
@@ -1080,10 +1076,7 @@ Alternatively, import an already trained model and customize the pruning process
                    </property>
                   </widget>
                  </item>
-                 <item row="0" column="0">
-                  <widget class="QTableWidget" name="tableWidgetPruning_2"/>
-                 </item>
-                 <item row="1" column="0">
+                 <item row="2" column="0">
                   <widget class="QWidget" name="widget_10" native="true">
                    <property name="minimumSize">
                     <size>
@@ -1095,21 +1088,32 @@ Alternatively, import an already trained model and customize the pruning process
                     <item>
                      <widget class="QPushButton" name="multiply_rows_timeline_button">
                       <property name="text">
-                       <string>Multiply rows</string>
+                       <string>  Multiply rows</string>
+                      </property>
+                      <property name="icon">
+                       <iconset>
+                        <normaloff>resources/icons/copy.png</normaloff>resources/icons/copy.png</iconset>
                       </property>
                      </widget>
                     </item>
                     <item>
                      <widget class="QPushButton" name="delete_rows_timeline_button">
                       <property name="text">
-                       <string>Delete Rows</string>
+                       <string>  Delete Rows</string>
+                      </property>
+                      <property name="icon">
+                       <iconset>
+                        <normaloff>resources/icons/delete.png</normaloff>resources/icons/delete.png</iconset>
                       </property>
                      </widget>
                     </item>
                    </layout>
                   </widget>
                  </item>
-                 <item row="2" column="0">
+                 <item row="1" column="0">
+                  <widget class="QTableWidget" name="tableWidgetPruning_2"/>
+                 </item>
+                 <item row="0" column="0">
                   <widget class="QLabel" name="label_2">
                    <property name="text">
                     <string>    To edit a cell without losing the selection, use right click to edit!</string>
@@ -2692,8 +2696,8 @@ Alternatively, import an already trained model and customize the pruning process
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>98</width>
-                             <height>548</height>
+                             <width>100</width>
+                             <height>550</height>
                             </rect>
                            </property>
                            <property name="autoFillBackground">

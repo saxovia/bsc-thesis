@@ -58,7 +58,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.home_model_button.clicked.connect(self.navigator.showModelPage)
         self.home_results_button.clicked.connect(self.navigator.showChooseResultsPage)
         self.modify_dataset_button.clicked.connect(self.navigator.showDatasetPage)
-        self.dataset_choose_model_button.clicked.connect(self.navigator.showModelPage)
+        #self.dataset_choose_model_button.clicked.connect(self.navigator.showModelPage)
         self.model_train_button.clicked.connect(self.navigator.showModelStartingPage)
 
         # Other buttons
@@ -276,44 +276,88 @@ class MainWindow(QtWidgets.QMainWindow):
     def showTableWidget2(self):
         # sample data
         data = [
-            
-            ["", "2", "LSTM", "Prune", "CIFAR-10", "6", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
-            ["", "3", "LSTM", "Prune", "MLP", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
-            ["", "1", "LSTM", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.7, 64,0.001, "WS"],
+            ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "10", "", "", 32, 0.001, "Full"],
+            ["", "3", "LSTM", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
+            ["", "1", "LSTM", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "30", 2, 1.0, 64,0.001, "WS"],
+            ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.7, 64,0.01, "WS"],
         ]
 
-        model = ReorderTableModel(data, headers=["", "Edit", "Model Type", "Start", "Dataset", "Hidden sizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch Size", "Learning Rate", "Graph Type"])
+        self.timelineTableModel = ReorderTableModel(data, headers=["", "Edit", "Model Type", "Start", "Dataset", "Hidden sizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch Size", "Learning Rate", "Graph Type"])
 
         self.reorder_table_view2 = ReorderTableView(self)
-        self.reorder_table_view2.setModel(model)
+        self.reorder_table_view2.setModel(self.timelineTableModel)
         self.reorder_table_view2.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
-
+        #default values for hidden data:
+        self.timelineTableModel.set_hidden_data(0, [["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"], ["2", "Retrain", "-", "-", "-", "-", "10", "0.001"], ["3", "Prune", "Global", "FULL", "10", "Magnitude", "-", "-"]])
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view2)
 
         if self.tableWidgetPruning_2.layout(): #TODO rename this. rename dataset pages
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
+
+        self.reorder_table_view2.setColumnWidth(0, 20)  # Optional: Set an initial width
+
+        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.reorder_table_view2.setColumnWidth(1, 0)  # Optional: Set an initial width
+
+        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 2, QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 1, QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.reorder_table_view2.setColumnWidth(self.timelineTableModel.columnCount() - 2, 10)
+        self.reorder_table_view2.setColumnWidth(self.timelineTableModel.columnCount() - 1, 10)  # Delete col
+        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 2, QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 1, QtWidgets.QHeaderView.ResizeMode.Fixed)
+
+        for col in range(2, self.timelineTableModel.columnCount() - 2):
+            self.reorder_table_view2.resizeColumnToContents(col)
+
+
         self.tableWidgetPruning_2.setLayout(layout)
         self.tableWidgetPruning_2.resizeColumnsToContents()
-        self.multiply_rows_timeline_button.clicked.connect(model.multiply_selected_items) # TODO doesnt work completeley
+        self.multiply_rows_timeline_button.clicked.connect(lambda: self.multiply_rows_timeline(self.timelineTableModel))
 
-        self.delete_rows_timeline_button.clicked.connect(model.remove_selected_items)
-        self.tableWidgetPruning_2.editClicked.connect(self.temp)
-        self.reorder_table_view2.rowEdited.connect(self.handle_row_edit)
-
-    def handle_row_edit(self, row, column):
-        #transition pages
-        # get row data nd fill in the table fields (this should be hidden data for each row)
-        self.navigator.showModelPruningTablePage()
-
-        # get every selected row
         
-        # iterate and edit them to be the same
-        # return to timeline page once user wants
 
+        self.delete_rows_timeline_button.clicked.connect(self.timelineTableModel.remove_selected_items)
+        self.reorder_table_view2.rowEdited.connect(lambda row: self.handle_row_edit(row))
 
-    def temp(self):
-        print('temp')
+    def multiply_rows_timeline(self, model):
+        count, response = QtWidgets.QInputDialog.getInt(
+            self, "Multiply Items", "How many copies?", 2, 1, 100, 1
+        )
+        if response:
+            model.multiply_selected_items(count)
+        
+            
+    def handle_row_edit(self, row):
+        print("Row edited:", row)
+        # Transition pages
+        # Get row data and fill in the table fields (this should be hidden data for each row)
+
+        data = self.timelineTableModel.get_hidden_data(row)
+        # Example data = ["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"]
+
+        # Ensure pruningTableModel has enough rows
+        required_rows = len(data)
+        current_rows = self.pruningTableModel.rowCount()
+        if current_rows < required_rows:
+            for _ in range(required_rows - current_rows):
+                self.pruningTableModel.beginInsertRows(QtCore.QModelIndex(), current_rows, current_rows)
+                self.pruningTableModel._data.append([""] * self.pruningTableModel.columnCount())
+                self.pruningTableModel.endInsertRows()
+                current_rows += 1
+
+        for i in range(len(data)):
+            for j in range(len(data[i])):
+                index = self.pruningTableModel.index(i, j, QtCore.QModelIndex())
+                self.pruningTableModel.setData(index, data[i][j], QtCore.Qt.ItemDataRole.EditRole)
+
+        self.navigator.showModelPage()
+        self.navigator.showModelPruningTablePage()
+        # Iterate and edit them to be the same
+        # Return to timeline page once user wants
+
     def showTableWidget(self):
         # sample data
         data = [
@@ -321,10 +365,10 @@ class MainWindow(QtWidgets.QMainWindow):
             ["2", "Retrain", "-", "-", "-", "-", "10", "0.001"],
         ]
 
-        model = ReorderTableModel(data, headers=["", "Step", "Action", "Scope", "Layer(s) Affected", "Pruning %", "Method", "Epochs", "Learning Rate"])
+        self.pruningTableModel = ReorderTableModel(data, headers=["", "Step", "Action", "Scope", "Layer(s) Affected", "Pruning %", "Method", "Epochs", "Learning Rate"], show_edit_column=False)
 
         self.reorder_table_view = ReorderTableView(self)
-        self.reorder_table_view.setModel(model)
+        self.reorder_table_view.setModel(self.pruningTableModel)
         self.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
         layout = QtWidgets.QVBoxLayout()

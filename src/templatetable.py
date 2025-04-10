@@ -4,8 +4,9 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 # TODO fix multiplication issues
 class ReorderTableModel(QtCore.QAbstractTableModel):
-    def __init__(self, data, headers=None, editable=True, parent=None):
+    def __init__(self, data, headers=None, editable=True, show_edit_column=True, parent=None):
         super().__init__(parent)
+        self._show_edit_column = show_edit_column
         self._data = [[False] + list(row) + ['', ''] for row in data]
         self._headers = [''] + (headers if headers else [f"Column {i+1}" for i in range(len(self._data[0]) - 3)]) + ['', '']
         self._editable = editable
@@ -36,7 +37,8 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
                 return QtCore.Qt.CheckState.Checked if self._data[row][col] else QtCore.Qt.CheckState.Unchecked
             if role==QtCore.Qt.ItemDataRole.DisplayRole:
                 return None  # Hide the True/False text
-
+        if col == 2 and role == QtCore.Qt.ItemDataRole.DisplayRole:
+            return str(row + 1)
         if col >= len(self._headers) - 2:
             if role == QtCore.Qt.ItemDataRole.DecorationRole:
                 if col == len(self._headers) - 2:
@@ -141,7 +143,6 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         if col >= len(self._headers) - 2:
             return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDropEnabled
 
-
         flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDragEnabled | QtCore.Qt.ItemFlag.ItemIsDropEnabled
         if self._editable:
             flags |= QtCore.Qt.ItemFlag.ItemIsEditable
@@ -196,10 +197,9 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         stream = QtCore.QDataStream(data.data("application/x-qabstractitemmodeldatalist"), QtCore.QIODevice.OpenModeFlag.ReadOnly)
         count = stream.readInt32()
         from_rows = [stream.readInt32() for _ in range(count)]
-        
+
         from_rows = [r for r in from_rows if 0 <= r < self.rowCount() - 1]
         if not from_rows:
-            print("  No valid rows to move")
             return False        
         
         moved_data = []
@@ -208,8 +208,10 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             self.beginRemoveRows(QtCore.QModelIndex(), r, r)
             self.endRemoveRows()
 
+        # drag to first row
         if row == -1:
-            row = self.rowCount()
+            row = 0
+
         adjusted_row = row - sum(1 for r in from_rows if r < row)
         adjusted_row = max(0, min(adjusted_row, self.rowCount()))
         
@@ -257,10 +259,14 @@ class ReorderTableView(QtWidgets.QTableView):
         super().setModel(model)
         if model:
             self.setColumnWidth(0, 20)
-            self.setColumnWidth(model.columnCount() - 2, 30)  #Edit col
+            if model._show_edit_column:
+                self.setColumnWidth(model.columnCount() - 2, 30)
+            else:
+                self.setColumnWidth(model.columnCount() - 2, 0)
             self.setColumnWidth(model.columnCount() - 1, 30)  #Delete col
             self.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Fixed)
-            self.horizontalHeader().setSectionResizeMode(model.columnCount() - 2, QtWidgets.QHeaderView.ResizeMode.Fixed)
+            if model._show_edit_column:
+                self.horizontalHeader().setSectionResizeMode(model.columnCount() - 2, QtWidgets.QHeaderView.ResizeMode.Fixed)
             self.horizontalHeader().setSectionResizeMode(model.columnCount() - 1, QtWidgets.QHeaderView.ResizeMode.Fixed)
             for col in range(1, model.columnCount() - 2):
                 self.resizeColumnToContents(col)
@@ -319,7 +325,7 @@ class ReorderTableView(QtWidgets.QTableView):
 
 
 class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
-    def __init__(self, editable=True):
+    def __init__(self, editable=True, show_edit_column=True):
         super().__init__()
         data = [
             ("1","A","Extra 1"),
@@ -330,11 +336,12 @@ class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
         headers = ["Numbers", "ABCD", "Extra"]
 
         view = ReorderTableView(self)
-        self.model = ReorderTableModel(data, headers, editable)
+        self.model = ReorderTableModel(data, headers, editable, show_edit_column)
         view.setModel(self.model)
 
         hidden_data_row_0 = self.model.get_hidden_data(0)
         print(f"Hidden data for row 0: {hidden_data_row_0}")
+        self.model.set_hidden_data(0, {"hidden_key": "new_value"})
         if editable:
             view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
         else:
@@ -377,5 +384,5 @@ class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    window = Testing(editable=True) 
+    window = Testing(editable=True, show_edit_column=True) 
     sys.exit(app.exec())

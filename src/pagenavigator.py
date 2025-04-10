@@ -125,8 +125,7 @@ class PageNavigator:
 
 
     def trainOneModel(self, modelrow): # Already have the data. Its job is not to format the data to the interpretable type for the trainer. Nor give default values
-        #Paste this here later. I suggest going through the pages first, the rest will come to you later
-        index = modelrow[0]
+        index = int(modelrow[0])
         model = modelrow[1]
         start =  modelrow[2]
         dataset = modelrow[3]
@@ -142,17 +141,17 @@ class PageNavigator:
         
         if start == "Prior":
             #Dont forget to make number of layers or number of nodes or N the same
-            self.trainer = Trainer(model, dataset, hidden_sizes= N, loss=loss, optimizer=optimizer, epochs=epochs, k=k, p=p, batch_size=batch_size, lr=learning_rate, graph_type=graph_type)
+            self.trainer = Trainer(model, dataset, hidden_sizes= N, loss=loss, optimizer=optimizer, epochs=epochs, k=k, p=p, batch_size=batch_size, lr=learning_rate, graph_type=graph_type, index=index)
             self.trainer.message.connect(self.updateTrainingProcessLabel)
             self.trainer.load_data_and_create_graph()
             self.trainer.start()
             self.trainer.finished.connect(self.onTrainingFinished)
 
         else:
-            self.trainer = Trainer(model, dataset, hidden_sizes=N, loss=loss, optimizer=optimizer, epochs=epochs, graph_type=graph_type, batch_size=batch_size)
+            self.trainer = Trainer(model, dataset, hidden_sizes=N, loss=loss, optimizer=optimizer, epochs=epochs, graph_type=graph_type, batch_size=batch_size, index=index)
             self.trainer.message.connect(self.updateTrainingProcessLabel)
             self.trainer.load_data_and_create_graph()
-            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), self.trainer.model)
+            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), self.trainer)
             #self.onTrainingFinished()
 
         #TODO make a functionality for Undo button between model stages
@@ -380,10 +379,16 @@ class PageNavigator:
 
     def handleReadingPruningTable(self, data, model):
         print("Data from pruning table:", data)
-        self.main_window.pruning_data = data
-        # TODO change the page too
+        #self.main_window.pruning_data = data
+        #data should be instead the corresponding rows hidden data
+        data = self.main_window.timelineTableModel.get_hidden_data(model.index-1)
+        # TODO change the page too???
         
-        for row in data:
+        for i in range(len(data)):
+            row = data[i]
+            if row == '':
+                continue
+            print("Row data:", row)
             action = row[0]
             if action == "Prune": 
                 scope = row[1]
