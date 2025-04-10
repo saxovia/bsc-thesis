@@ -2,9 +2,7 @@ from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QThread, pyqtSignal
 
-# TODO add functoinality for editing all rows when some are selected and only one is edited. edit all of them to be the same column data
 # TODO fix multiplication issues
-# TODO if a row is selected, tick their checkbox too! untick if unselected
 class ReorderTableModel(QtCore.QAbstractTableModel):
     def __init__(self, data, headers=None, editable=True, parent=None):
         super().__init__(parent)
@@ -88,14 +86,17 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             self._data.pop(rowi)
             self.endRemoveRows()
         return True
+    
+
+
     def setData(self, index: QtCore.QModelIndex, value, role: QtCore.Qt.ItemDataRole):
         if not index.isValid():
             return False
         
         row, col = index.row(), index.column()
 
-        if col == 0 and role == QtCore.Qt.ItemDataRole.CheckStateRole: # Selection column
-            self._data[row][col] = (value == int(QtCore.Qt.CheckState.Checked.value))
+        if col == 0 and role == QtCore.Qt.ItemDataRole.CheckStateRole:  # Selection column
+            self._data[row][col] = (value == QtCore.Qt.CheckState.Checked)
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.CheckStateRole])
             return True
         if col >= len(self._headers) - 2: #no editing on edit or delete columns
@@ -103,6 +104,14 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.ItemDataRole.EditRole and col > 0 and self._editable:
             self._data[row][col] = value
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.EditRole])
+
+            # If hte other rows are edited, edit them too
+            selected_rows = [i for i, row_data in enumerate(self._data[:-1]) if row_data[0] and i != row]
+            for selected_row in selected_rows:
+                self._data[selected_row][col] = value
+                selected_index = self.index(selected_row, col)
+                self.dataChanged.emit(selected_index, selected_index, [QtCore.Qt.ItemDataRole.EditRole])
+
             # Should the last row be edited, add one, this ensures theres no need for extra buttons for adding more rows
             if row == len(self._data) - 1:
                 self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
@@ -234,6 +243,15 @@ class ReorderTableView(QtWidgets.QTableView):
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(False)
         
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.MouseButton.RightButton:
+            index = self.indexAt(event.position().toPoint())
+            if index.isValid():
+                self.edit(index)
+                return
+            
+
+        super().mousePressEvent(event)
 
     def setModel(self, model):
         super().setModel(model)
@@ -286,6 +304,18 @@ class ReorderTableView(QtWidgets.QTableView):
             event.accept()
         else:
             event.ignore()
+    def selectionChanged(self, selected, deselected):
+        super().selectionChanged(selected, deselected)
+        model = self.model()
+
+        # Change the checkboxes state based on the selection done
+        for index in selected.indexes():
+            if index.column()== 0:
+                model.setData(index, QtCore.Qt.CheckState.Checked,QtCore.Qt.ItemDataRole.CheckStateRole)
+        for index in deselected.indexes():
+            if index.column() == 0:
+                model.setData(index, QtCore.Qt.CheckState.Unchecked,QtCore.Qt.ItemDataRole.CheckStateRole)
+
 
 
 class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself

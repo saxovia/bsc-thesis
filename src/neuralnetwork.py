@@ -47,7 +47,7 @@ class SparseMLPNet(nn.Module):
         for i in range(len(hidden_sizes)):
             input_dim = input_size if i == 0 else hidden_sizes[i-1]
             self.lstms.append(nn.LSTM(
-                input_dim, 
+                input_dim,
                 hidden_sizes[i], 
                 batch_first=True
             ))
