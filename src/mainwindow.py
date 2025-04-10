@@ -295,9 +295,25 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
         self.tableWidgetPruning_2.setLayout(layout)
         self.tableWidgetPruning_2.resizeColumnsToContents()
+        self.multiply_rows_timeline_button.clicked.connect(model.multiply_selected_items) # TODO doesnt work completeley
+
+        self.delete_rows_timeline_button.clicked.connect(model.remove_selected_items)
+        self.tableWidgetPruning_2.editClicked.connect(self.temp)
+        self.reorder_table_view2.rowEdited.connect(self.handle_row_edit)
+
+    def handle_row_edit(self, row, column):
+        #transition pages
+        # get row data nd fill in the table fields (this should be hidden data for each row)
+        self.navigator.showModelPruningTablePage()
+
+        # get every selected row
+        
+        # iterate and edit them to be the same
+        # return to timeline page once user wants
 
 
-
+    def temp(self):
+        print('temp')
     def showTableWidget(self):
         # sample data
         data = [

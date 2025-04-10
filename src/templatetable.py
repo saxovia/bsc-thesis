@@ -1,14 +1,17 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
-from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QThread, pyqtSignal
 
+# TODO add functoinality for editing all rows when some are selected and only one is edited. edit all of them to be the same column data
+# TODO fix multiplication issues
+# TODO if a row is selected, tick their checkbox too! untick if unselected
 class ReorderTableModel(QtCore.QAbstractTableModel):
     def __init__(self, data, headers=None, editable=True, parent=None):
         super().__init__(parent)
         self._data = [[False] + list(row) + ['', ''] for row in data]
         self._headers = [''] + (headers if headers else [f"Column {i+1}" for i in range(len(self._data[0]) - 3)]) + ['', '']
         self._editable = editable
-        self._data.append([False] + [''] * (len(self._headers) - 3) + ['', ''])
+        self._data.append([False] + [''] * (len(self._headers) - 3) + ['', '', {"hidden_key": "default_value"}])
 
     def columnCount(self, parent=None) -> int:
         return len(self._headers)
@@ -48,7 +51,18 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             return self._data[row][col]
 
         return None
+    
+    def get_hidden_data(self, row):
+        if 0 <= row < len(self._data):
+            return self._data[row][-1]
+        return None
 
+    def set_hidden_data(self, row, value):
+        if 0 <= row < len(self._data):
+            self._data[row][-1] = value
+            return True
+        return False
+    
     def multiply_selected_items(self, count):
         selected_rows = [i for i, row in enumerate(self._data[:-1]) if row[0]]
         
@@ -92,7 +106,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             # Should the last row be edited, add one, this ensures theres no need for extra buttons for adding more rows
             if row == len(self._data) - 1:
                 self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
-                self._data.append([False] + [''] * (len(self._headers) - 1))
+                self._data.append([False] + [''] * (len(self._headers) - 3) + ['', '', {"hidden_key": "default_value"}])
                 self.endInsertRows()
             return True
         
@@ -203,6 +217,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
 
 
 class ReorderTableView(QtWidgets.QTableView):
+    rowEdited = pyqtSignal(int)
     def __init__(self, parent):
         super().__init__(parent)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
@@ -218,6 +233,7 @@ class ReorderTableView(QtWidgets.QTableView):
         header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(False)
+        
 
     def setModel(self, model):
         super().setModel(model)
@@ -245,7 +261,7 @@ class ReorderTableView(QtWidgets.QTableView):
             
         elif col == model.columnCount() - 2 and row < model.rowCount() - 1:
             print(f"Edit row {row}")
-            self.editClicked.emit(row)
+            self.rowEdited.emit(row)
 
     def dragEnterEvent(self, event):
         if event.source() is self:
@@ -287,6 +303,8 @@ class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
         self.model = ReorderTableModel(data, headers, editable)
         view.setModel(self.model)
 
+        hidden_data_row_0 = self.model.get_hidden_data(0)
+        print(f"Hidden data for row 0: {hidden_data_row_0}")
         if editable:
             view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
         else:
@@ -299,8 +317,15 @@ class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
         delete_action = QtGui.QAction("Delete Selected", self)
         delete_action.triggered.connect(self.delete_items)
         toolbar.addAction(delete_action)
+
+
+        view.rowEdited.connect(self.handle_row_edit)
+
+
         self.setCentralWidget(view)
         self.show()
+    def handle_row_edit(self, row):
+        print(f"Row {row} was edited")
 
     def multiply_items(self):
         count, ok = QtWidgets.QInputDialog.getInt(
