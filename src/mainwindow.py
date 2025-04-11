@@ -7,8 +7,9 @@ import pandas as pd
 import numpy as np
 from src.uianimations import UIAnimations
 from src.windowcontrol import WindowControl
-from src.pagenavigator import PageNavigator
-from src.templatetable import ReorderTableView, ReorderTableModel
+from src.pagenavigationhandler import PageNavigationHandler
+from src.reordertable import ReorderTableView, ReorderTableModel
+from src.modeltraininghandler import ModelTrainingHandler
 
 #from temp.csvhandler import CSVHandler
 
@@ -44,22 +45,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.setContentsMargins(10, 10, 10, 10)  # Ensure space for the shadow
         self.layout.addWidget(self.main_frame)
         """
-        #self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+
         self.maximize_button.setCheckable(True)
-        #if self.statusBar():
-        #    self.statusBar().setSizeGripEnabled(False)
 
 
-        self.navigator = PageNavigator(self)
+        self.page_navigation_handler = PageNavigationHandler(self)
+        self.model_training_handler = ModelTrainingHandler(self)
+
+
         self.minimize_button.clicked.connect(self.showMinimized)
         self.maximize_button.clicked.connect(self.toggle_maximize_restore)
         self.close_button.clicked.connect(self.close)
-        #self.home_dataset_button.clicked.connect(self.navigator.showDatasetPage)
-        self.home_model_button.clicked.connect(self.navigator.showModelPage)
-        self.home_results_button.clicked.connect(self.navigator.showChooseResultsPage)
-        self.modify_dataset_button.clicked.connect(self.navigator.showDatasetPage)
-        #self.dataset_choose_model_button.clicked.connect(self.navigator.showModelPage)
-        self.model_train_button.clicked.connect(self.navigator.showModelStartingPage)
+        #self.home_dataset_button.clicked.connect(self.page_navigation_handler.showTimelinePage)
+        self.home_model_button.clicked.connect(self.page_navigation_handler.showTimelinePage)
+        self.home_results_button.clicked.connect(self.page_navigation_handler.showChooseResultsPage)
+        #self.dataset_choose_model_button.clicked.connect(self.page_navigation_handler.showModelPage)
+        self.model_train_button.clicked.connect(self.page_navigation_handler.showModelStartingPage)
 
         # Other buttons
         self.ui_handler = UIAnimations()
@@ -68,9 +69,9 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.dataset_save_button.clicked.connect(self.csv_handler.save_csv)
         #self.dataset_apply_button.clicked.connect(self.applyChangesToDataset)
         #self.view_header_button.clicked.connect(self.viewDataset)
-        self.settings_button.clicked.connect(self.navigator.showSettingsPage)
+        self.settings_button.clicked.connect(self.page_navigation_handler.showSettingsPage)
 
-        self.dataset_start_training_button.clicked.connect(self.navigator.parseThroughProcessesTable)
+        self.timeline_start_training_button.clicked.connect(self.model_training_handler.parseThroughProcessesTable)
 
         self.old_pos = self.pos()
         self.is_maximized = False
@@ -90,10 +91,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_page = "Home"
         self.onSettingsPage = False
         self.window_control = WindowControl(self)
-        #self.home_button.clicked.connect(self.navigator.showHomePage)
+        #self.home_button.clicked.connect(self.page_navigation_handler.showHomePage)
 
-        self.navigator.showHomePage() #this ensures to start at the home page
-        self.navigator.showModelStartingPage()
+        self.page_navigation_handler.showHomePage() #this ensures to start at the home page
+        self.page_navigation_handler.showModelStartingPage()
         self.showTableWidget()
         self.showTableWidget2()
 
@@ -176,7 +177,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
             print(f"Updated {global_var_name}: {selected_value}")
 
-        self.navigator.update_button_state()
+        self.page_navigation_handler.update_button_state()
         print(self.GLOBAL_CHOSEN_MODEL, self.GLOBAL_CHOSEN_START, self.GLOBAL_STAGE)
 
 
@@ -219,7 +220,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.exec()
 
     def fadeInUp(self, widget):
-        self.ui_handler.fadeInUp(widget) #this redirects the pagenavigator.py to the animations.py
+        self.ui_handler.fadeInUp(widget) #this redirects the pagenavigationhandler.py to the animations.py
 
     def fadeToPage(self, new_page):
         self.stackedWidget.setCurrentWidget(new_page)
@@ -353,10 +354,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 index = self.pruningTableModel.index(i, j, QtCore.QModelIndex())
                 self.pruningTableModel.setData(index, data[i][j], QtCore.Qt.ItemDataRole.EditRole)
 
-        self.navigator.showModelPage()
-        self.navigator.showModelPruningTablePage()
+        self.page_navigation_handler.showModelPage()
+        self.page_navigation_handler.showModelPruningTablePage()
         # Iterate and edit them to be the same
-        # Return to timeline page once user wants
 
     def showTableWidget(self):
         # sample data
@@ -478,27 +478,26 @@ class MainWindow(QtWidgets.QMainWindow):
             #print("User reset!")
             
             self.loading_label.hide()
-            self.navigator.showHomePage()
+            self.page_navigation_handler.showHomePage()
             self.model_train_button.setEnabled(True)
-            self.modify_dataset_button.setEnabled(True)
-            self.model_undo_button.setEnabled(True)
+            self.undo_button.setEnabled(True)
             self.GLOBAL_CHOSEN_MODEL = None
             self.GLOBAL_CHOSEN_START = None
             self.GLOBAL_STAGE = 1
             self.model_train_button.setText("Train Model")
             self.model_train_button.disconnect()
-            self.model_train_button.clicked.connect(self.navigator.showModelStartingPage)
+            self.model_train_button.clicked.connect(self.page_navigation_handler.showModelStartingPage)
             self.model_train_button.setEnabled(True)
-            if self.navigator.trainer is not None:
-                self.navigator.trainer.running = False
-                self.navigator.trainer.quit()
-                self.navigator.trainer.wait()
-                #self.navigator.trainer.join() # Wait for the thread to finish! doesnt work
+            if self.model_training_handler.trainer is not None:
+                self.model_training_handler.trainer.running = False
+                self.model_training_handler.trainer.quit()
+                self.model_training_handler.trainer.wait()
+                #self.model_training_handler.trainer.join() # Wait for the thread to finish! doesnt work
             self.neural_networks = []
-            self.navigator.showModelStartingPage()
+            self.page_navigation_handler.showModelStartingPage()
             self.listWidget.clearSelection()
             self.listWidget_2.clearSelection()
-            self.navigator.updateTrainingProcessLabel("")
+            self.page_navigation_handler.updateTrainingProcessLabel("")
             self.training_process_label.setText("")
 
 

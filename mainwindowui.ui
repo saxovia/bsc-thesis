@@ -123,7 +123,7 @@ QPushButton:disabled {
 	background-color: 2d2b36;
 }
 
-#dataset_page .QPushButton,
+#timeline_page .QPushButton,
 #model_page .QPushButton,
 #choose_results .QPushButton,
 #side_widget .QPushButton {
@@ -131,7 +131,7 @@ QPushButton:disabled {
 	color: #fff;
 
 }
-#dataset_page .QPushButton,
+#timeline_page .QPushButton,
 #choose_results .QPushButton,
 #side_widget .QPushButton {
 	min-width: 200px;
@@ -140,14 +140,14 @@ QPushButton:disabled {
 	max-height: 40px;
 	border-radius: 15px;
 }
-#model_train_button, #modify_dataset_button{
+#model_train_button, #modify_timeline_button{
 	min-width: 150px;
 	max-width: 200px;
 	min-height: 40px;
 	max-height: 40px;
 	border-radius: 15px;
 }
-#model_undo_button{
+#undo_button{
 	min-width: 40px;
 	max-width: 40px;
 	min-height: 40px;
@@ -307,7 +307,7 @@ QPlainTextEdit, QLineEdit {
 	background-image: url(./resources/sidewidget.png)
 }
 
-#dataset_main_content_frame{
+#timeline_main_content_frame{
 	background-color: #181621;
 	border-radius:15px;
 
@@ -671,7 +671,7 @@ QTableWidget, QTableView {
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="home_page">
              <property name="autoFillBackground">
@@ -936,7 +936,72 @@ Alternatively, import an already trained model and customize the pruning process
                  <property name="verticalSpacing">
                   <number>20</number>
                  </property>
+                 <item row="2" column="0">
+                  <widget class="QPushButton" name="home_model_button">
+                   <property name="minimumSize">
+                    <size>
+                     <width>302</width>
+                     <height>57</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>302</width>
+                     <height>57</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>  Make a project</string>
+                   </property>
+                   <property name="icon">
+                    <iconset>
+                     <normaloff>resources/icons/tech.png</normaloff>resources/icons/tech.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="5" column="0">
+                  <spacer name="verticalSpacer_3">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>130</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
                  <item row="3" column="0">
+                  <widget class="QLabel" name="label_4">
+                   <property name="text">
+                    <string>&gt;&gt;    or Continue one...           </string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <spacer name="verticalSpacer_2">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>350</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="4" column="0">
                   <widget class="QPushButton" name="home_results_button">
                    <property name="minimumSize">
                     <size>
@@ -959,67 +1024,12 @@ Alternatively, import an already trained model and customize the pruning process
                    </property>
                   </widget>
                  </item>
-                 <item row="2" column="0">
-                  <widget class="QPushButton" name="home_model_button">
-                   <property name="minimumSize">
-                    <size>
-                     <width>302</width>
-                     <height>57</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>302</width>
-                     <height>57</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>  Make a model</string>
-                   </property>
-                   <property name="icon">
-                    <iconset>
-                     <normaloff>resources/icons/tech.png</normaloff>resources/icons/tech.png</iconset>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="4" column="0">
-                  <spacer name="verticalSpacer_3">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Fixed</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>130</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item row="0" column="0">
-                  <spacer name="verticalSpacer_2">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Fixed</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>350</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
                 </layout>
                </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="dataset_page">
+            <widget class="QWidget" name="timeline_page">
              <layout class="QGridLayout" name="gridLayout_9">
               <property name="leftMargin">
                <number>0</number>
@@ -1037,7 +1047,7 @@ Alternatively, import an already trained model and customize the pruning process
                <number>10</number>
               </property>
               <item row="3" column="0" colspan="4">
-               <widget class="QFrame" name="dataset_main_content_frame">
+               <widget class="QFrame" name="timeline_main_content_frame">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
                   <horstretch>0</horstretch>
@@ -1124,7 +1134,7 @@ Alternatively, import an already trained model and customize the pruning process
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QLabel" name="dataset_header_label">
+               <widget class="QLabel" name="timeline_header_label">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -1168,7 +1178,7 @@ Alternatively, import an already trained model and customize the pruning process
                </spacer>
               </item>
               <item row="4" column="3">
-               <widget class="QPushButton" name="dataset_start_training_button">
+               <widget class="QPushButton" name="timeline_start_training_button">
                 <property name="text">
                  <string>Start Training</string>
                 </property>
@@ -1210,7 +1220,7 @@ Alternatively, import an already trained model and customize the pruning process
                <number>10</number>
               </property>
               <item row="3" column="3">
-               <widget class="QPushButton" name="model_undo_button">
+               <widget class="QPushButton" name="undo_button">
                 <property name="text">
                  <string/>
                 </property>
@@ -2696,7 +2706,7 @@ Alternatively, import an already trained model and customize the pruning process
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>100</width>
+                             <width>86</width>
                              <height>550</height>
                             </rect>
                            </property>
@@ -2800,7 +2810,7 @@ Alternatively, import an already trained model and customize the pruning process
                </widget>
               </item>
               <item row="3" column="0">
-               <widget class="QPushButton" name="modify_dataset_button">
+               <widget class="QPushButton" name="modify_timeline_button">
                 <property name="text">
                  <string>Process Timeline</string>
                 </property>

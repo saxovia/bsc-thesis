@@ -54,7 +54,10 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
     
     def get_hidden_data(self, row):
         if 0 <= row < len(self._data):
+            print(f"Hidden data for row {row}: {self._data[row][-1]}")
             return self._data[row][-1]
+        print(f"Row {row} is out of range")
+        print("Hidden data not found")
         return None
 
     def set_hidden_data(self, row, value):

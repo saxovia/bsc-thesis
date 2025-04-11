@@ -196,8 +196,8 @@ class Trainer(QThread):
                 self.structured_prune(self.model, prune_ratio=0.5)
     
     def magnitude_prune(self, prune_ratio, mode="FULL"):
-        print(f"!!!Applying {mode} magnitude pruning with ratio: {prune_ratio}")
-
+        print(f"Applying {mode} magnitude pruning with ratio: {prune_ratio}")
+        self.message.emit(f"Applying {mode} magnitude pruning with ratio: {prune_ratio}")
         pruner = MagnitudePruner()
         pruner.apply_pruning(self.model, prune_ratio * 100, mode=mode)
 

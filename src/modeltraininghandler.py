@@ -1,0 +1,215 @@
+
+from PyQt6.QtGui import QMovie
+from src.trainer import Trainer
+
+
+class ModelTrainingHandler:
+    #TODO make a functionality for Undo button between model stages
+    def __init__(self, main_window):
+        self.main_window = main_window
+        self.trainer = None
+        self.trainers = []
+        self.current_model_index = 0
+        
+    def setupTrainingUI(self):
+        self.main_window.model_train_button.setEnabled(False)
+        self.main_window.undo_button.setEnabled(False)
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
+        self.main_window.model_train_button.setText("...")
+        self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.main_window.page_navigation_handler.showChooseResultsPage)
+        self.showLoadingAnimation()
+
+    def resetUI(self):
+        self.main_window.model_train_button.setEnabled(True)
+        self.main_window.undo_button.setEnabled(True)
+        self.main_window.model_train_button.setText("Train")
+        self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.parseThroughProcessesTable)
+    
+    def showLoadingAnimation(self):
+        self.main_window.loading_label.setFixedSize(50, 50)
+        movie = QMovie("./resources/icons/loading.gif")
+        self.main_window.loading_label.setVisible(True)
+        self.main_window.loading_label.setMovie(movie)
+        movie.start()
+        self.main_window.loading_label.show()
+
+    def parseThroughProcessesTable(self):
+        self.main_window.model_train_button.setEnabled(False)
+        self.main_window.undo_button.setEnabled(False)
+
+        data = self.main_window.reorder_table_view2.model().get_table_data()
+        print("Data from pruning table:", data)
+
+        for row in data:
+            self.processTableRow(row)
+
+        self.current_model_index = 0
+        self.mainTrainLoop()
+
+    def processTableRow(self, row):
+        index = row[0]
+        model = row[1] if row[1] != "" else "MLP"
+        start = row[2] if row[2] != "" else "Prior"
+        dataset = row[3] if row[3] != "" else "MNIST"
+        N = self.parseNValue(row[4], start)
+        loss = row[5] if row[5] != "" else "CrossEntropy"
+        optimizer = row[6] if row[6] != "" else "Adam"
+        epochs = int(row[7]) if row[7] != "" else 30
+        k = int(row[8]) if row[8] != "" else 2 
+        p = float(row[9]) if row[9] != "" else 0.5 
+        batch_size = int(row[10]) if row[10] != "" else 64 
+        learning_rate = float(row[11]) if row[11] != "" else 0.001
+        graph_type = row[12] if row[12] != "" else "WS"
+
+        self.main_window.neural_networks.append([
+            index, model, start, dataset, N, loss, optimizer, 
+            epochs, k, p, batch_size, learning_rate, graph_type
+        ])
+
+    def parseNValue(self, n_value, start_type):
+        if n_value == "":
+            return [6,6,6] if start_type == "Prune" else 250
+            
+        if start_type == "Prune":
+            if "[" in n_value and "]" in n_value:
+                return [int(i) for i in n_value[1:-1].split(",") if i.strip() != ""]
+            elif "," in n_value: 
+                return [int(i) for i in n_value.split(",") if i.strip() != ""]
+            else:
+                return [int(n_value)] * int(n_value)
+        else:
+            return int(n_value)
+
+    def mainTrainLoop(self):
+        self.main_window.page_navigation_handler.showModelPage()
+        self.setupTrainingUI()
+        
+        if self.current_model_index < len(self.main_window.neural_networks):
+            self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
+
+    def trainOneModel(self, modelrow):
+        params = self.extractTrainingParameters(modelrow)
+        
+        if modelrow[2] == "Prior":
+            self.trainPriorModel(params)
+        else:
+            self.trainPrunedModel(params)
+
+    def extractTrainingParameters(self, modelrow):
+        return {
+            'index': int(modelrow[0]),
+            'model': modelrow[1],
+            'start': modelrow[2],
+            'dataset': modelrow[3],
+            'N': modelrow[4],
+            'loss': modelrow[5],
+            'optimizer': modelrow[6],
+            'epochs': modelrow[7],
+            'k': modelrow[8],
+            'p': modelrow[9],
+            'batch_size': modelrow[10],
+            'learning_rate': modelrow[11],
+            'graph_type': modelrow[12]
+        }
+
+    def trainPriorModel(self, params):
+        self.trainer = Trainer(
+            params['model'], params['dataset'], 
+            hidden_sizes=params['N'], loss=params['loss'], 
+            optimizer=params['optimizer'], epochs=params['epochs'], 
+            k=params['k'], p=params['p'], batch_size=params['batch_size'], 
+            lr=params['learning_rate'], graph_type=params['graph_type'], 
+            index=params['index']
+        )
+        self.trainer.message.connect(self.updateTrainingProcessLabel)
+        self.trainer.load_data_and_create_graph()
+        self.trainer.start()
+        self.trainer.finished.connect(self.onTrainingFinished)
+
+    def trainPrunedModel(self, params):
+        self.trainer = Trainer(
+            params['model'], params['dataset'], 
+            hidden_sizes=params['N'], loss=params['loss'], 
+            optimizer=params['optimizer'], epochs=params['epochs'], 
+            graph_type=params['graph_type'], batch_size=params['batch_size'], 
+            index=params['index']
+        )
+        
+        self.trainer.message.connect(self.updateTrainingProcessLabel)
+        self.trainer.load_data_and_create_graph()
+        self.handleReadingPruningTable(self.trainer)
+        self.trainer.finished.connect(self.onTrainingFinished)
+
+
+    def updateTrainingProcessLabel(self, message):
+        previous_text = self.main_window.training_process_label.text()
+
+        self.main_window.training_process_label.setText(previous_text + "\n" + message)
+
+    def onTrainingFinished(self):
+        print(f"Training for model {self.current_model_index + 1} finished")
+        self.current_model_index += 1
+
+        if self.current_model_index < len(self.main_window.neural_networks):
+            self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
+        else: # Training finalized
+            print("All models training completed")
+            self.main_window.loading_label.hide()
+            self.main_window.model_train_button.setEnabled(True)
+            self.main_window.model_train_button.setText("Training Completed")
+            if hasattr(self, 'trainer'):
+                self.trainer.deleteLater()
+
+
+    def handleReadingPruningTable(self, model):
+        hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index-2)
+
+        self.action_queue = []
+        for row in hidden_data:
+            if row == '':
+                continue
+            action = row[1]
+            if action == "Prune": 
+                self.action_queue.append(("Prune", row))
+            elif action == "Retrain":
+                self.action_queue.append(("Retrain", row))
+            else:
+                print(f"Unknown action: {action}")
+
+        self.processNextAction()
+
+    def processNextAction(self):
+        if not self.action_queue:
+            return
+        action, row = self.action_queue.pop(0)
+        if action == "Prune":
+            self.handlePruneAction(row)
+        elif action == "Retrain":
+            self.handleRetrainAction(row)
+
+    def handlePruneAction(self, row):
+        scope = row[2]
+        layer = row[3]
+        prune_ratio = float(row[4]) / 100
+        prune_method = row[5]
+        #print(f"Pruning {layer} with ratio {prune_ratio}% using {prune_method} method.")
+
+        if prune_method == "Magnitude":
+            #print("Magnitude Pruning")
+            self.trainer.magnitude_prune(prune_ratio, layer)
+        elif prune_method == "Random":
+            pass #TODO make sure this goes over the methods of all prunings by classes of pruner.py
+            #print("Random Pruning")
+        self.processNextAction()
+
+    def handleRetrainAction(self, row):
+        epochs = row[6]
+        learning_rate = row[7]
+        #print(f"Training {layer} for {epochs} epochs with learning rate {learning_rate}.")
+        self.trainer.epochs = int(epochs)
+        self.trainer.lr = float(learning_rate)
+        self.trainer.optimizer = self.main_window.optimizer
+        self.trainer.start()
+        self.trainer.finished.connect(self.processNextAction)

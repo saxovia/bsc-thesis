@@ -1,13 +1,9 @@
 import PyQt6 as Qt
 from src.trainer import Trainer
 from PyQt6.QtGui import QMovie
-
-from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QTimer
-from uuid import uuid4
 
-#TODO To make this class less complicated, seperate the trainings into a new class later. This class is too long and complicated. The new class name should be something like MasterModelTrainer or ModelTrainingHandler.
-class PageNavigator:
+class PageNavigationHandler:
     def __init__(self, main_window):
         self.main_window = main_window
         self.trainer = None
@@ -39,139 +35,43 @@ class PageNavigator:
     
         self.resetSettingsButton()
 
-    def showDatasetPage(self):
-        self.fadeToPage(self.main_window.dataset_page)
-        self.main_window.previous_page = self.main_window.current_page
-        self.main_window.current_page = "Dataset"
-        self.main_window.restart_button.show()
-        self.resetSettingsButton()
-        #If i press that the training button, read through the table OR the self.main_window.neural_networks and parse through it to train. save progress! save model should it get interrupted
-        self.main_window.model_train_button.setText("Start Training")
-        self.main_window.model_train_button.clicked.connect(self.parseThroughProcessesTable)
-
-    def parseThroughProcessesTable(self):
-        data = self.main_window.reorder_table_view2.model().get_table_data()
-        print("Data from pruning table:", data)
-
-        for row in data:
-            index = row[0]
-            model = row[1] if row[1] != "" else "MLP"
-            start = row[2] if row[2] != "" else "Prior"
-            dataset = row[3] if row[3] != "" else "MNIST"
-            if row[4] == "":
-                if start == "Prune":
-                    N = [6,6,6]
-                else:
-                    N = 250
-            else: 
-                if start == "Prune":
-                    #N can be "[6,6,6]" or 6,6,6 or 6
-                    if "[" in row[4] and "]" in row[4]:
-                        N = [int(i) for i in row[4][1:-1].split(",") if i.strip() != ""]
-                    elif "," in row[4]: 
-                       N = [int(i) for i in row[4].split(",") if i.strip() != ""]
-                    else:
-                        N = [int(row[4])] * int(row[4])
-                else:
-                    N = int(row[4])
-
-
-
-            #N = int(row[4]) if row[4] != "" else 250
-            loss = row[5] if row[5] != "" else "CrossEntropy"
-            optimizer = row[6] if row[6] != "" else "Adam"
-            epochs = int(row[7]) if row[7] != "" else 30
-            k = int(row[8]) if row[8] != "" else 2 
-            p = float(row[9]) if row[9] != "" else 0.5 
-            batch_size = int(row[10]) if row[10] != "" else 64 
-            learning_rate = float(row[11]) if row[11] != "" else 0.001
-            graph_type = row[12] if row[12] != "" else "WS"
-            uuid = str(uuid4())
-
-            #If the model is not in the list already by uuid, add it to the NN list?? Have to check if it is changed too. Perhaps a hidden flag should suffice when it is done.
-           # if not any(item[13] == uuid for item in self.main_window.neural_networks):
-            self.main_window.neural_networks.append([index, model, start, dataset, N, loss, optimizer, epochs, k, p, batch_size, learning_rate, graph_type, uuid])
-
-        self.current_model_index = 0
-        self.mainTrainLoop()
-
-    
-
-
-    def mainTrainLoop(self):
-        self.showModelPage()
-        self.main_window.model_train_button.setEnabled(False)
-        self.main_window.model_undo_button.setEnabled(False)
-        
-        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
-        self.main_window.model_train_button.setText("...")
-        self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)# ????
-        
-        self.main_window.loading_label.setFixedSize(50, 50)
-        movie = QMovie("./resources/icons/loading.gif")
-        self.main_window.loading_label.setVisible(True) #TODO simplify later
-        self.main_window.loading_label.setMovie(movie)
-        movie.start()
-        self.main_window.loading_label.show()
-        #self.main_window.repaint()
-        # The NN gets filled at the stage of clicking on "Done", in place of the previous training button. It redirects to the process timeline
-        
-        if self.current_model_index < len(self.main_window.neural_networks):
-            self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
-            
-
-
-
-
-    def trainOneModel(self, modelrow): # Already have the data. Its job is not to format the data to the interpretable type for the trainer. Nor give default values
-        index = int(modelrow[0])
-        model = modelrow[1]
-        start =  modelrow[2]
-        dataset = modelrow[3]
-        N = modelrow[4]
-        loss = modelrow[5]
-        optimizer = modelrow[6]
-        epochs = modelrow[7]
-        k = modelrow[8]
-        p = modelrow[9]
-        batch_size = modelrow[10]
-        learning_rate = modelrow[11]
-        graph_type = modelrow[12]
-        
-        if start == "Prior":
-            #Dont forget to make number of layers or number of nodes or N the same
-            self.trainer = Trainer(model, dataset, hidden_sizes= N, loss=loss, optimizer=optimizer, epochs=epochs, k=k, p=p, batch_size=batch_size, lr=learning_rate, graph_type=graph_type, index=index)
-            self.trainer.message.connect(self.updateTrainingProcessLabel)
-            self.trainer.load_data_and_create_graph()
-            self.trainer.start()
-            self.trainer.finished.connect(self.onTrainingFinished)
-
-        else:
-            self.trainer = Trainer(model, dataset, hidden_sizes=N, loss=loss, optimizer=optimizer, epochs=epochs, graph_type=graph_type, batch_size=batch_size, index=index)
-            self.trainer.message.connect(self.updateTrainingProcessLabel)
-            self.trainer.load_data_and_create_graph()
-            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), self.trainer)
-            #self.onTrainingFinished()
-
-        #TODO make a functionality for Undo button between model stages
-
-
-
     def showModelPage(self):
         self.fadeToPage(self.main_window.model_page)
         self.main_window.previous_page = self.main_window.current_page
         self.main_window.current_page = "Model"
         self.main_window.restart_button.show()
-
         self.resetSettingsButton()
 
+    def showTimelinePage(self):
+        self.fadeToPage(self.main_window.timeline_page)
+        self.main_window.previous_page = self.main_window.current_page
+        self.main_window.current_page = "Timeline"
+        self.main_window.restart_button.show()
+        self.resetSettingsButton()
+        self.main_window.model_train_button.setText("Start Training")
+        self.main_window.model_train_button.clicked.connect(self.main_window.model_training_handler.parseThroughProcessesTable)
+
     def showChooseResultsPage(self):
+
         self.fadeToPage(self.main_window.choose_results_page)
         self.main_window.previous_page = self.main_window.current_page
         self.main_window.current_page = "Results"
         self.main_window.restart_button.show()
         self.resetSettingsButton()
+
+    def modelTransitioner(self):
+        if self.main_window.GLOBAL_CHOSEN_START == "Full":
+            self.showPruningStartPage()
+        else:
+            self.showModelPriorPage()
+
+    def showModelStartingPage(self):
+        #self.fadeToPage(self.main_window.model_starting_page)
+        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_starting_page)
+        self.main_window.model_train_button.setText("Continue")
+        if self.main_window.model_train_button.signalsBlocked():
+            self.main_window.model_train_button.disconnect()
+        self.main_window.model_train_button.clicked.connect(self.modelTransitioner)
 
     def showSettingsPage(self):
         self.fadeToPage(self.main_window.settings_page)
@@ -186,25 +86,10 @@ class PageNavigator:
             self.main_window.settings_button.clicked.connect(self.showChooseResultsPage)
         elif self.main_window.previous_page == "Model":
             self.main_window.settings_button.clicked.connect(self.showModelPage)
-        elif self.main_window.previous_page == "Dataset":
-            self.main_window.settings_button.clicked.connect(self.showDatasetPage)
+        elif self.main_window.previous_page == "Timeline":
+            self.main_window.settings_button.clicked.connect(self.showTimelinePage)
         else:
             print("Error: No previous page found")
-
-    def showModelStartingPage(self):
-        #self.fadeToPage(self.main_window.model_starting_page)
-        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_starting_page)
-        self.main_window.model_train_button.setText("Continue")
-        if self.main_window.model_train_button.signalsBlocked():
-            self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.modelTransitioner)
-
-    def modelTransitioner(self):
-        if self.main_window.GLOBAL_CHOSEN_START == "Full":
-            self.showPruningStartPage()
-        else:
-            self.showModelPriorPage()
-
 
     def showModelPriorPage(self):
         self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_prior_start_page)
@@ -212,7 +97,6 @@ class PageNavigator:
         if self.main_window.model_train_button.signalsBlocked():
             self.main_window.model_train_button.disconnect()
         self.main_window.model_train_button.clicked.connect(self.showModelTrainingPage)
-
 
     def showPruningStartPage(self):
         self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_pruning_page)
@@ -227,11 +111,12 @@ class PageNavigator:
         if self.main_window.model_train_button.signalsBlocked():
             self.main_window.model_train_button.disconnect()
         self.main_window.model_train_button.clicked.connect(self.showModelTrainingPage)
+        self.main_window.undo_button.setEnabled(True)
+        self.main_window.undo_button.clicked.connect(self.showTimelinePage)
 
     def showModelTrainingPage(self):
         self.main_window.model_train_button.setEnabled(False)
-        self.main_window.modify_dataset_button.setEnabled(False)
-        self.main_window.model_undo_button.setEnabled(False)
+        self.main_window.undo_button.setEnabled(False)
         self.main_window.chosen_dataset = self.main_window.input_dataset.currentText()
 
         self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
@@ -367,73 +252,6 @@ class PageNavigator:
 
             self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), self.trainer.model)
 
-
-
-
-
-    def updateTrainingProcessLabel(self, message):
-        previous_text = self.main_window.training_process_label.text()
-
-        self.main_window.training_process_label.setText(previous_text + "\n" + message)
-
-
-    def handleReadingPruningTable(self, data, model):
-        print("Data from pruning table:", data)
-        #self.main_window.pruning_data = data
-        #data should be instead the corresponding rows hidden data
-        data = self.main_window.timelineTableModel.get_hidden_data(model.index-1)
-        # TODO change the page too???
-        
-        for i in range(len(data)):
-            row = data[i]
-            if row == '':
-                continue
-            print("Row data:", row)
-            action = row[0]
-            if action == "Prune": 
-                scope = row[1]
-                layer = row[2]
-                prune_ratio = float(row[3]) / 100
-                prune_method = row[4]
-                print(f"Pruning {layer} with ratio {prune_ratio}% using {prune_method} method.")
-
-                if prune_method == "Magnitude": #TODO make sure this goes over the methods of all prunings by classes of pruner.py
-                    print("Magnitude Pruning")
-                    self.trainer.magnitude_prune(prune_ratio, layer)
-
-                elif prune_method == "Random":
-                    print("Random Pruning")
-            elif action == "Retrain":
-                epochs = row[5]
-                learning_rate = row[6]
-                print(f"Training {layer} for {epochs} epochs with learning rate {learning_rate}.")
-                self.trainer.epochs = int(epochs)
-                self.trainer.lr = float(learning_rate)
-                self.trainer.optimizer = self.main_window.optimizer
-                self.trainer.start()
-                    
-            
-
-
-    def onTrainingFinished(self):
-        print(f"Training for model {self.current_model_index + 1} finished")
-        self.current_model_index += 1
-
-        if self.current_model_index < len(self.main_window.neural_networks):
-            self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
-        else:
-            print("All models training completed")
-            self.main_window.loading_label.hide()
-            self.main_window.model_train_button.setEnabled(True)
-            self.main_window.model_train_button.setText("Training Completed")
-            self.main_window.modify_dataset_button.setEnabled(True)
-
-            if hasattr(self, 'trainer'): #Just in case
-                self.trainer.deleteLater()
-
-
-
-    
     def update_button_state(self): #TODO make other mechanism for this!!!
         #if self.main_window.GLOBAL_STAGE == 1: # havent started training yet and the model is not chosen yet
         if self.main_window.GLOBAL_CHOSEN_MODEL is not None and self.main_window.GLOBAL_CHOSEN_START is not None:
