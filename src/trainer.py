@@ -295,21 +295,14 @@ class Trainer(QThread):
 
     
     def set_state(self, state):
-        # Rebuild the model architecture if it's not already set
         if state['model_type'] == "MLP" and not isinstance(self.model, MLPNet):
             self.model = MLPNet(self.hidden_sizes).to(self.device)
         elif state['model_type'] == "LSTM" and not isinstance(self.model, LSTMNet):
             self.model = LSTMNet(self.hidden_sizes).to(self.device)
-        
-        # Load model state
         if state['model_state']:
             self.model.load_state_dict(state['model_state'])
-
-        # Set optimizer
         if state['optimizer_state'] and hasattr(self, 'optimizer'):
             self.optimizer.load_state_dict(state['optimizer_state'])
-
-        # Restore other attributes
         self.current_epoch = state['current_epoch']
         self.hidden_sizes = state['hidden_sizes']
         self.index = state['index']
@@ -321,7 +314,6 @@ class Trainer(QThread):
         self.k = state['k']
         self.p = state['p']
         
-        # Ensure model is transferred to the correct device
         self.model.to(self.device)
 
 
@@ -362,8 +354,6 @@ class Trainer(QThread):
         print(f"Training state saved to {path}")
     def load_model(self, path, neural_networks):
         state = torch.load(path)
-
-        # Restore model architecture before loading weights
         self.index = state['index']
         self.hidden_sizes = state['hidden_sizes']
         self.dataset_type = state['dataset_type']
@@ -373,11 +363,6 @@ class Trainer(QThread):
         self.batch_size = state['batch_size']
         self.k = state['k']
         self.p = state['p']
-
-        # Rebuild the model if needed
-        # You must call load_data_and_create_graph or set self.model appropriately
-        # Here we assume you call load_data_and_create_graph externally to initialize model correctly
-
         if 'model_state_dict' in state and self.model is not None:
             self.model.load_state_dict(state['model_state_dict'])
 
