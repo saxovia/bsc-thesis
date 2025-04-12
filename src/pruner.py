@@ -11,31 +11,58 @@ class BasePruner(ABC): #abstract class for pruning
         pass
     
     def apply_pruning(self, model, prune_percent, mode="FULL"):
-        if isinstance(model, LSTMNet):
-            for name, param in model.named_parameters():
-                if "weight" in name:  # Ignore biases
-                    if mode == "FULL" or (mode == "IH" and "weight_ih" in name) or (mode == "HH" and "weight_hh" in name):
+        if isinstance(model, nn.LSTM) or (hasattr(model, 'lstm')) and isinstance(model.lstm, nn.LSTM):
+            self._prune_lstm(model, prune_percent, mode)
+        else:
+            self._prune_mlp(model, prune_percent, mode)
+
+    def _prune_lstm(self, model, prune_percent, mode="FULL", ):
+        lstm = model.lstm if hasattr(model, 'lstm') else model
+        
+        for name, param in lstm.named_parameters():
+            if 'weight' in name:
+                if mode == "FULL" or (mode == "IH" and "weight_ih" in name) or (mode == "HH" and "weight_hh" in name):
+                    
+                    mask = self.compute_mask(param, prune_percent)
+                    param.data.mul_(mask)
+                    if mode == "IH+HH":
                         mask = self.compute_mask(param, prune_percent)
                         param.data.mul_(mask)
-                    elif mode == "HTO" and hasattr(model, "fc") and "fc.weight" in name:
-                        mask = self.compute_mask(param, prune_percent)
-                        param.data.mul_(mask)
-        elif isinstance(model, MLPNet) or isinstance(model, nn.Sequential):
-            layers = [module for module in model.modules() if isinstance(module, nn.Linear)]
-            if mode == "FULL":
-                for layer in layers:
-                    mask = self.compute_mask(layer.weight, prune_percent)
-                    layer.weight.data.mul_(mask)
-            elif mode == "IH" and len(layers) > 0:
-                mask = self.compute_mask(layers[0].weight, prune_percent)
-                layers[0].weight.data.mul_(mask)
-            elif mode == "HH" and len(layers) > 2:
-                for layer in layers[1:-1]:
-                    mask = self.compute_mask(layer.weight, prune_percent)
-                    layer.weight.data.mul_(mask)
-            elif mode == "HTO" and len(layers) > 0:
-                mask = self.compute_mask(layers[-1].weight, prune_percent)
-                layers[-1].weight.data.mul_(mask)
+
+
+    def _prune_mlp(self, model, prune_percent, mode="FULL"):
+        layers = []
+        #Get
+        for module in model.modules():
+            if isinstance(module, nn.Linear):
+                layers.append(module)
+        
+        if not layers:
+            return
+
+        if mode == "FULL":
+            all_weights = torch.cat([layer.weight.view(-1) for layer in layers])
+            global_threshold = torch.kthvalue(
+                torch.abs(all_weights),
+                int(prune_percent / 100 * all_weights.numel())
+            ).values
+            
+            for layer in layers:
+                mask = (torch.abs(layer.weight) > global_threshold).float()
+                layer.weight.data.mul_(mask)
+                
+        elif mode == "IH" and len(layers) >= 1:
+            mask = self.compute_mask(layers[0].weight, prune_percent)
+            layers[0].weight.data.mul_(mask)
+            
+        elif mode == "HH" and len(layers) > 2:
+            for layer in layers[1:-1]:
+                mask = self.compute_mask(layer.weight, prune_percent)
+                layer.weight.data.mul_(mask)
+                
+        elif mode == "HO" and len(layers) >= 1:
+            mask = self.compute_mask(layers[-1].weight, prune_percent)
+            layers[-1].weight.data.mul_(mask)
 
 
 class MagnitudePruner(BasePruner):

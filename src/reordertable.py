@@ -33,9 +33,9 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         row, col = index.row(), index.column()
 
         if col==0:
-            if role==QtCore.Qt.ItemDataRole.CheckStateRole:
-                return QtCore.Qt.CheckState.Checked if self._data[row][col] else QtCore.Qt.CheckState.Unchecked
-            if role==QtCore.Qt.ItemDataRole.DisplayRole:
+            if role == QtCore.Qt.ItemDataRole.DecorationRole:
+                return QIcon("./resources/icons/checked.png") if self._data[row][col] else QIcon("./resources/icons/unchecked.png")
+            if role == QtCore.Qt.ItemDataRole.DisplayRole:
                 return None  # Hide the True/False text
         if col == 2 and role == QtCore.Qt.ItemDataRole.DisplayRole:
             return str(row + 1)
@@ -100,9 +100,9 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         
         row, col = index.row(), index.column()
 
-        if col == 0 and role == QtCore.Qt.ItemDataRole.CheckStateRole:  # Selection column
-            self._data[row][col] = (value == QtCore.Qt.CheckState.Checked)
-            self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.CheckStateRole])
+        if col == 0 and role == QtCore.Qt.ItemDataRole.EditRole:
+            self._data[row][col] = not self._data[row][col]
+            self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.DecorationRole])
             return True
         if col >= len(self._headers) - 2: #no editing on edit or delete columns
             return False
@@ -110,7 +110,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             self._data[row][col] = value
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.EditRole])
 
-            # If hte other rows are edited, edit them too
+            # If other rows are edited, edit them too
             selected_rows = [i for i, row_data in enumerate(self._data[:-1]) if row_data[0] and i != row]
             for selected_row in selected_rows:
                 self._data[selected_row][col] = value
@@ -136,19 +136,20 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         if row == self.rowCount() - 1:
             flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable
             if col == 0:
-                flags |= QtCore.Qt.ItemFlag.ItemIsUserCheckable
+                flags |= QtCore.Qt.ItemFlag.ItemIsEditable
             if self._editable and col > 0 and col < len(self._headers) - 2:
                 flags |= QtCore.Qt.ItemFlag.ItemIsEditable
             return flags
 
         if col == 0:
-            return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable | QtCore.Qt.ItemFlag.ItemIsSelectable
+            return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsEditable | QtCore.Qt.ItemFlag.ItemIsSelectable
         if col >= len(self._headers) - 2:
             return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDropEnabled
 
         flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDragEnabled | QtCore.Qt.ItemFlag.ItemIsDropEnabled
         if self._editable:
             flags |= QtCore.Qt.ItemFlag.ItemIsEditable
+        
         
         return flags
 
@@ -319,11 +320,11 @@ class ReorderTableView(QtWidgets.QTableView):
 
         # Change the checkboxes state based on the selection done
         for index in selected.indexes():
-            if index.column()== 0:
-                model.setData(index, QtCore.Qt.CheckState.Checked,QtCore.Qt.ItemDataRole.CheckStateRole)
+            if index.column() == 0: 
+                model.setData(index, True, QtCore.Qt.ItemDataRole.EditRole)  # Set to checked
         for index in deselected.indexes():
             if index.column() == 0:
-                model.setData(index, QtCore.Qt.CheckState.Unchecked,QtCore.Qt.ItemDataRole.CheckStateRole)
+                model.setData(index, False, QtCore.Qt.ItemDataRole.EditRole)
 
 
 

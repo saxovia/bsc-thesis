@@ -34,6 +34,7 @@ class PageNavigationHandler:
         self.main_window.restart_button.hide()
     
         self.resetSettingsButton()
+        self.main_window.undo_button.show()
 
     def showModelPage(self):
         self.fadeToPage(self.main_window.model_page)
@@ -52,12 +53,14 @@ class PageNavigationHandler:
         self.main_window.model_train_button.clicked.connect(self.main_window.model_training_handler.parseThroughProcessesTable)
 
     def showChooseResultsPage(self):
-
         self.fadeToPage(self.main_window.choose_results_page)
         self.main_window.previous_page = self.main_window.current_page
         self.main_window.current_page = "Results"
         self.main_window.restart_button.show()
         self.resetSettingsButton()
+        self.main_window.undo_button.hide()
+        self.main_window.model_training_handler.resetUI()
+
 
     def modelTransitioner(self):
         if self.main_window.GLOBAL_CHOSEN_START == "Full":

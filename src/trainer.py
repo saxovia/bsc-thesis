@@ -51,9 +51,9 @@ class Trainer(QThread):
             self.criterion = nn.CrossEntropyLoss()
         else: #for now default to MSELoss
             self.criterion = nn.MSELoss()
-
-
         self.running = True
+        self.current_epoch = 0
+        
     def load_data_and_create_graph(self):
         dataset_info = {
             "MNIST": {
@@ -123,6 +123,7 @@ class Trainer(QThread):
                 self.message.emit("MLP NN created.")
             elif self.model == "LSTM":
                 lstm_structure = self.dag_to_lstm_structure(dag_graph)
+                self.hidden_sizes = lstm_structure[1:-1] if len(lstm_structure) > 2 else lstm_structure
                 self.model = SparseLSTMNet(input_size=self.feature_size, hidden_sizes=self.hidden_sizes, output_dim=num_classes).to(self.device)
                 print("LSTM NN created.")
                 self.message.emit("LSTM NN created.")
@@ -156,7 +157,6 @@ class Trainer(QThread):
                 self.message.emit("LSTM NN created.")
         
 
-
         print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
         progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
         self.message.emit(progress_message)
@@ -168,12 +168,15 @@ class Trainer(QThread):
         progress_message = "Starting the training process..."
         self.message.emit(progress_message)
 
-        self.train(self.model, self.train_loader, self.epochs, lr=self.lr)
+        self.train(self.model, self.train_loader, self.epochs - self.current_epoch, lr=self.lr)
         self.finished.emit()  # notify gui when done
     
     def stop(self):
         self.running = False
+        self.quit() # this 
+        self.wait()
         self.finished.emit()
+
 
     def generate_fully_connected_graph(self, nodes):
         G = nx.complete_graph(nodes, create_using=nx.DiGraph)
@@ -187,6 +190,10 @@ class Trainer(QThread):
         return G
 
     def prune_self(self, layer,  prune_ratio, prune_type):
+        if not self.running:
+            print("Stopping pruning early...")
+            return
+
         for prune_types in self.prune_handler:
             if prune_type == "Magnitude":
                 self.magnitude_prune(self.model, prune_ratio=0.5, mode="FULL")
@@ -207,17 +214,17 @@ class Trainer(QThread):
         model.to(self.device)
         criterion = self.criterion
         if self.optimizer == "Adam":
-            optimizer = optim.Adam(model.parameters(), lr=lr)
+            self.optimizer = optim.Adam(model.parameters(), lr=lr)
         elif self.optimizer == "SGD":
-            optimizer = optim.SGD(model.parameters(), lr=lr)
+            self.optimizer = optim.SGD(model.parameters(), lr=lr)
         elif self.optimizer == "RMSprop":
-            optimizer = optim.RMSprop(model.parameters(), lr=lr)
+            self.optimizer = optim.RMSprop(model.parameters(), lr=lr)
         elif self.optimizer == "Adadelta":
-            optimizer = optim.Adadelta(model.parameters(), lr=lr)
+            self.optimizer = optim.Adadelta(model.parameters(), lr=lr)
         elif self.optimizer == "Adagrad":
-            optimizer = optim.Adagrad(model.parameters(), lr=lr)
+            self.optimizer = optim.Adagrad(model.parameters(), lr=lr)
         else:  
-            optimizer = optim.Adam(model.parameters(), lr=lr)
+            self.optimizer = optim.Adam(model.parameters(), lr=lr)
 
         model.train()
 
@@ -243,7 +250,7 @@ class Trainer(QThread):
                 else:
                     images = images.view(images.size(0), -1)
 
-                optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 outputs = model(images)
 
                 if isinstance(criterion, nn.MSELoss):
@@ -254,19 +261,135 @@ class Trainer(QThread):
                     loss = criterion(outputs, labels)
 
                 loss.backward()
-                optimizer.step()
+                self.optimizer.step()
 
                 total_loss += loss.item()
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
-
+            self.current_epoch = epoch
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%")
             self.message.emit(f"Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(train_loader):.4f}, Accuracy: {100. * correct / total:.2f}%")
             epoch += 1 
 
         print("Training complete.")
         self.message.emit("Training complete.")
+
+    def get_state(self):
+        state = {
+            'model_type': self.model.__class__.__name__ if self.model else None,
+            'model_state': self.model.state_dict() if self.model and hasattr(self.model, 'state_dict') else None,
+            'optimizer_state': self.optimizer.state_dict() if self.optimizer and hasattr(self.optimizer, 'state_dict') else None,
+            'current_epoch': self.current_epoch,
+            'hidden_sizes': self.hidden_sizes,
+            'index': self.index,
+            'dataset_type': self.dataset_type,
+            'graph_type': self.graph_type,
+            'lr': self.lr,
+            'epochs': self.epochs,
+            'batch_size': self.batch_size,
+            'k': self.k,
+            'p': self.p,
+        }
+        return state
+
+    
+    def set_state(self, state):
+        # Rebuild the model architecture if it's not already set
+        if state['model_type'] == "MLP" and not isinstance(self.model, MLPNet):
+            self.model = MLPNet(self.hidden_sizes).to(self.device)
+        elif state['model_type'] == "LSTM" and not isinstance(self.model, LSTMNet):
+            self.model = LSTMNet(self.hidden_sizes).to(self.device)
+        
+        # Load model state
+        if state['model_state']:
+            self.model.load_state_dict(state['model_state'])
+
+        # Set optimizer
+        if state['optimizer_state'] and hasattr(self, 'optimizer'):
+            self.optimizer.load_state_dict(state['optimizer_state'])
+
+        # Restore other attributes
+        self.current_epoch = state['current_epoch']
+        self.hidden_sizes = state['hidden_sizes']
+        self.index = state['index']
+        self.dataset_type = state['dataset_type']
+        self.graph_type = state['graph_type']
+        self.lr = state['lr']
+        self.epochs = state['epochs']
+        self.batch_size = state['batch_size']
+        self.k = state['k']
+        self.p = state['p']
+        
+        # Ensure model is transferred to the correct device
+        self.model.to(self.device)
+
+
+
+    def save_model(self, path, neural_networks):
+        if isinstance(self.optimizer, str):
+            state = {
+            'model_state_dict': self.model.state_dict(),
+            'epoch': self.current_epoch,
+            'index': self.index,
+            'neural_networks': neural_networks,
+            'hidden_sizes': self.hidden_sizes,
+            'dataset_type': self.dataset_type,
+            'graph_type': self.graph_type,
+            'lr': self.lr,
+            'epochs': self.epochs,
+            'batch_size': self.batch_size,
+            'k': self.k,
+            'p': self.p,
+            }
+        else:
+            state = {
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'epoch': self.current_epoch,
+            'index': self.index,
+            'neural_networks': neural_networks,
+            'hidden_sizes': self.hidden_sizes,
+            'dataset_type': self.dataset_type,
+            'graph_type': self.graph_type,
+            'lr': self.lr,
+            'epochs': self.epochs,
+            'batch_size': self.batch_size,
+            'k': self.k,
+            'p': self.p,
+            }
+        torch.save(state, path)
+        print(f"Training state saved to {path}")
+    def load_model(self, path, neural_networks):
+        state = torch.load(path)
+
+        # Restore model architecture before loading weights
+        self.index = state['index']
+        self.hidden_sizes = state['hidden_sizes']
+        self.dataset_type = state['dataset_type']
+        self.graph_type = state['graph_type']
+        self.lr = state['lr']
+        self.epochs = state['epochs']
+        self.batch_size = state['batch_size']
+        self.k = state['k']
+        self.p = state['p']
+
+        # Rebuild the model if needed
+        # You must call load_data_and_create_graph or set self.model appropriately
+        # Here we assume you call load_data_and_create_graph externally to initialize model correctly
+
+        if 'model_state_dict' in state and self.model is not None:
+            self.model.load_state_dict(state['model_state_dict'])
+
+        if 'optimizer_state_dict' in state and hasattr(self, 'optimizer') and self.optimizer is not None:
+            self.optimizer.load_state_dict(state['optimizer_state_dict'])
+
+        self.current_epoch = state['epoch']
+        self.model.to(self.device)
+
+        return state['neural_networks'], self.index
+
+
 
     def generate_ws_graph(self, nodes, k=2, p=0.05):
         return nx.watts_strogatz_graph(nodes, k, p)
@@ -349,52 +472,9 @@ class Trainer(QThread):
         layer_sizes = []
 
         for l in range(max_layer + 1):
-            count = 0
-            for layer in node_layers.values():
-                if layer==l:
-                    count+=1
+            count = sum(1 for layer in node_layers.values() if layer == l)
             layer_sizes.append(count)
 
         if input_size is not None and output_size is not None:
             return [input_size] + layer_sizes + [output_size]
-        else:
-            return layer_sizes
-
-
-
-    def get_layer_adjacency(self, dag):
-        layer_adj = defaultdict(list)
-        for u, v in dag.edges():
-            u_layer = dag.nodes[u]['layer']
-            v_layer = dag.nodes[v]['layer']
-            if u_layer < v_layer and u_layer not in layer_adj[v_layer]:
-                layer_adj[v_layer].append(u_layer)
-        max_layer = max(layer_adj.keys(), default=-1)
-        layer_connections = {}
-        for layer in range(max_layer + 1):
-            predecessors = sorted(layer_adj.get(layer, []))
-            layer_connections[layer] = predecessors
-        return layer_connections
-    
-
-    #UNUSED FUNCTION
-    def ws_to_dag(self, G):
-        adj_matrix = nx.to_numpy_array(G)
-        n = adj_matrix.shape[0]
-        dag = nx.DiGraph()
-        dag.add_nodes_from(G.nodes)
-        for i in range(n):
-            for j in range(i): #ensures that the lower triangular matrix is used
-                if adj_matrix[i][j] > 0: #checks if there is an edge between i and j
-                    dag.add_edge(i,j)
-        layers = {}
-        for node in nx.topological_sort(dag):
-            predecessors = list(dag.predecessors(node))
-            if predecessors:
-                layers[node] = max(layers[p] for p in predecessors) + 1
-            else:
-                layers[node] = 0 #root
-
-        nx.set_node_attributes(dag, layers, 'layer')
-
-        return dag
+        return layer_sizes

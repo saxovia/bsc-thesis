@@ -23,28 +23,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        self.GLOBAL_CHOSEN_MODEL = None #TODO remove these and make them more generic to self.trainer = []. its not global but specific to a trainer model
+        self.GLOBAL_CHOSEN_MODEL = None
         self.GLOBAL_CHOSEN_START = None
         self.GLOBAL_STAGE = 1
-        for widget in self.findChildren(QtWidgets.QPushButton):
-            widget.installEventFilter(self)
-
-        """
-        self.setCentralWidget(self.centralwidget)
-
-        self.shadow = QtWidgets.QGraphicsDropShadowEffect(self)
-        self.shadow.setBlurRadius(20)
-        self.shadow.setXOffset(0)
-        self.shadow.setYOffset(0)
-        self.shadow.setColor(QtGui.QColor(0, 0, 0, 150))
-
-        self.main_frame = QtWidgets.QFrame(self.centralwidget)
-        self.main_frame.setStyleSheet("background-color: white; border-radius: 10px;")
-        self.main_frame.setGraphicsEffect(self.shadow)
-        self.layout = QtWidgets.QVBoxLayout(self.centralwidget)
-        self.layout.setContentsMargins(10, 10, 10, 10)  # Ensure space for the shadow
-        self.layout.addWidget(self.main_frame)
-        """
+        #for widget in self.findChildren(QtWidgets.QPushButton):
+        #    widget.installEventFilter(self)
 
         self.maximize_button.setCheckable(True)
 
@@ -61,14 +44,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.home_results_button.clicked.connect(self.page_navigation_handler.showChooseResultsPage)
         #self.dataset_choose_model_button.clicked.connect(self.page_navigation_handler.showModelPage)
         self.model_train_button.clicked.connect(self.page_navigation_handler.showModelStartingPage)
-
+        self.save_process_button.clicked.connect(self.model_training_handler.saveModel)
+        self.load_process_button.clicked.connect(self.model_training_handler.loadModel)
         # Other buttons
         self.ui_handler = UIAnimations()
-        #self.csv_handler = CSVHandler(self)
-        #self.dataset_csv_button.clicked.connect(self.csv_handler.load_csv)
-        #self.dataset_save_button.clicked.connect(self.csv_handler.save_csv)
-        #self.dataset_apply_button.clicked.connect(self.applyChangesToDataset)
-        #self.view_header_button.clicked.connect(self.viewDataset)
         self.settings_button.clicked.connect(self.page_navigation_handler.showSettingsPage)
 
         self.timeline_start_training_button.clicked.connect(self.model_training_handler.parseThroughProcessesTable)
@@ -100,22 +79,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.model_train_button.setEnabled(False)
         self.listWidget.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget, "GLOBAL_CHOSEN_MODEL"))
-        self.listWidget_2.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget_2, "GLOBAL_CHOSEN_START"))
+        self.listWidget_2.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget_2, "GLOBAL_CHOSEN_START")) #unused
 
         #use array instead for all this input
         self.neural_networks = []
-        # There is no option to use activation function, It is hardcoded in the model
-
-        self.number_of_nodes = []
-        self.number_of_layers = 0
-        self.activation_function = "" #..?
-        self.optimizer = ""
-        self.loss_function = ""
-        self.epochs = 0
-        self.k = 0
-        self.p = 0.0
-        self.learning_rate = 0.0
-        self.batch_size = 0 #TODO clean up default values assignment because ghjrgh It is all over the place
 
     def update_variable(self, input_widget, var_value): #TODO rewrite this to be more generic and not throw exceptions when debugging
         if isinstance(input_widget, QtWidgets.QLineEdit):
@@ -277,30 +244,48 @@ class MainWindow(QtWidgets.QMainWindow):
     def showTableWidget2(self):
         # sample data
         data = [
-            ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "10", "", "", 32, 0.001, "Full"],
-            ["", "3", "LSTM", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "10", "", "", 32, 0.01, "Full"],
+            ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
+            ["", "3", "LSTM", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
             ["", "1", "LSTM", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "30", 2, 1.0, 64,0.001, "WS"],
             ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.7, 64,0.01, "WS"],
         ]
 
-        self.timelineTableModel = ReorderTableModel(data, headers=["", "Edit", "Model Type", "Start", "Dataset", "Hidden sizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch Size", "Learning Rate", "Graph Type"])
+        self.timelineTableModel = ReorderTableModel(data, headers=["", "", "Model\nType", "Start", "Dataset", "Hidden\nsizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch\nSize", "Learning\nRate", "Graph\nType"])
 
         self.reorder_table_view2 = ReorderTableView(self)
         self.reorder_table_view2.setModel(self.timelineTableModel)
         self.reorder_table_view2.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
         #default values for hidden data:
-        self.timelineTableModel.set_hidden_data(0, [["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"], ["2", "Retrain", "-", "-", "-", "-", "10", "0.001"], ["3", "Prune", "Global", "FULL", "10", "Magnitude", "-", "-"]])
+        # For each pruned data, set hidden data to be the same as the proceeding:
+        for i in range(0, len(data)):
+            self.timelineTableModel.set_hidden_data(i, [["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"], ["2", "Retrain", "-", "-", "-", "-", "1", "0.001"], ["3", "Prune", "No", "IH", "10", "Magnitude", "-", "-"]])
+        #self.timelineTableModel.set_hidden_data(0, [["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"], ["2", "Retrain", "-", "-", "-", "-", "1", "0.001"], ["3", "Prune", "No", "IH", "10", "Magnitude", "-", "-"]])
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view2)
+
+
+        header = self.reorder_table_view2.horizontalHeader()
+        header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
+        header.setStyleSheet("QHeaderView::section {"
+                            "   qproperty-alignment: AlignCenter;"
+                            "   padding: 4px;"
+                            "   font-size: 7pt;"
+                            "   white-space: normal;"
+                            "}")
+
+        font = header.font()
+        font.setPointSize(8)
+        header.setFont(font)
 
         if self.tableWidgetPruning_2.layout(): #TODO rename this. rename dataset pages
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
 
-        self.reorder_table_view2.setColumnWidth(0, 20)  # Optional: Set an initial width
+        self.reorder_table_view2.resizeColumnsToContents()
+        self.reorder_table_view2.setColumnWidth(0, 20)
 
         self.reorder_table_view2.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Fixed)
-        self.reorder_table_view2.setColumnWidth(1, 0)  # Optional: Set an initial width
-
         self.reorder_table_view2.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeMode.Fixed)
         self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 2, QtWidgets.QHeaderView.ResizeMode.Fixed)
         self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 1, QtWidgets.QHeaderView.ResizeMode.Fixed)
@@ -313,7 +298,16 @@ class MainWindow(QtWidgets.QMainWindow):
         for col in range(2, self.timelineTableModel.columnCount() - 2):
             self.reorder_table_view2.resizeColumnToContents(col)
 
-
+        self.reorder_table_view2.verticalHeader().hide()
+        self.reorder_table_view2.setColumnWidth(1, 0)
+        self.reorder_table_view2.setColumnWidth(6, 80)
+        self.reorder_table_view2.setColumnWidth(7, 80)
+        
+        self.reorder_table_view2.setColumnWidth(9, 40)
+        self.reorder_table_view2.setColumnWidth(8, 60)
+        self.reorder_table_view2.setColumnWidth(10, 30)
+        self.reorder_table_view2.setColumnWidth(11, 30)
+        self.reorder_table_view2.setColumnWidth(12, 30)
         self.tableWidgetPruning_2.setLayout(layout)
         self.tableWidgetPruning_2.resizeColumnsToContents()
         self.multiply_rows_timeline_button.clicked.connect(lambda: self.multiply_rows_timeline(self.timelineTableModel))
@@ -371,6 +365,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.reorder_table_view.setModel(self.pruningTableModel)
         self.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
+
+        header = self.reorder_table_view.horizontalHeader()
+        header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
+        header.setStyleSheet("QHeaderView::section {"
+                            "   qproperty-alignment: AlignCenter;"
+                            "   padding: 4px;"
+                            "   font-size: 7pt;"
+                            "   white-space: normal;"
+                            "}")
+
+        # Adjust font size
+        font = header.font()
+        font.setPointSize(8)  # Set to a smaller font size
+        header.setFont(font)
+        self.reorder_table_view.verticalHeader().hide()
+        self.reorder_table_view.resizeColumnsToContents()
+        self.reorder_table_view.setColumnWidth(0, 20)
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view)
 
@@ -379,103 +393,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tableWidgetPruning.setLayout(layout)
         self.tableWidgetPruning.resizeColumnsToContents()
 
-    #unused but will be used later for project loading, et.c
-    def load_csv(self):
-        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select CSV File", "", "CSV Files (*.csv)")
-        
-        if file_path:
-            try:
-                self.df = pd.read_csv(file_path)
-                self.dataset_filepath_label.setText(file_path)
-                print("CSV loaded successfully!")
-                print(self.df.head())
-            except Exception as e:
-                print(f"Error while loading CSV: {e}")
-                QtWidgets.QMessageBox.critical(self, "Error", f"Failed to load CSV: {e}")
-                def cancel_action():
-                    print("User canceled.")
-
-                msg = CustomMessageBox(
-                    "Error Warning",
-                    "Warning!\n Failed to load CSV.",
-                    [
-                        ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
-                    ],
-                    self
-                )
-                msg.exec()
-        else:
-            return
-    #unused
-    def save_csv(self, df):
-        if self.df is None or self.df.empty:
-            #QtWidgets.QMessageBox.warning(self, "Warning", "No data to save.")
-            def cancel_action():
-                print("User canceled.")
-
-            msg = CustomMessageBox(
-                "No Data Warning",
-                "Warning!\nThere is no data to save.",
-                [
-                    ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
-                ],
-                self
-            )
-            msg.exec()
-            return
-        
-        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save CSV File", self.df_last_file_path, "CSV Files (*.csv);;All Files (*)")
-        
-        print("runs until here")
-        if not file_path:
-            return
-
-        if not file_path.endswith(".csv"):
-            file_path += ".csv"
-
-        try:
-            self.df.to_csv(file_path, index=False)
-            print(f"CSV saved successfully at {file_path}!")
-            #QtWidgets.QMessageBox.information(self, "Success", f"CSV saved successfully at:\n{file_path}")
-            text = f"Success!\nCSV saved successfully at:\n{file_path}"
-            def cancel_action():
-                print("User canceled.")
-
-            msg = CustomMessageBox(
-                "Success",
-                text,
-                [
-                    ("Ok", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
-                ],
-                self
-            )
-            msg.exec()
-
-        except Exception as e:
-            print(f"Error while saving CSV: {e}")
-            #QtWidgets.QMessageBox.critical(self, "Error", f"Failed to save CSV: {e}")
-            text = f"Error!\nFailed to save CSV: {e}"
-            def cancel_action():
-                print("User canceled.")
-
-            msg = CustomMessageBox(
-                "Error",
-                text,
-                [
-                    ("Discard", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
-                ],
-                self
-            )
-            msg.exec()
-
-    def show_warning(self):
-        #opacity_effect = QtWidgets.QGraphicsOpacityEffect(self)
-        #opacity_effect.setOpacity(0.5)  # Set the dimming level (0.0 to 1.0)
-        #self.setGraphicsEffect(opacity_effect)
-        # actions to be taken when the buttons are clicked
-        
+    def show_warning(self, title="Warning", message="Are you sure you want to proceed?", actions=None):
         def discard_action():
-            #print("User reset!")
             
             self.loading_label.hide()
             self.page_navigation_handler.showHomePage()
@@ -492,16 +411,21 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.model_training_handler.trainer.running = False
                 self.model_training_handler.trainer.quit()
                 self.model_training_handler.trainer.wait()
-                #self.model_training_handler.trainer.join() # Wait for the thread to finish! doesnt work
+                self.model_training_handler.trainer = None
             self.neural_networks = []
             self.page_navigation_handler.showModelStartingPage()
             self.listWidget.clearSelection()
             self.listWidget_2.clearSelection()
-            self.page_navigation_handler.updateTrainingProcessLabel("")
+            self.model_training_handler.updateTrainingProcessLabel("")
             self.training_process_label.setText("")
 
 
-
+        if actions is None:
+            # Default actions if none are provided
+            actions = [
+                ("OK", QtWidgets.QMessageBox.ButtonRole.AcceptRole, lambda: print("OK clicked")),
+                ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, lambda: print("Cancel clicked"))
+            ]
         def cancel_action():
             print("User canceled.")
 

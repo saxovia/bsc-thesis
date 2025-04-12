@@ -61,6 +61,9 @@ class SparseMLPNet(nn.Module):
 class SparseLSTMNet(nn.Module):
     def __init__(self, input_size, hidden_sizes, output_dim=10):
         super().__init__()
+        
+        if not isinstance(hidden_sizes, (list, tuple)): #this is here just in case
+            hidden_sizes = [hidden_sizes]
         self.lstms = nn.ModuleList()
         current_input_size = input_size
         for hidden_size in hidden_sizes:

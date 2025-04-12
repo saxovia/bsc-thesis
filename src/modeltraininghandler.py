@@ -1,10 +1,11 @@
 
 from PyQt6.QtGui import QMovie
 from src.trainer import Trainer
-
+from PyQt6 import QtWidgets
+from PyQt6 import QtCore
+import os
 
 class ModelTrainingHandler:
-    #TODO make a functionality for Undo button between model stages
     def __init__(self, main_window):
         self.main_window = main_window
         self.trainer = None
@@ -23,7 +24,7 @@ class ModelTrainingHandler:
     def resetUI(self):
         self.main_window.model_train_button.setEnabled(True)
         self.main_window.undo_button.setEnabled(True)
-        self.main_window.model_train_button.setText("Train")
+        self.main_window.model_train_button.setText("Start Training")
         self.main_window.model_train_button.disconnect()
         self.main_window.model_train_button.clicked.connect(self.parseThroughProcessesTable)
     
@@ -149,9 +150,16 @@ class ModelTrainingHandler:
         self.main_window.training_process_label.setText(previous_text + "\n" + message)
 
     def onTrainingFinished(self):
-        print(f"Training for model {self.current_model_index + 1} finished")
-        self.current_model_index += 1
+        print(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
 
+        #try:
+        #    self.trainer.finished.disconnect()
+        #    self.trainer.message.disconnect()
+        #except:
+        #    pass
+            
+        #self.trainer.deleteLater()
+        self.current_model_index += 1
         if self.current_model_index < len(self.main_window.neural_networks):
             self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
         else: # Training finalized
@@ -159,13 +167,17 @@ class ModelTrainingHandler:
             self.main_window.loading_label.hide()
             self.main_window.model_train_button.setEnabled(True)
             self.main_window.model_train_button.setText("Training Completed")
-            if hasattr(self, 'trainer'):
-                self.trainer.deleteLater()
+            #if hasattr(self, 'trainer'):
+            #    self.trainer.deleteLater()
 
 
     def handleReadingPruningTable(self, model):
         hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index-2)
-
+        if hidden_data == '' or hidden_data is None:
+            self.trainer.message.emit("No hidden data for model. Skipping pruning actions.")
+            self.trainer.finished.emit()
+            self.onTrainingFinished()
+            return
         self.action_queue = []
         for row in hidden_data:
             if row == '':
@@ -178,16 +190,22 @@ class ModelTrainingHandler:
             else:
                 print(f"Unknown action: {action}")
 
+        if not self.action_queue:
+            self.trainer.finished.emit()
+            self.onTrainingFinished()
+            return
+
         self.processNextAction()
 
     def processNextAction(self):
-        if not self.action_queue:
+        if not self.action_queue or len(self.action_queue) == 0 or self.trainer is None:
             return
         action, row = self.action_queue.pop(0)
         if action == "Prune":
             self.handlePruneAction(row)
         elif action == "Retrain":
             self.handleRetrainAction(row)
+        
 
     def handlePruneAction(self, row):
         scope = row[2]
@@ -210,6 +228,102 @@ class ModelTrainingHandler:
         #print(f"Training {layer} for {epochs} epochs with learning rate {learning_rate}.")
         self.trainer.epochs = int(epochs)
         self.trainer.lr = float(learning_rate)
-        self.trainer.optimizer = self.main_window.optimizer
         self.trainer.start()
         self.trainer.finished.connect(self.processNextAction)
+
+    def saveModel(self, model):
+        if hasattr(self, 'trainer') and self.trainer is not None:
+            self.trainer.running = False
+            self.trainer.quit()
+            self.trainer.wait()
+
+        temp_neural_networks = self.main_window.neural_networks.copy()
+        self.main_window.neural_networks = []
+        temp_trainer = self.trainer.get_state()
+
+        # Get default path from settings.txt
+        settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
+        fallback_path = os.path.join(os.path.dirname(__file__), "..\savedmodels")
+        
+        default_dir = fallback_path
+        
+        try:
+            with open(settings_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        if not os.path.isabs(line):
+                            line = os.path.join(os.path.dirname(__file__), line)
+                        if os.path.isdir(line):
+                            default_dir = line
+                        break
+        except (FileNotFoundError, IOError) as e:
+            print(f"Note: Using fallback path ({fallback_path}) because: {str(e)}")
+        
+        # Create directory if it doesn't exist
+        os.makedirs(default_dir, exist_ok=True)
+        
+        # Generate default filename
+        timestamp = QtCore.QDateTime.currentDateTime().toString('yyyyMMdd_hhmmss')
+        default_name = os.path.join(default_dir, f"model_{timestamp}.pt")
+        
+        # Open save dialog
+        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self.main_window,
+            "Save Model",
+            default_name,  # This sets both directory and suggested filename
+            "PyTorch Model Files (*.pt);;All Files (*)"
+        )
+        
+        if not file_path:  # User cancelled
+            self.main_window.neural_networks = temp_neural_networks.copy()
+            return
+        
+        # Ensure .pt extension
+        if not file_path.endswith('.pt'):
+            file_path += '.pt'
+        try:
+            if self.trainer.running:
+                self.trainer.stop()
+            self.trainer.save_model(file_path, self.main_window.neural_networks)
+            print("Model saved successfully!")
+        except Exception as e:
+            print(f"Failed to save model:\n{str(e)}")
+        #file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self.main_window, "Save Model", "/savedModels", "Model Files (*.pt);;All Files (*)")
+
+        self.main_window.neural_networks = temp_neural_networks.copy()
+        self.trainer = Trainer("MLP", "MNIST")
+        self.trainer.set_state(temp_trainer)
+        self.trainer.start()
+
+    def loadModel(self, model):
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self.main_window,
+            "Load Model",
+            "",
+            "PyTorch Model Files (*.pt);;All Files (*)"
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            self.trainer = Trainer("MLP", "MNIST") #just placeholder, will be overwritten later
+            self.trainer.load_data_and_create_graph()
+            data = self.trainer.load_model(file_path, self.main_window.neural_networks)
+            
+            if data and len(data) >= 2:
+                self.main_window.neural_networks = data[0]
+                self.main_window.current_model_index = data[1]
+                #self.self.main_window.show_message("Success", "Model loaded successfully!", "info")
+                print("Model loaded successfully!")
+                #self.main_window.page_navigation_handler.update_model_display()
+            else:
+                print("Invalid model file format")
+                #self.show_message("Error", "Invalid model file format", "warning")
+                
+        except Exception as e:
+            self.main_window.neural_networks =[]
+            self.main_window.current_model_index = -1
+            print(f"Failed to load model:\n{str(e)}")
+            #self.show_message("Error", f"Failed to load model:\n{str(e)}", "critical")
