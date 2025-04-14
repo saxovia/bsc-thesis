@@ -60,7 +60,6 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.home_button.clicked.connect(self.page_navigation_handler.showHomePage)
 
         self.page_navigation_handler.showHomePage() #this ensures to start at the home page
-        #self.page_navigation_handler.showModelStartingPage()
         self.showTableWidget()
         self.showTableWidget2()
 
@@ -69,45 +68,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.neural_networks = []
         self.previous_results = []
         self.previous_results = []
-
-
-    def applyChangesToDataset(self):
-        if self.encoding_input.toPlainText() != "":
-            text = self.encoding_input.toPlainText()
-            try:
-                exec_env = {"df": self.df}
-                exec(text, exec_env)
-
-                # if there are modifications:
-                if "df" in exec_env:
-                    self.df = exec_env["df"]
-                self.dataset_error_message_label.setText("Code executed successfully.")
-            except Exception as e:
-                self.dataset_error_message_label.setText(f"Error: {str(e)}")
-
-    def viewDataset(self):
-        data = self.df.head(5)
-        dialog = QtWidgets.QDialog(self)
-        dialog.setWindowTitle("Dataset Header")
-
-        table = QtWidgets.QTableWidget(dialog)
-        table.setRowCount(data.shape[0])
-        table.setColumnCount(data.shape[1])
-        table.setHorizontalHeaderLabels(data.columns)
-
-        for row in range(data.shape[0]):
-            for col in range(data.shape[1]):
-                item = QtWidgets.QTableWidgetItem(str(data.iloc[row, col]))
-                table.setItem(row, col, item)
-
-
-        table.resizeColumnsToContents()
-        table.resizeRowsToContents()
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(table)
-        dialog.setLayout(layout)
-
-        dialog.exec()
 
     def fadeInUp(self, widget):
         self.ui_handler.fadeInUp(widget) #this redirects the pagenavigationhandler.py to the animations.py
@@ -278,6 +238,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.page_navigation_handler.showModelPage()
         self.page_navigation_handler.showModelPruningTablePage()
 
+    def overwrite_table_data(self, table, data):
+        table.beginResetModel()
+        table._data = []
+
+        for row in data:
+            new_row = [""] * table.columnCount()
+            for j in range(min(len(row), table.columnCount())):
+                new_row[j] = row[j]
+            table._data.append(row)
+        table.endResetModel()
+
     def showTableWidget(self):
         # sample data
         data = [
@@ -326,7 +297,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.undo_button.setEnabled(True)
         self.model_train_button.setText("Train Model")
         self.model_train_button.disconnect()
-        self.model_train_button.clicked.connect(self.page_navigation_handler.showModelStartingPage)
         self.model_train_button.setEnabled(True)
         if self.model_training_handler.trainer is not None:
             self.model_training_handler.trainer.running = False
@@ -334,7 +304,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.model_training_handler.trainer.wait()
             self.model_training_handler.trainer = None
         self.neural_networks = []
-        self.page_navigation_handler.showModelStartingPage()
         #self.listWidget.clearSelection()
         #self.listWidget_2.clearSelection()
         self.model_training_handler.updateTrainingProcessLabel("")

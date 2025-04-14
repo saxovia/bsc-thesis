@@ -11,6 +11,7 @@ class ModelTrainingHandler:
         self.trainer = None
         self.trainers = []
         self.current_model_index = 0
+        self.action_queue = []
         
     def setupTrainingUI(self):
         self.main_window.model_train_button.setEnabled(False)
@@ -86,7 +87,7 @@ class ModelTrainingHandler:
     def mainTrainLoop(self):
         self.main_window.page_navigation_handler.showModelPage()
         self.setupTrainingUI()
-        print(self.main_window.neural_networks)
+        #print(self.main_window.neural_networks)
         if self.current_model_index < len(self.main_window.neural_networks):
             self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
 
@@ -243,7 +244,6 @@ class ModelTrainingHandler:
 
         temp_neural_networks = self.main_window.neural_networks.copy()
         self.main_window.neural_networks = []
-        temp_trainer = self.trainer.get_state()
 
         # Get default path from settings.txt
         settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
@@ -284,38 +284,45 @@ class ModelTrainingHandler:
         try:
             if self.trainer.running:
                 self.trainer.stop()
-            self.trainer.save_model(file_path, self.main_window.neural_networks)
+            self.trainer.save_model(file_path, temp_neural_networks, self.action_queue)
             print("Model saved successfully!")
         except Exception as e:
             print(f"Failed to save model:\n{str(e)}")
 
         self.main_window.neural_networks = temp_neural_networks.copy()
-        self.trainer = Trainer("MLP", "MNIST")
-        self.trainer.set_state(temp_trainer)
-        self.trainer.start()
+        
 
     def loadModel(self, model):
+        
+        settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
+        fallback_path = os.path.join(os.path.dirname(__file__), "..\savedmodels")
+        
+        default_dir = fallback_path
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self.main_window,
             "Load Model",
-            "",
+            default_dir,
             "PyTorch Model Files (*.pt);;All Files (*)"
         )
-        
         if not file_path:
             return
         
         try:
             self.trainer = Trainer("MLP", "MNIST")
+            data = self.trainer.load_model(file_path, self.main_window.neural_networks, self.action_queue)
             self.trainer.load_data_and_create_graph()
-            data = self.trainer.load_model(file_path, self.main_window.neural_networks)
             
             if data and len(data) >= 2:
                 self.main_window.neural_networks = data[0]
                 self.main_window.current_model_index = data[1]
+                self.action_queue = data[2]
                 print("Model loaded successfully!")
             else:
                 print("Invalid model file format")
+            #self.trainer.start()
+            self.main_window.page_navigation_handler.showModelTrainingPage()
+            self.mainTrainLoop()
+            #self.trainer.finished.connect(self.onTrainingFinished)
                 
         except Exception as e:
             self.main_window.neural_networks =[]

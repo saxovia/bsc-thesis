@@ -1,0 +1,12 @@
+
+
+
+class TrainStateHandler:
+    def __init__(self, trainer):
+        self.trainer = trainer
+    
+    def save_state(self, path):
+        pass
+    
+    def load_state(self, path):
+        pass

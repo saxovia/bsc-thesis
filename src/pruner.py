@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 from abc import ABC, abstractmethod
 from src.neuralnetwork import MLPNet, LSTMNet
+from PyQt6.QtCore import QThread, pyqtSignal
 
 class BasePruner(ABC): #abstract class for pruning
     
@@ -91,3 +92,68 @@ class L2Pruner(BasePruner):
         threshold = norm * (prune_percent / 100)
         mask = (torch.abs(weight_tensor) > threshold).float()
         return mask
+
+
+class PrunerThread(QThread):
+    finished = pyqtSignal(bool)
+    progress = pyqtSignal(str)
+    progress_message = pyqtSignal(str)
+    validation_info = pyqtSignal(dict)
+    results_ready = pyqtSignal(dict)
+
+    
+    def __init__(self, model, prune_ratio, mode="FULL"):
+        super().__init__()
+        self.model = model
+        self.prune_ratio = prune_ratio
+        self.mode = mode
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    def run(self):
+        try:
+            if not hasattr(self, 'model'):
+                raise AttributeError("Model attribute missing")
+                
+            if isinstance(self.model, str):
+                raise ValueError(f"Model is still a string ('{self.model}')")
+                
+            if self.model is None:
+                raise ValueError("Model is None")
+                
+            try:
+                first_param = next(self.model.parameters(), None)
+                if first_param is None:
+                    raise RuntimeError("Model exists but has no parameters")
+            except Exception as e:
+                raise RuntimeError(f"Parameter access failed: {str(e)}") from e
+            
+            validation_data = {
+                'model_type': type(self.model).__name__,
+                'device': str(next(self.model.parameters()).device),
+                'parameter_tensors': sum(1 for _ in self.model.parameters())
+            }
+            self.validation_info.emit(validation_data)
+            
+            self.progress_message.emit(f"\nApplying {self.mode} pruning at {self.prune_ratio:.0%} ratio")
+            
+            pruner = MagnitudePruner()
+            pruner.apply_pruning(self.model, self.prune_ratio * 100, mode=self.mode)
+            
+            total_params = sum(p.numel() for p in self.model.parameters())
+            zero_params = sum((p == 0).sum().item() for p in self.model.parameters())
+            actual_sparsity = zero_params / total_params if total_params > 0 else 0
+            
+            results = {
+                'total_parameters': total_params,
+                'global_sparsity': actual_sparsity,
+                'prune_mode': self.mode,
+                'target_sparsity': self.prune_ratio,
+                'actual_sparsity': actual_sparsity
+            }
+            self.results_ready.emit(results)
+            
+            self.finished.emit(True)
+            
+        except Exception as e:
+            self.progress_message.emit(f"Pruning failed: {str(e)}")
+            self.finished.emit(False)

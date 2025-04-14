@@ -7,9 +7,9 @@ import networkx as nx
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from PyQt6.QtCore import QThread, pyqtSignal
-from src.pruner import MagnitudePruner, RandomPruner, L1Pruner
+from src.pruner import MagnitudePruner, RandomPruner, L1Pruner, L2Pruner, PrunerThread
 from collections import defaultdict
-from time import time
+
 
 class Trainer(QThread):
     progress = pyqtSignal(int)
@@ -25,7 +25,8 @@ class Trainer(QThread):
         self.model = None
         self.lr = lr
         self.epochs = epochs
-        self.optimizer = optimizer
+        self.optimizer_type = optimizer
+        self.optimizer = None
         self.k = k
         self.p = p
         self.dataset_type = dataset_type
@@ -49,6 +50,10 @@ class Trainer(QThread):
             'graph_metrics': {}
         }
         self.pruning_history = []
+        self.pruner_thread = None
+        self.train_loader = None
+        self.test_loader = None
+        self.dag_graph = None
 
         
     def load_data_and_create_graph(self):
@@ -136,11 +141,11 @@ class Trainer(QThread):
                                          output_dim=num_classes).to(self.device)
         
         if self.graph_type == "WS" or self.graph_type == "BA":
-            print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
-            progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
+            print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
+            progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
         else:
-            print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer} optimizer, {self.criterion} loss function, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
-            progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.optimizer} optimizer, {self.criterion} loss function, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
+            print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
+            progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
         self.message.emit(progress_message)
 
 
@@ -155,12 +160,17 @@ class Trainer(QThread):
     
     def stop(self):
         self.running = False
+        if self.pruner_thread and self.pruner_thread.isRunning():
+            self.pruner_thread.stop()
         self.terminate()
         self.wait()
         self.finished.emit()
 
     
     def magnitude_prune(self, prune_ratio, mode="FULL"):
+        self.async_prune(prune_ratio, mode)
+
+        """
         try:
             if not hasattr(self, 'model'):
                 raise AttributeError("Model attribute missing - was __init__() called?")
@@ -208,8 +218,54 @@ class Trainer(QThread):
             print(error_msg)
             self.message.emit(error_msg)
             return False
+        """
 
+    def async_prune(self, prune_ratio, mode="FULL"):
+            if self.pruner_thread and self.pruner_thread.isRunning():
+                self.message.emit("Pruning already in progress")
+                return False
 
+            self.pruner_thread = PrunerThread(self.model, prune_ratio, mode)
+
+            self.pruner_thread.progress_message.connect(self.handle_pruning_message)
+            self.pruner_thread.validation_info.connect(self.handle_validation_info)
+            self.pruner_thread.results_ready.connect(self.handle_pruning_results)
+            self.pruner_thread.finished.connect(self.handle_pruning_finished)
+            self.pruner_thread.start()
+            return True
+    def handle_pruning_message(self, message):
+        print(message)
+        self.message.emit(message)
+
+    def on_pruning_complete(self, success):
+        if success:
+            self.message.emit("Pruning completed successfully")
+        else:
+            self.message.emit("Pruning failed")
+        self.pruner_thread = None
+   
+    def handle_validation_info(self, info):
+        """Handle pre-pruning validation info"""
+        print("\n=== Pre-Pruning Validation ===")
+        print(f"Model type: {info['model_type']}")
+        print(f"Device: {info['device']}")
+        print(f"Parameter tensors: {info['parameter_tensors']}")
+        
+    def handle_pruning_results(self, results):
+        print("\n=== Pruning Results ===")
+        print(f"Actual sparsity: {results['actual_sparsity']:.2%} (target: {results['target_sparsity']:.2%})")
+        
+        self.training_metrics['model_metrics'] = {
+            'total_parameters': results['total_parameters'],
+            'global_sparsity': results['actual_sparsity'],
+            'prune_mode': results['prune_mode']
+        }
+        
+    def handle_pruning_finished(self, success):
+        if success:
+            self.message.emit("Pruning completed successfully")
+        self.pruner_thread = None
+        
 
     def train(self, model, train_loader, epochs=30, lr=0.001):
         print("Training started...")
@@ -223,7 +279,7 @@ class Trainer(QThread):
             "Adadelta": optim.Adadelta,
             "Adagrad": optim.Adagrad
         }
-        self.optimizer = optimizers.get(self.optimizer, optim.Adam)(model.parameters(), lr=lr)
+        self.optimizer = optimizers.get(self.optimizer_type, optim.Adam)(model.parameters(), lr=lr)
         epoch = 0 
 
         for epoch in range(epochs):
@@ -344,7 +400,7 @@ class Trainer(QThread):
             'pruning_history': self.pruning_history,
             'dag_graph': nx.node_link_data(self.dag_graph) if hasattr(self, 'dag_graph') else None,
             'model': self.model.__class__.__name__ if hasattr(self, 'model') else None,
-            'optimizer': self.optimizer.__class__.__name__ if hasattr(self, 'optimizer') else None,
+            'optimizer_type': self.optimizer.__class__.__name__ if hasattr(self, 'optimizer') else None,
             'criterion': self.criterion.__class__.__name__ if hasattr(self, 'criterion') else None,
             'training_metrics': self.training_metrics if hasattr(self, 'training_metrics') else None,
             'graph_metrics': self.graph_metrics if hasattr(self, 'graph_metrics') else None,
@@ -368,9 +424,10 @@ class Trainer(QThread):
         self.batch_size = state.get('batch_size', 64)
         self.pruning_history = state.get('pruning_history', [])
 
-        self.load_data_and_create_graph()
-        if self.model and state['model_state_dict']:
+        #self.load_data_and_create_graph()
+        if self.model and state.get('model_state_dict'):
             self.model.load_state_dict(state['model_state_dict'])
+            
         if self.model:
             optimizers = {
                 "Adam": optim.Adam,
@@ -379,9 +436,9 @@ class Trainer(QThread):
                 "Adadelta": optim.Adadelta,
                 "Adagrad": optim.Adagrad
             }
-            opt_class = optimizers.get(self.optimizer, optim.Adam)
+            opt_class = optimizers.get(self.optimizer_type, optim.Adam)
             self.optimizer = opt_class(self.model.parameters(), lr=self.lr or 0.001)
-            if state['optimizer_state_dict']:
+            if state.get('optimizer_state_dict'):
                 self.optimizer.load_state_dict(state['optimizer_state_dict'])
 
         if state.get('dag_graph'):
@@ -394,18 +451,18 @@ class Trainer(QThread):
                 self.model = model_class(self.hidden_sizes).to(self.device)
             else:
                 raise ValueError(f"Model class {state['model']} not found")
-        if state.get('optimizer'):
-            optimizer_class = globals().get(state['optimizer'])
-            if optimizer_class:
-                self.optimizer = optimizer_class(self.model.parameters(), lr=self.lr or 0.001)
-            else:
-                raise ValueError(f"Optimizer class {state['optimizer']} not found")
-        if state.get('criterion'):
-            criterion_class = globals().get(state['criterion'])
-            if criterion_class:
-                self.criterion = criterion_class()
-            else:
-                raise ValueError(f"Criterion class {state['criterion']} not found")
+        #if state.get('optimizer'):
+        #    optimizer_class = globals().get(state['optimizer'])
+        #    if optimizer_class:
+        #        self.optimizer = optimizer_class(self.model.parameters(), lr=self.lr or 0.001)
+        #    else:
+        #        raise ValueError(f"Optimizer class {state['optimizer']} not found")
+        #if state.get('criterion'):
+        #    criterion_class = globals().get(state['criterion'])
+        #    if criterion_class:
+        #        self.criterion = criterion_class()
+        #    else:
+        #        raise ValueError(f"Criterion class {state['criterion']} not found")
         if state.get('training_metrics'):
             self.training_metrics = state['training_metrics']
         if state.get('graph_metrics'):
@@ -413,18 +470,20 @@ class Trainer(QThread):
         if state.get('prune_type'):
             self.pruning_history.append({'type': state['prune_type']})
 
-    def save_model(self, path, neural_networks):
+    def save_model(self, path, neural_networks, action_queue):
         state = self.get_state()
         state['neural_networks'] = neural_networks
+        state['action_queue'] = action_queue
         torch.save(state, path)
         print(f"Saved model and trainer state to {path}")
 
-    def load_model(self, path, neural_networks):
+    def load_model(self, path, neural_networks, action_queue):
         state = torch.load(path, map_location=self.device)
         self.set_state(state)
         self.index = state.get('index')
-        print(f"Model and trainer state loaded from {path}")
-        return state.get('neural_networks', neural_networks), self.index
+        neural_networks = state.get('neural_networks', neural_networks)
+        action_queue = state.get('action_queue', action_queue)
+        return self.index
 
 
     def calculate_graph_metrics(self, G):
