@@ -499,13 +499,13 @@ QTableWidget, QTableView {
           <property name="bottomMargin">
            <number>60</number>
           </property>
-          <item row="1" column="0">
+          <item row="0" column="0">
            <widget class="QStackedWidget" name="stackedWidget">
             <property name="autoFillBackground">
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>4</number>
             </property>
             <widget class="QWidget" name="home_page">
              <property name="autoFillBackground">
@@ -2547,8 +2547,8 @@ Alternatively, import an already trained model and customize the pruning process
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>98</width>
-                             <height>64</height>
+                             <width>820</width>
+                             <height>337</height>
                             </rect>
                            </property>
                            <property name="styleSheet">
@@ -2559,6 +2559,9 @@ Alternatively, import an already trained model and customize the pruning process
                              <widget class="QLabel" name="training_process_label">
                               <property name="text">
                                <string/>
+                              </property>
+                              <property name="textFormat">
+                               <enum>Qt::PlainText</enum>
                               </property>
                               <property name="alignment">
                                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -2640,91 +2643,96 @@ Alternatively, import an already trained model and customize the pruning process
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page">
-             <widget class="QPushButton" name="restart_button_4">
-              <property name="geometry">
-               <rect>
-                <x>1060</x>
-                <y>29</y>
-                <width>150</width>
-                <height>40</height>
-               </rect>
-              </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>150</width>
-                <height>40</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>150</width>
-                <height>40</height>
-               </size>
-              </property>
-              <property name="styleSheet">
-               <string notr="true"/>
-              </property>
-              <property name="text">
-               <string>   Restart</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../.designer/backup/resources/icons/restart.png</normaloff>../.designer/backup/resources/icons/restart.png</iconset>
-              </property>
-             </widget>
-            </widget>
+            <widget class="QWidget" name="page"/>
             <widget class="QWidget" name="choose_results_page">
-             <widget class="QLabel" name="results_header_label">
-              <property name="geometry">
-               <rect>
-                <x>120</x>
-                <y>50</y>
-                <width>220</width>
-                <height>100</height>
-               </rect>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>70</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>100</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <pointsize>22</pointsize>
-                <bold>false</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Results</string>
-              </property>
-             </widget>
-             <widget class="QLabel" name="label">
-              <property name="geometry">
-               <rect>
-                <x>160</x>
-                <y>190</y>
-                <width>49</width>
-                <height>16</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>Finished!</string>
-              </property>
-             </widget>
+             <layout class="QGridLayout" name="gridLayout_5">
+              <item row="0" column="0">
+               <widget class="QLabel" name="results_header_label">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>70</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>22</pointsize>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Results</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label">
+                <property name="text">
+                 <string>Finished!</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QFrame" name="timeline_main_content_frame_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_24">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="horizontalSpacing">
+                  <number>0</number>
+                 </property>
+                 <item row="2" column="0">
+                  <widget class="Line" name="line_3">
+                   <property name="styleSheet">
+                    <string notr="true">color: transparent; border:none;</string>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QWidget" name="widget_11" native="true">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>30</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_8"/>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
             </widget>
             <widget class="QWidget" name="settings_page">
              <layout class="QGridLayout" name="gridLayout_13">

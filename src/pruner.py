@@ -28,6 +28,7 @@ class BasePruner(ABC): #abstract class for pruning
                     if mode == "IH+HH":
                         mask = self.compute_mask(param, prune_percent)
                         param.data.mul_(mask)
+                param.data[param.data == 0] = 0
 
 
     def _prune_mlp(self, model, prune_percent, mode="FULL"):

@@ -86,7 +86,7 @@ class ModelTrainingHandler:
     def mainTrainLoop(self):
         self.main_window.page_navigation_handler.showModelPage()
         self.setupTrainingUI()
-        
+        print(self.main_window.neural_networks)
         if self.current_model_index < len(self.main_window.neural_networks):
             self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
 
@@ -150,25 +150,29 @@ class ModelTrainingHandler:
         self.main_window.training_process_label.setText(previous_text + "\n" + message)
 
     def onTrainingFinished(self):
+        if self.action_queue and len(self.action_queue) > 0:
+            self.processNextAction()
+            return
+        try:
+            self.trainer.print_summary()
+        except Exception as e:
+            print(f"Error printing summary: {str(e)}")
+        #Printage
         print(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
+        self.trainer.message.emit(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
 
-        #try:
-        #    self.trainer.finished.disconnect()
-        #    self.trainer.message.disconnect()
-        #except:
-        #    pass
-            
-        #self.trainer.deleteLater()
         self.current_model_index += 1
+        self.main_window.previous_results.append(self.trainer.get_state())
+
         if self.current_model_index < len(self.main_window.neural_networks):
             self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
+            pass
         else: # Training finalized
             print("All models training completed")
             self.main_window.loading_label.hide()
+            self.main_window.page_navigation_handler.visualize_results()
             self.main_window.model_train_button.setEnabled(True)
-            self.main_window.model_train_button.setText("Training Completed")
-            #if hasattr(self, 'trainer'):
-            #    self.trainer.deleteLater()
+            self.main_window.model_train_button.setText("Show Results")
 
 
     def handleReadingPruningTable(self, model):
@@ -180,6 +184,7 @@ class ModelTrainingHandler:
             return
         self.action_queue = []
         for row in hidden_data:
+            row = row[2:]
             if row == '':
                 continue
             action = row[1]
@@ -208,10 +213,9 @@ class ModelTrainingHandler:
         
 
     def handlePruneAction(self, row):
-        scope = row[2]
-        layer = row[3]
-        prune_ratio = float(row[4]) / 100
-        prune_method = row[5]
+        layer = row[2]
+        prune_ratio = float(row[3]) / 100
+        prune_method = row[4]
         #print(f"Pruning {layer} with ratio {prune_ratio}% using {prune_method} method.")
 
         if prune_method == "Magnitude":
@@ -223,13 +227,13 @@ class ModelTrainingHandler:
         self.processNextAction()
 
     def handleRetrainAction(self, row):
-        epochs = row[6]
-        learning_rate = row[7]
+        epochs = row[5]
+        learning_rate = row[6]
         #print(f"Training {layer} for {epochs} epochs with learning rate {learning_rate}.")
         self.trainer.epochs = int(epochs)
         self.trainer.lr = float(learning_rate)
         self.trainer.start()
-        self.trainer.finished.connect(self.processNextAction)
+        #self.trainer.finished.connect(self.processNextAction)
 
     def saveModel(self, model):
         if hasattr(self, 'trainer') and self.trainer is not None:
@@ -260,26 +264,21 @@ class ModelTrainingHandler:
         except (FileNotFoundError, IOError) as e:
             print(f"Note: Using fallback path ({fallback_path}) because: {str(e)}")
         
-        # Create directory if it doesn't exist
         os.makedirs(default_dir, exist_ok=True)
         
-        # Generate default filename
         timestamp = QtCore.QDateTime.currentDateTime().toString('yyyyMMdd_hhmmss')
         default_name = os.path.join(default_dir, f"model_{timestamp}.pt")
         
-        # Open save dialog
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.main_window,
             "Save Model",
-            default_name,  # This sets both directory and suggested filename
+            default_name,
             "PyTorch Model Files (*.pt);;All Files (*)"
         )
         
-        if not file_path:  # User cancelled
+        if not file_path:
             self.main_window.neural_networks = temp_neural_networks.copy()
             return
-        
-        # Ensure .pt extension
         if not file_path.endswith('.pt'):
             file_path += '.pt'
         try:
@@ -289,7 +288,6 @@ class ModelTrainingHandler:
             print("Model saved successfully!")
         except Exception as e:
             print(f"Failed to save model:\n{str(e)}")
-        #file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self.main_window, "Save Model", "/savedModels", "Model Files (*.pt);;All Files (*)")
 
         self.main_window.neural_networks = temp_neural_networks.copy()
         self.trainer = Trainer("MLP", "MNIST")
@@ -308,19 +306,16 @@ class ModelTrainingHandler:
             return
         
         try:
-            self.trainer = Trainer("MLP", "MNIST") #just placeholder, will be overwritten later
+            self.trainer = Trainer("MLP", "MNIST")
             self.trainer.load_data_and_create_graph()
             data = self.trainer.load_model(file_path, self.main_window.neural_networks)
             
             if data and len(data) >= 2:
                 self.main_window.neural_networks = data[0]
                 self.main_window.current_model_index = data[1]
-                #self.self.main_window.show_message("Success", "Model loaded successfully!", "info")
                 print("Model loaded successfully!")
-                #self.main_window.page_navigation_handler.update_model_display()
             else:
                 print("Invalid model file format")
-                #self.show_message("Error", "Invalid model file format", "warning")
                 
         except Exception as e:
             self.main_window.neural_networks =[]

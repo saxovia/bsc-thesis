@@ -2,9 +2,6 @@ from PyQt6 import QtWidgets, uic, QtCore, QtGui
 import psutil
 import GPUtil
 from src.messagebox import CustomMessageBox
-import sys
-import pandas as pd
-import numpy as np
 from src.uianimations import UIAnimations
 from src.windowcontrol import WindowControl
 from src.pagenavigationhandler import PageNavigationHandler
@@ -22,13 +19,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.restart_button.clicked.connect(self.show_warning)
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        self.GLOBAL_CHOSEN_MODEL = None
-        self.GLOBAL_CHOSEN_START = None
-        self.GLOBAL_STAGE = 1
-        #for widget in self.findChildren(QtWidgets.QPushButton):
-        #    widget.installEventFilter(self)
-
         self.maximize_button.setCheckable(True)
 
 
@@ -39,14 +29,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.minimize_button.clicked.connect(self.showMinimized)
         self.maximize_button.clicked.connect(self.toggle_maximize_restore)
         self.close_button.clicked.connect(self.close)
-        #self.home_dataset_button.clicked.connect(self.page_navigation_handler.showTimelinePage)
         self.home_model_button.clicked.connect(self.page_navigation_handler.showTimelinePage)
         self.home_results_button.clicked.connect(self.page_navigation_handler.showChooseResultsPage)
-        #self.dataset_choose_model_button.clicked.connect(self.page_navigation_handler.showModelPage)
-        self.model_train_button.clicked.connect(self.page_navigation_handler.showModelStartingPage)
+        self.model_train_button.clicked.connect(self.page_navigation_handler.showModelTrainingPage)
         self.save_process_button.clicked.connect(self.model_training_handler.saveModel)
         self.load_process_button.clicked.connect(self.model_training_handler.loadModel)
-        # Other buttons
         self.ui_handler = UIAnimations()
         self.settings_button.clicked.connect(self.page_navigation_handler.showSettingsPage)
 
@@ -73,79 +60,15 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.home_button.clicked.connect(self.page_navigation_handler.showHomePage)
 
         self.page_navigation_handler.showHomePage() #this ensures to start at the home page
-        self.page_navigation_handler.showModelStartingPage()
+        #self.page_navigation_handler.showModelStartingPage()
         self.showTableWidget()
         self.showTableWidget2()
 
-        self.model_train_button.setEnabled(False)
-        self.listWidget.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget, "GLOBAL_CHOSEN_MODEL"))
-        self.listWidget_2.itemSelectionChanged.connect(lambda: self.on_item_selected(self.listWidget_2, "GLOBAL_CHOSEN_START")) #unused
+        self.model_train_button.setEnabled(True)
 
-        #use array instead for all this input
         self.neural_networks = []
-
-    def update_variable(self, input_widget, var_value): #TODO rewrite this to be more generic and not throw exceptions when debugging
-        if isinstance(input_widget, QtWidgets.QLineEdit):
-            text_value = input_widget.text()
-        elif isinstance(input_widget, QtWidgets.QComboBox):
-            text_value = input_widget.currentText()
-        else:
-            print("Unsupported widget")
-            return
-
-        current_value = getattr(self, var_value, None)
-
-        if ',' in text_value:
-            node_values = [int(value.strip()) for value in text_value.split(',') if value.strip()]
-            setattr(self, var_value, node_values)
-            return
-
-        if isinstance(current_value, int):
-            try:
-                setattr(self, var_value, int(text_value))
-            except ValueError:
-                setattr(self, var_value, 0)
-        elif isinstance(current_value, float):
-            try:
-                setattr(self, var_value, float(text_value))
-            except ValueError:
-                setattr(self, var_value, 0.0)
-        else:
-            setattr(self, var_value, text_value)
-
-
-
-
-    def eventFilter(self, obj, event):
-        if isinstance(obj, QtWidgets.QPushButton):
-            if event.type() == QtCore.QEvent.Type.Enter:
-                #self.highlight_button(obj, True)  # Hover In
-                pass
-            elif event.type() == QtCore.QEvent.Type.Leave:
-                ##self.highlight_button(obj, False)  # Hover Out
-                pass
-            elif event.type() == QtCore.QEvent.Type.MouseButtonPress:
-                pass
-                #self.flash_color(obj)  # Click effect
-        return super().eventFilter(obj, event)
-
-
-    def toggle_stackedWidget2_page(self):
-        """.
-        current_index = self.stackedWidget_2.currentIndex()
-        next_index = 1 if current_index == 0 else 0 
-        self.stackedWidget2.setCurrentIndex(next_index)"""
-
-    def on_item_selected(self, list_widget, global_var_name):
-        selected_items = list_widget.selectedItems()
-        if selected_items:
-            selected_value = selected_items[0].text()
-            setattr(self, global_var_name, selected_value)
-        
-            print(f"Updated {global_var_name}: {selected_value}")
-
-        self.page_navigation_handler.update_button_state()
-        print(self.GLOBAL_CHOSEN_MODEL, self.GLOBAL_CHOSEN_START, self.GLOBAL_STAGE)
+        self.previous_results = []
+        self.previous_results = []
 
 
     def applyChangesToDataset(self):
@@ -245,21 +168,33 @@ class MainWindow(QtWidgets.QMainWindow):
         # sample data
         data = [
             ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
+            ["", "3", "MLP", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
+            ["", "3", "MLP", "Prune", "MNIST", "[11,3,6,4,2,8]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
+            ["", "1", "MLP", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "1", 2, 1.0, 64,0.001, "WS"],
+            ["", "4", "MLP", "Prior", "MNIST", "70", "CrossEntropy", "Adam", "1", 2, 0.8, 64,0.01, "WS"],
+            ["", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64,0.01, "WS"],
+            ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64,0.01, "WS"],
+        ]
+        """
+                data = [
+            ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
             ["", "3", "LSTM", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
             ["", "1", "LSTM", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "30", 2, 1.0, 64,0.001, "WS"],
             ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.7, 64,0.01, "WS"],
         ]
+        """
 
         self.timelineTableModel = ReorderTableModel(data, headers=["", "", "Model\nType", "Start", "Dataset", "Hidden\nsizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch\nSize", "Learning\nRate", "Graph\nType"])
 
         self.reorder_table_view2 = ReorderTableView(self)
         self.reorder_table_view2.setModel(self.timelineTableModel)
         self.reorder_table_view2.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
-        #default values for hidden data:
-        # For each pruned data, set hidden data to be the same as the proceeding:
-        for i in range(0, len(data)):
-            self.timelineTableModel.set_hidden_data(i, [["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"], ["2", "Retrain", "-", "-", "-", "-", "1", "0.001"], ["3", "Prune", "No", "IH", "10", "Magnitude", "-", "-"]])
-        #self.timelineTableModel.set_hidden_data(0, [["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"], ["2", "Retrain", "-", "-", "-", "-", "1", "0.001"], ["3", "Prune", "No", "IH", "10", "Magnitude", "-", "-"]])
+
+        hidden_data = [
+            [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"] ],
+        ]
+        for i in range(min(len(data), len(hidden_data))):
+            self.timelineTableModel.set_hidden_data(i, hidden_data[i])
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view2)
 
@@ -279,7 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
         font.setPointSize(8)
         header.setFont(font)
 
-        if self.tableWidgetPruning_2.layout(): #TODO rename this. rename dataset pages
+        if self.tableWidgetPruning_2.layout():
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
 
         self.reorder_table_view2.resizeColumnsToContents()
@@ -322,44 +257,35 @@ class MainWindow(QtWidgets.QMainWindow):
             self, "Multiply Items", "How many copies?", 2, 1, 100, 1
         )
         if response:
-            model.multiply_selected_items(count)
+            model.multiply_selected_items(count+1)
         
             
     def handle_row_edit(self, row):
-        print("Row edited:", row)
-        # Transition pages
-        # Get row data and fill in the table fields (this should be hidden data for each row)
-
         data = self.timelineTableModel.get_hidden_data(row)
-        # Example data = ["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"]
-
-        # Ensure pruningTableModel has enough rows
-        required_rows = len(data)
-        current_rows = self.pruningTableModel.rowCount()
-        if current_rows < required_rows:
-            for _ in range(required_rows - current_rows):
-                self.pruningTableModel.beginInsertRows(QtCore.QModelIndex(), current_rows, current_rows)
-                self.pruningTableModel._data.append([""] * self.pruningTableModel.columnCount())
-                self.pruningTableModel.endInsertRows()
-                current_rows += 1
-
-        for i in range(len(data)):
-            for j in range(len(data[i])):
-                index = self.pruningTableModel.index(i, j, QtCore.QModelIndex())
-                self.pruningTableModel.setData(index, data[i][j], QtCore.Qt.ItemDataRole.EditRole)
-
+        
+        self.pruningTableModel.beginResetModel()
+        self.pruningTableModel._data = []
+        
+        for hidden_row in data:
+            new_row = [""] * self.pruningTableModel.columnCount()
+            
+            for j in range(min(len(hidden_row), self.pruningTableModel.columnCount())):
+                new_row[j] = hidden_row[j]
+            
+            self.pruningTableModel._data.append(new_row)
+        
+        self.pruningTableModel.endResetModel()
         self.page_navigation_handler.showModelPage()
         self.page_navigation_handler.showModelPruningTablePage()
-        # Iterate and edit them to be the same
 
     def showTableWidget(self):
         # sample data
         data = [
-            ["1", "Prune", "Global", "FULL", "50", "Magnitude", "-", "-"],
-            ["2", "Retrain", "-", "-", "-", "-", "10", "0.001"],
+            ["1", "Prune", "FULL", "50", "Magnitude", "-", "-"],
+            ["2", "Retrain", "-", "-", "-", "10", "0.001"],
         ]
 
-        self.pruningTableModel = ReorderTableModel(data, headers=["", "Step", "Action", "Scope", "Layer(s) Affected", "Pruning %", "Method", "Epochs", "Learning Rate"], show_edit_column=False)
+        self.pruningTableModel = ReorderTableModel(data, headers=["", "Step", "Action", "Scope", "Pruning %", "Method", "Epochs", "Learning Rate"], show_edit_column=False)
 
         self.reorder_table_view = ReorderTableView(self)
         self.reorder_table_view.setModel(self.pruningTableModel)
@@ -393,31 +319,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tableWidgetPruning.setLayout(layout)
         self.tableWidgetPruning.resizeColumnsToContents()
 
+    def complete_reset(self):
+        self.loading_label.hide()
+        self.page_navigation_handler.showHomePage()
+        self.model_train_button.setEnabled(True)
+        self.undo_button.setEnabled(True)
+        self.model_train_button.setText("Train Model")
+        self.model_train_button.disconnect()
+        self.model_train_button.clicked.connect(self.page_navigation_handler.showModelStartingPage)
+        self.model_train_button.setEnabled(True)
+        if self.model_training_handler.trainer is not None:
+            self.model_training_handler.trainer.running = False
+            self.model_training_handler.trainer.quit()
+            self.model_training_handler.trainer.wait()
+            self.model_training_handler.trainer = None
+        self.neural_networks = []
+        self.page_navigation_handler.showModelStartingPage()
+        #self.listWidget.clearSelection()
+        #self.listWidget_2.clearSelection()
+        self.model_training_handler.updateTrainingProcessLabel("")
+        self.training_process_label.setText("")
+
+
     def show_warning(self, title="Warning", message="Are you sure you want to proceed?", actions=None):
+        #TODO generalize this function to be used in other places as well
         def discard_action():
-            
-            self.loading_label.hide()
-            self.page_navigation_handler.showHomePage()
-            self.model_train_button.setEnabled(True)
-            self.undo_button.setEnabled(True)
-            self.GLOBAL_CHOSEN_MODEL = None
-            self.GLOBAL_CHOSEN_START = None
-            self.GLOBAL_STAGE = 1
-            self.model_train_button.setText("Train Model")
-            self.model_train_button.disconnect()
-            self.model_train_button.clicked.connect(self.page_navigation_handler.showModelStartingPage)
-            self.model_train_button.setEnabled(True)
-            if self.model_training_handler.trainer is not None:
-                self.model_training_handler.trainer.running = False
-                self.model_training_handler.trainer.quit()
-                self.model_training_handler.trainer.wait()
-                self.model_training_handler.trainer = None
-            self.neural_networks = []
-            self.page_navigation_handler.showModelStartingPage()
-            self.listWidget.clearSelection()
-            self.listWidget_2.clearSelection()
-            self.model_training_handler.updateTrainingProcessLabel("")
-            self.training_process_label.setText("")
+            self.complete_reset()
 
 
         if actions is None:

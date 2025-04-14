@@ -2,6 +2,15 @@ import PyQt6 as Qt
 from src.trainer import Trainer
 from PyQt6.QtGui import QMovie
 from PyQt6.QtCore import QTimer
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+from PyQt6.QtWidgets import QVBoxLayout
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+
+from matplotlib.gridspec import GridSpec
+
 
 class PageNavigationHandler:
     def __init__(self, main_window):
@@ -62,19 +71,6 @@ class PageNavigationHandler:
         self.main_window.model_training_handler.resetUI()
 
 
-    def modelTransitioner(self):
-        if self.main_window.GLOBAL_CHOSEN_START == "Full":
-            self.showPruningStartPage()
-        else:
-            self.showModelPriorPage()
-
-    def showModelStartingPage(self):
-        #self.fadeToPage(self.main_window.model_starting_page)
-        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_starting_page)
-        self.main_window.model_train_button.setText("Continue")
-        if self.main_window.model_train_button.signalsBlocked():
-            self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.modelTransitioner)
 
     def showSettingsPage(self):
         self.fadeToPage(self.main_window.settings_page)
@@ -117,161 +113,155 @@ class PageNavigationHandler:
         self.main_window.undo_button.setEnabled(True)
         self.main_window.undo_button.clicked.connect(self.showTimelinePage)
 
-    def showModelTrainingPage(self):
-        self.main_window.model_train_button.setEnabled(False)
-        self.main_window.undo_button.setEnabled(False)
-        self.main_window.chosen_dataset = self.main_window.input_dataset.currentText()
+    def showModelTrainingPage(self): # TODO delete later safely
+        pass
 
-        self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
-        self.main_window.model_train_button.setText("...")
-        self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.showChooseResultsPage)
+    def visualize_results(self): #TODO migrate this elsewhere ?
+        if not self.main_window.previous_results:
+            print("No results available for visualization.")
+            return
 
-        self.main_window.loading_label.setFixedSize(50, 50)
-        movie = QMovie("./resources/icons/loading.gif")
-        self.main_window.loading_label.setVisible(True)
-        self.main_window.loading_label.raise_()  # Ensure it's on top so it wont disappear behind other widgets
+        metrics = {
+            "train_loss": [],
+            "train_accuracy": [],
+            "val_loss": [],
+            "val_accuracy": [],
+            "global_sparsity": [],
+            "total_parameters": [],
+            "model_type": [],
+            "graph_type": [],
+            "prune_type": [],
+            "degree": [],
+            "eccentricity": [],
+            "closeness": [],
+            "betweenness": [],
+            "edge_betweenness": []
+        }
+        for result in self.main_window.previous_results:
+            metrics["model_type"].append(result["model_type"])
+            metrics["graph_type"].append(result["graph_type"])
 
-        self.main_window.loading_label.setMovie(movie)
-        movie.start()
-        self.main_window.loading_label.show()
+            training_metrics = result["training_metrics"]
+            metrics["train_loss"].append(training_metrics["final_train_loss"])
+            metrics["train_accuracy"].append(training_metrics["final_train_accuracy"])
+            metrics["val_loss"].append(training_metrics["final_val_loss"])
+            metrics["val_accuracy"].append(training_metrics["final_val_accuracy"])
+            graph_metrics = result["graph_metrics"]
+            metrics["global_sparsity"].append(graph_metrics["global_sparsity"])
+            metrics["total_parameters"].append(graph_metrics["total_parameters"])
+            metrics["prune_type"].append(result["prune_type"])
 
+            metrics["degree"].append(graph_metrics.get("degree", {}))
+            metrics["eccentricity"].append(graph_metrics.get("eccentricity", {}))
+            metrics["closeness"].append(graph_metrics.get("closeness", {}))
+            metrics["betweenness"].append(graph_metrics.get("betweenness", {}))
+            metrics["edge_betweenness"].append(graph_metrics.get("edge_betweenness", {}))
 
-        # Show the label and refresh UI
-        self.main_window.loading_label.show()
-        self.main_window.repaint()
-
-
-
-        #TODO make a functionality for Undo button between model stages
-
-        if self.main_window.GLOBAL_CHOSEN_START == "Prior":
-            self.main_window.update_variable(self.main_window.input_prior_numofnodes, 'number_of_nodes')
-            #self.main_window.update_variable(self.main_window.input_prior_numoflayer, 'number_of_layers')
-            self.main_window.update_variable(self.main_window.input_prior_optimizer, 'optimizer')
-            self.main_window.update_variable(self.main_window.input_prior_lr, 'learning_rate')
-            self.main_window.update_variable(self.main_window.input_prior_epochs, 'epochs')
-            self.main_window.update_variable(self.main_window.input_prior_k, 'k')
-            self.main_window.update_variable(self.main_window.input_prior_p, 'p')
-            self.main_window.update_variable(self.main_window.input_prior_loss, 'loss_function')
-            self.main_window.update_variable(self.main_window.input_prior_batch, 'batch_size')
-            
-            num_layers = int(self.main_window.number_of_layers)
-
-            if isinstance(self.main_window.number_of_nodes, list):
-                layer_sizes = self.main_window.number_of_nodes
-            elif isinstance(self.main_window.number_of_nodes, int):
-                layer_sizes = [self.main_window.number_of_nodes] * num_layers
-            else:
-                layer_sizes_input = self.main_window.number_of_nodes.strip()
-                if ',' in layer_sizes_input:
-                    layer_sizes = [int(node) for node in layer_sizes_input.split(',') if node.strip()]
-                elif layer_sizes_input == "":
-                    layer_sizes = [6, 6, 6] #default value for the model
-                    num_layers = 3
-                    self.main_window.number_of_layers = 3
-                    self.main_window.number_of_nodes = 250
-                else:
-                    layer_sizes = [int(layer_sizes_input)] * num_layers
-            # error!
-
-            #if len(layer_sizes) != num_layers:
-            #    raise ValueError(f"Number of nodes ({len(layer_sizes)}) does not match the number of layers ({num_layers}).")
-
-            self.main_window.hidden_sizes = [int(self.main_window.number_of_nodes) for _ in range(int(self.main_window.number_of_layers))]
-            learning_rate = self.main_window.learning_rate
-            
-            if isinstance(self.main_window.input_prior_epochs, str) and self.main_window.input_prior_epochs.strip() != '':
-                self.main_window.epochs = int(self.main_window.input_prior_epochs)
-            else:
-                self.main_window.epochs = 10
-
-            if isinstance(learning_rate, str) and learning_rate.strip() != '':
-                learning_rate = float(learning_rate)
-            else:
-                learning_rate = 0.001 
-
-            p_value = self.main_window.p
-            if isinstance(p_value, str) and p_value.strip() != '':
-                p_value = float(p_value)
-            else:
-                p_value = 0.5
-            if self.main_window.k == "":
-                self.main_window.k = 2
-            if isinstance(self.main_window.k, str) and self.main_window.k.strip() != '':
-                self.main_window.k = int(self.main_window.k)
-            else:
-                self.main_window.k = 2
-
-            if self.main_window.batch_size == "" or self.main_window.batch_size == 0:
-                self.main_window.batch_size = 32
+        self.display_graphs(metrics)
 
 
-            #for i in range(self.main_window.k):
-            #    self.trainers.append(Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.GLOBAL_CHOSEN_DATASET, layer_sizes, lr=learning_rate, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, k=self.main_window.k, p=p_value))
-            self.trainer = Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.chosen_dataset, hidden_sizes=layer_sizes, lr=learning_rate, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, k=self.main_window.k, p=p_value, graph_type="WS", N=self.main_window.number_of_nodes, batch_size=self.main_window.batch_size)
-            
-            self.trainer.message.connect(self.updateTrainingProcessLabel)
-            self.trainer.load_data_and_create_graph()
-            # start training 
-            self.trainer.start()
+    def display_graphs(self, metrics):
+        layout = self.main_window.widget_11.layout()
+        if layout is None:
+            layout = QVBoxLayout(self.main_window.widget_11)
+            self.main_window.widget_11.setLayout(layout)
+        else:
+            while layout.count():
+                child = layout.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
 
-            self.trainer.finished.connect(self.onTrainingFinished)
-
-
-
-        elif self.main_window.GLOBAL_CHOSEN_START == "Full":
-            self.main_window.update_variable(self.main_window.input_prior_numofnodes_2, 'number_of_nodes')
-            self.main_window.update_variable(self.main_window.input_prior_numoflayer_2, 'number_of_layers')
-            self.main_window.update_variable(self.main_window.input_prior_optimizer_2, 'optimizer')
-            self.main_window.update_variable(self.main_window.input_prior_lr_2, 'learning_rate') #the conversion is not good. always raises exceptions
-            self.main_window.update_variable(self.main_window.input_prior_epochs_2, 'epochs')
-            self.main_window.update_variable(self.main_window.input_prior_loss_2, 'loss_function')
-            self.main_window.update_variable(self.main_window.input_prior_batch_2, 'batch_size')
-
-            num_layers = int(self.main_window.number_of_layers)
-            if isinstance(self.main_window.number_of_nodes, list):
-                self.main_window.number_of_nodes = int(self.main_window.number_of_nodes.strip())
-
-            layer_sizes_input = self.main_window.number_of_nodes
-            if layer_sizes_input == "":
-                self.main_window.hidden_sizes = [6, 6, 6] #default value for the model
-            else:
-                self.main_window.hidden_sizes = [int(self.main_window.number_of_nodes)] * num_layers
-            #self.main_window.hidden_sizes = [int(self.main_window.number_of_nodes) for _ in range(int(self.main_window.number_of_layers))]
-
-
-            print(self.main_window.hidden_sizes) # [6,6,6]
-            if self.main_window.batch_size == "" or self.main_window.batch_size == 0:
-                self.main_window.batch_size = 32
-
-
-            #will need to go over teh pruning settings of the model and add them here
-            print(self.main_window.hidden_sizes, self.main_window.loss_function, self.main_window.optimizer, self.main_window.epochs, self.main_window.batch_size, self.main_window.GLOBAL_CHOSEN_START, self.main_window.chosen_dataset, self.main_window.GLOBAL_CHOSEN_MODEL)
-            self.trainer = Trainer(self.main_window.GLOBAL_CHOSEN_MODEL, self.main_window.chosen_dataset,  hidden_sizes=self.main_window.hidden_sizes, loss=self.main_window.loss_function, optimizer=self.main_window.optimizer, epochs=self.main_window.epochs, graph_type=self.main_window.GLOBAL_CHOSEN_START, batch_size=int(self.main_window.batch_size))
-            
-            self.trainer.message.connect(self.updateTrainingProcessLabel)
-            self.trainer.load_data_and_create_graph()
-
-            self.handleReadingPruningTable(self.main_window.reorder_table_view.model().get_table_data(), self.trainer.model)
-
-    def update_button_state(self): #TODO make other mechanism for this!!!
-        #if self.main_window.GLOBAL_STAGE == 1: # havent started training yet and the model is not chosen yet
-        if self.main_window.GLOBAL_CHOSEN_MODEL is not None and self.main_window.GLOBAL_CHOSEN_START is not None:
-            self.main_window.model_train_button.setEnabled(True)
-            self.main_window.current_model_architecture_label.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
-            self.main_window.current_model_architecture_label_2.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
-            self.main_window.current_model_architecture_label_3.setText(self.main_window.GLOBAL_CHOSEN_MODEL)
-
-            #self.main_window.GLOBAL_STAGE = 2
-        else: # unless the model is chosen, disable the button
-            self.main_window.model_train_button.setEnabled(False)
+        # Create a figure with 2 rows and 3 columns of subplots
+        fig, axs = plt.subplots(2, 3, figsize=(18, 12))
         
-        # elif self.main_window.GLOBAL_STAGE == 2:
-        """
-            if self.main_window.GLOBAL_CHOSEN_MODEL is not None and self.main_window.GLOBAL_CHOSEN_START is not None:
-                self.main_window.model_train_button.setEnabled(True)
-                self.GLOBAL_STAGE = 2
-            else:
-                self.main_window.model_train_button.setEnabled(False)
-        """
+        # First subplot: Number of parameters vs accuracy (colored by graph_type)
+        graph_types = ['BA', 'WS', 'Full']
+        colors = {'BA': 'r', 'WS': 'g', 'Full': 'b'}
+        
+        for graph_type in graph_types:
+            # Filter data for this graph_type
+            indices = [i for i, gt in enumerate(metrics['graph_type']) if gt == graph_type]
+            params = [metrics['total_parameters'][i] for i in indices]
+            accuracies = [metrics['val_accuracy'][i] for i in indices]
+            
+            axs[0, 0].scatter(params, accuracies, color=colors[graph_type], label=graph_type)
+        
+        axs[0, 0].set_xlabel('Number of Parameters')
+        axs[0, 0].set_ylabel('Validation Accuracy')
+        axs[0, 0].set_title('Parameters vs Accuracy by Graph Type')
+        axs[0, 0].legend()
+        axs[0, 0].grid(True)
+        
+        # Prepare data for the other plots
+        prune_percents = []
+        eccentricities = []
+        degrees = []
+        closeness = []
+        betweenness = []
+        edge_betweenness = []
+        prune_labels = []
+        
+        for i in range(len(metrics['model_type'])):
+            if (metrics['model_type'][i] == 'MLP' and metrics['graph_type'][i] == 'Full'):
+                current_prune_type = metrics['prune_type'][i][-1] if isinstance(metrics['prune_type'][i], list) else metrics['prune_type'][i]
+                
+                if current_prune_type in ['IH', 'HH', 'HO', 'FULL']:
+                    # Get global sparsity (prune %)
+                    prune_percent = metrics['global_sparsity'][i] * 100  # Convert to percentage
+                    
+                    # Get all metrics (assuming they're dictionaries)
+                    eccentricity_dict = metrics['eccentricity'][i]
+                    degree_dict = metrics['degree'][i]
+                    closeness_dict = metrics['closeness'][i]
+                    betweenness_dict = metrics['betweenness'][i]
+                    edge_betweenness_dict = metrics['edge_betweenness'][i]
+
+                    if eccentricity_dict:  # Check if not empty
+                        # Calculate mean values
+                        prune_percents.append(prune_percent)
+                        prune_labels.append(current_prune_type)
+                        eccentricities.append(sum(eccentricity_dict.values()) / len(eccentricity_dict))
+                        degrees.append(sum(degree_dict.values()) / len(degree_dict) if degree_dict else 0)
+                        closeness.append(sum(closeness_dict.values()) / len(closeness_dict) if closeness_dict else 0)
+                        betweenness.append(sum(betweenness_dict.values()) / len(betweenness_dict) if betweenness_dict else 0)
+                        edge_betweenness.append(sum(edge_betweenness_dict.values()) / len(edge_betweenness_dict) if edge_betweenness_dict else 0)
+
+        # Create color mapping for prune types
+        prune_colors = {'IH': 'red', 'HH': 'blue', 'HO': 'green', 'FULL': 'purple'}
+        
+        # Function to create a scatter plot for a given metric
+        def plot_metric(ax, y_values, y_label, title):
+            for prune_type in ['IH', 'HH', 'HO', 'FULL']:
+                indices = [i for i, pt in enumerate(prune_labels) if pt == prune_type]
+                ax.scatter(
+                    [prune_percents[i] for i in indices],
+                    [y_values[i] for i in indices],
+                    color=prune_colors[prune_type],
+                    label=prune_type
+                )
+            ax.set_xlabel('Prune Percentage (%)')
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
+            ax.legend()
+            ax.grid(True)
+        
+        # Second subplot (top middle): Eccentricity vs Prune %
+        plot_metric(axs[0, 1], eccentricities, 'Mean Eccentricity', 'Eccentricity vs Prune % (MLP, Full Graph)')
+        
+        # Third subplot (top right): Degree vs Prune %
+        plot_metric(axs[0, 2], degrees, 'Mean Degree', 'Degree vs Prune % (MLP, Full Graph)')
+        
+        # Fourth subplot (bottom left): Closeness vs Prune %
+        plot_metric(axs[1, 0], closeness, 'Mean Closeness', 'Closeness vs Prune % (MLP, Full Graph)')
+        
+        # Fifth subplot (bottom middle): Betweenness vs Prune %
+        plot_metric(axs[1, 1], betweenness, 'Mean Betweenness', 'Betweenness vs Prune % (MLP, Full Graph)')
+        
+        # Sixth subplot (bottom right): Edge Betweenness vs Prune %
+        plot_metric(axs[1, 2], edge_betweenness, 'Mean Edge Betweenness', 'Edge Betweenness vs Prune % (MLP, Full Graph)')
+        
+        # Adjust layout and display
+        plt.tight_layout()
+        
+        canvas = FigureCanvas(fig)
+        layout.addWidget(canvas)
