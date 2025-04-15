@@ -163,38 +163,52 @@ class PageNavigationHandler:
             metrics["betweenness"].append(graph_metrics.get("betweenness", {}))
             metrics["edge_betweenness"].append(graph_metrics.get("edge_betweenness", {}))
 
+        #TODO REMOVE!! just tests
         metrics['graph_type'].extend(['WS', 'Full'])
         metrics['total_parameters'].extend([30000, 1500])
         metrics['val_accuracy'].extend([85.0, 25.0])
+        metrics['model_type'].extend(['MLP', 'LSTM'])
         self.display_graphs(metrics)
 
     def display_graphs(self, metrics):
-        container = self.main_window.widget_11
-        layout = container.layout()
+        scroll_content = self.main_window.scrollAreaWidgetContents_2
+        layout = scroll_content.layout()
         if layout is None:
-            layout = QVBoxLayout(container)
-            container.setLayout(layout)
+            layout = QVBoxLayout(scroll_content)
+            scroll_content.setLayout(layout)
         else:
-            while layout.count():
-                child = layout.takeAt(0)
-                if child.widget():
-                    child.widget().deleteLater()
-
-        scroll = Qt.QtWidgets.QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll_content = Qt.QtWidgets.QWidget()
-        scroll_layout = QVBoxLayout(scroll_content)
+            self.clear_layout(layout)
         
-        self.add_graph_widget(scroll_layout, self.create_parameters_vs_accuracy_graph(metrics))
-        self.add_graph_widget(scroll_layout, self.create_prune_metric_graph(metrics, "eccentricity", "Mean Eccentricity"))
-        self.add_graph_widget(scroll_layout, self.create_prune_metric_graph(metrics, "degree", "Mean Degree"))
-        self.add_graph_widget(scroll_layout, self.create_prune_metric_graph(metrics, "closeness", "Mean Closeness"))
-        self.add_graph_widget(scroll_layout, self.create_prune_metric_graph(metrics, "betweenness", "Mean Betweenness"))
-        self.add_graph_widget(scroll_layout, self.create_prune_metric_graph(metrics, "edge_betweenness", "Mean Edge Betweenness"))
+        graphs = [
+            self.create_parameters_vs_accuracy_graph(metrics),
+            self.create_prune_metric_graph(metrics, "eccentricity", "Mean Eccentricity"),
+            self.create_prune_metric_graph(metrics, "degree", "Mean Degree"),
+            self.create_prune_metric_graph(metrics, "closeness", "Mean Closeness"),
+            self.create_prune_metric_graph(metrics, "betweenness", "Mean Betweenness"),
+            self.create_prune_metric_graph(metrics, "edge_betweenness", "Mean Edge Betweenness")
+        ]
         
-        scroll.setWidget(scroll_content)
-        layout.addWidget(scroll)
-
+        for fig in graphs:
+            container = Qt.QtWidgets.QWidget()
+            container.setMinimumSize(800, 500)
+            
+            container_layout = QVBoxLayout(container)
+            container_layout.setContentsMargins(10, 10, 10, 10)
+            
+            canvas = FigureCanvas(fig)
+            container_layout.addWidget(canvas)
+            
+            layout.addWidget(container)
+            layout.addSpacing(15)
+        
+        # Ensure proper updating
+        scroll_content.adjustSize()
+    def clear_layout(self, layout):
+        """Clean up existing widgets in layout"""
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
     def add_graph_widget(self, layout, figure):
         widget = Qt.QtWidgets.QWidget()
         widget_layout = QVBoxLayout(widget)
@@ -208,41 +222,26 @@ class PageNavigationHandler:
         layout.addSpacing(10)
 
     def create_parameters_vs_accuracy_graph(self, metrics):
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig = plt.figure(figsize=(8, 3))
+        ax = fig.add_subplot(111)
         
         graph_types = ['BA', 'WS', 'Full']
         colors = {'BA': 'r', 'WS': 'g', 'Full': 'b'}
-        markers = {'BA': 'o', 'WS': 's', 'Full': 'D'}
         
         for graph_type in graph_types:
             indices = [i for i, gt in enumerate(metrics['graph_type']) if gt == graph_type]
             params = [metrics['total_parameters'][i] for i in indices]
             accuracies = [metrics['val_accuracy'][i] for i in indices]
             
-            # Make single points larger and add labels
-            if len(params) == 1:
+            if params:
                 ax.scatter(params, accuracies, color=colors[graph_type], 
-                        marker=markers[graph_type], s=200, label=f'{graph_type}',
-                        edgecolors='black', linewidths=1)
-            else:
-                ax.scatter(params, accuracies, color=colors[graph_type],
-                        marker=markers[graph_type], label=graph_type, s=100)
+                        label=f"{graph_type} (n={len(params)})", s=100)
         
         ax.set_xlabel('Number of Parameters')
         ax.set_ylabel('Validation Accuracy')
         ax.set_title('Parameters vs Accuracy by Graph Type')
         ax.legend()
         ax.grid(True)
-        
-        # Add annotations for single points
-        for i, (gt, param, acc) in enumerate(zip(metrics['graph_type'], 
-                                            metrics['total_parameters'], 
-                                            metrics['val_accuracy'])):
-            ax.annotate(f"{gt}\n{acc:.2f}%", 
-                    (param, acc), 
-                    textcoords="offset points",
-                    xytext=(10,10), 
-                    ha='center')
         
         plt.tight_layout()
         return fig
@@ -254,7 +253,7 @@ class PageNavigationHandler:
         metric_values = []
         prune_labels = []
         
-        for i in range(len(metrics['model_type'])):
+        for i in range(len(metrics['graph_type'])):
             if (metrics['model_type'][i] == 'MLP' and metrics['graph_type'][i] == 'Full'):
                 current_prune_type = metrics['prune_type'][i][-1] if isinstance(metrics['prune_type'][i], list) else metrics['prune_type'][i]
                 
