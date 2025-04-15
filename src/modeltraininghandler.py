@@ -154,17 +154,16 @@ class ModelTrainingHandler:
         if self.action_queue and len(self.action_queue) > 0:
             self.processNextAction()
             return
-        try:
-            self.trainer.print_summary()
-        except Exception as e:
-            print(f"Error printing summary: {str(e)}")
+
+
         #Printage
+        self.trainer.message.emit#   (f"Final accuracy: {self.trainer.training_metrics.get('final_train_accuracy'):.4f}, Validation accuracy: {self.training_metrics.get('final_val_accuracy'):.4f}")
+
         print(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
         self.trainer.message.emit(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
 
         self.current_model_index += 1
         self.main_window.previous_results.append(self.trainer.get_state())
-
         if self.current_model_index < len(self.main_window.neural_networks):
             self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
             pass
@@ -290,7 +289,7 @@ class ModelTrainingHandler:
             print(f"Failed to save model:\n{str(e)}")
 
         self.main_window.neural_networks = temp_neural_networks.copy()
-        
+
 
     def loadModel(self, model):
         

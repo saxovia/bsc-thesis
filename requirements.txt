@@ -9,3 +9,8 @@ PyQt6
 PyQt6-Qt6
 pytest-qt
 torchvision
+psutil
+GPUtil
+pandas
+numpy
+matplotlib

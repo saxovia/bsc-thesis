@@ -1,4 +1,4 @@
-from src.neuralnetwork import MLPNet, LSTMNet, SparseMLPNet, SparseLSTMNet
+from src.training.neuralnetwork import MLPNet, LSTMNet, SparseMLPNet, SparseLSTMNet
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,15 +7,18 @@ import networkx as nx
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from PyQt6.QtCore import QThread, pyqtSignal
-from src.pruner import MagnitudePruner, RandomPruner, L1Pruner, L2Pruner, PrunerThread
+from src.training.pruner import MagnitudePruner, RandomPruner, L1Pruner, L2Pruner, PrunerThread
 from collections import defaultdict
+from src.training.datahandler import DataHandler
+from src.training.modelhandler import ModelHandler
+import networkx as nx
+from src.training.graphhandler import GraphHandler
 
 
 class Trainer(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal()
     message = pyqtSignal(str)
-
 
     def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250, batch_size=64, layer_count=5, index=None):
 
@@ -49,7 +52,6 @@ class Trainer(QThread):
             'model_metrics': {},
             'graph_metrics': {}
         }
-        self.pruning_history = []
         self.pruner_thread = None
         self.train_loader = None
         self.test_loader = None
@@ -57,101 +59,35 @@ class Trainer(QThread):
 
         
     def load_data_and_create_graph(self):
-        dataset_info = {
-            "MNIST": {
-                "dataset": datasets.MNIST,
-                "input_size": 28 * 28,
-                "num_classes": 10,
-                "transform": transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]),
-                "default_batch_size": 64
-            },
-            "CIFAR-10": {
-                "dataset": datasets.CIFAR10,
-                "input_size": 3 * 32 * 32,
-                "num_classes": 10,
-                "transform": transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]),
-                "default_batch_size": 32
-            },
-            "CIFAR-100": {
-                "dataset": datasets.CIFAR100,
-                "input_size": 3 * 32 * 32,
-                "num_classes": 100,
-                "transform": transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]),
-                "default_batch_size": 128 #TODO Adjust every default value assignment because it is all over the place
-            }
-        }
 
-        dataset_config = dataset_info[self.dataset_type]
-        input_size = dataset_config["input_size"]
-        num_classes = dataset_config["num_classes"]
-        transform = dataset_config["transform"]
-        
 
-        if self.dataset_type == "MNIST":
-            self.feature_size = 28
-            self.sequence_length = 28
-        else:  # CIFAR
-            self.feature_size = 32 * 3
-            self.sequence_length = 32
+        data_handler = DataHandler(self.dataset_type, self.batch_size)
 
-        # Load datasets
-        train_dataset = dataset_config["dataset"](
-            root="./data", train=True, transform=transform, download=True)
-        test_dataset = dataset_config["dataset"](
-            root="./data", train=False, transform=transform, download=True)
+        self.train_loader, self.test_loader = data_handler.load_data()
 
-        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+        dataset_properties = data_handler.dataset_info.get(self.dataset_type, None)
+        input_size = dataset_properties["input_size"] if dataset_properties else None
+        num_classes = dataset_properties["num_classes"] if dataset_properties else None
+        self.feature_size = dataset_properties["feature_size"] if dataset_properties else None
+        self.sequence_length = dataset_properties["sequence_length"] if dataset_properties else None
 
-        self.dag_graph = None
-        if self.graph_type == "WS":
-            self.dag_graph = self.generate_ws_dag(nodes=self.hidden_sizes, k=self.k, p=self.p, target_layers=self.layer_count )
-            if self.model_type == "MLP":
-                mlp_structure = self.dag_to_mlp_structure(self.dag_graph, input_size, num_classes)
-                self.model = SparseMLPNet(mlp_structure, hidden_sizes=self.hidden_sizes).to(self.device)
-            else:  # LSTM
-                lstm_structure = self.dag_to_lstm_structure(self.dag_graph)
-                self.hidden_sizes = lstm_structure[1:-1] if len(lstm_structure) > 2 else lstm_structure
-                self.model = SparseLSTMNet(input_size=self.feature_size, 
-                                         hidden_sizes=self.hidden_sizes, 
-                                         output_dim=num_classes).to(self.device)
+        self.graph_handler = GraphHandler()
+        self.dag_graph = self.graph_handler.create_dag_graph(self.hidden_sizes, self.graph_type, self.k, self.p, self.layer_count)
 
-        elif self.graph_type == "Full":
-            self.dag_graph = self.generate_fully_connected_graph(sum(self.hidden_sizes))
-            self.dag_graph = self.dag_graph
-            
-            if self.model_type == "MLP":
-                mlp_structure = self.dag_to_mlp_structure(self.dag_graph, input_size, num_classes)
-                self.model = MLPNet(mlp_structure).to(self.device)
-            else:  # LSTM
-                self.model = LSTMNet(input_size=self.feature_size, 
-                                   hidden_sizes=self.hidden_sizes, 
-                                   output_dim=num_classes).to(self.device)
+        self.model_handler = ModelHandler(self.model_type, self.hidden_sizes, self.device)
+        self.model = self.model_handler.create_model(self.graph_type, self.dag_graph, input_size, num_classes, self.feature_size)
 
-        elif self.graph_type == "BA":
-            self.dag_graph = self.generate_ba_dag(nodes=sum(self.hidden_sizes), 
-                                           edges_per_node=self.k, 
-                                           target_layers=self.layer_count)
-            if self.model_type == "MLP":
-                mlp_structure = self.dag_to_mlp_structure(self.dag_graph, input_size, num_classes)
-                self.model = SparseMLPNet(mlp_structure).to(self.device)
-            else:  # LSTM
-                self.model = SparseLSTMNet(input_size=self.feature_size, 
-                                         hidden_sizes=self.hidden_sizes, 
-                                         output_dim=num_classes).to(self.device)
-        
+
+
         if self.graph_type == "WS" or self.graph_type == "BA":
-            print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
-            progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
+            progress_message = f"Parameters of the {self.model_type} {self.graph_type} trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
         else:
-            print(f"Parameters of the trainer: {self.epochs} epoch, default learning_rate, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes")
-            progress_message = f"Parameters of the trainer: {self.epochs} epoch, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
+            progress_message = f"Parameters of the {self.model_type} {self.graph_type} trainer: {self.epochs} epoch, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
         self.message.emit(progress_message)
 
 
 
     def run(self):
-        print("Starting the training process...")
         progress_message = "Starting the training process..."
         self.message.emit(progress_message)
 
@@ -169,56 +105,6 @@ class Trainer(QThread):
     
     def magnitude_prune(self, prune_ratio, mode="FULL"):
         self.async_prune(prune_ratio, mode)
-
-        """
-        try:
-            if not hasattr(self, 'model'):
-                raise AttributeError("Model attribute missing - was __init__() called?")
-                
-            if isinstance(self.model, str):
-                raise ValueError(f"Model is still a string ('{self.model}') - call load_data_and_create_graph() first")
-                
-            if self.model is None:
-                raise ValueError("Model is None - initialization failed in load_data_and_create_graph()")
-                
-            try:
-                first_param = next(self.model.parameters(), None)
-                if first_param is None:
-                    raise RuntimeError("Model exists but has no parameters")
-            except Exception as e:
-                raise RuntimeError(f"Parameter access failed: {str(e)}") from e
-                
-            print("\n=== Pre-Pruning Validation ===")
-            print(f"Model type: {type(self.model).__name__}")
-            print(f"Device: {next(self.model.parameters()).device}")
-            print(f"Parameter tensors: {sum(1 for _ in self.model.parameters())}")
-            
-            print(f"\nApplying {mode} pruning at {prune_ratio:.0%} ratio")
-            pruner = MagnitudePruner()
-            pruner.apply_pruning(self.model, prune_ratio * 100, mode=mode)
-            
-            self.record_pruning_metrics(prune_type=mode, prune_percent=prune_ratio)
-            print("\n=== Pruning Results ===")
-            total_params = sum(p.numel() for p in self.model.parameters())
-            zero_params = sum((p == 0).sum().item() for p in self.model.parameters())
-            actual_sparsity = zero_params / total_params if total_params > 0 else 0
-            print(f"Actual sparsity: {actual_sparsity:.2%} (target: {prune_ratio:.2%})")
-            
-            self.training_metrics['model_metrics'] = {
-                'total_parameters': total_params,
-                'global_sparsity': actual_sparsity,
-                'prune_mode': mode
-            }
-
-
-            return True
-            
-        except Exception as e:
-            error_msg = f"Pruning failed at step {len(self.pruning_history)+1}: {str(e)}"
-            print(error_msg)
-            self.message.emit(error_msg)
-            return False
-        """
 
     def async_prune(self, prune_ratio, mode="FULL"):
             if self.pruner_thread and self.pruner_thread.isRunning():
@@ -245,7 +131,6 @@ class Trainer(QThread):
         self.pruner_thread = None
    
     def handle_validation_info(self, info):
-        """Handle pre-pruning validation info"""
         print("\n=== Pre-Pruning Validation ===")
         print(f"Model type: {info['model_type']}")
         print(f"Device: {info['device']}")
@@ -257,9 +142,10 @@ class Trainer(QThread):
         
         self.training_metrics['model_metrics'] = {
             'total_parameters': results['total_parameters'],
-            'global_sparsity': results['actual_sparsity'],
-            'prune_mode': results['prune_mode']
+            'global_sparsity_prune': results['actual_sparsity'],
+            'prune_type': results['prune_type']
         }
+        #self.record_pruning_metrics(results['prune_mode'], results['target_sparsity'])
         
     def handle_pruning_finished(self, success):
         if success:
@@ -381,7 +267,10 @@ class Trainer(QThread):
         return total_loss / len(self.test_loader), 100. * correct / total
 
     def get_state(self):
-        self.graph_metrics = self.calculate_graph_metrics(self.dag_graph) if hasattr(self, 'dag_graph') else {}
+        pruning_metrics = self.training_metrics['model_metrics']
+        self.graph_metrics = self.graph_handler.calculate_graph_metrics(self.dag_graph, self.model) if hasattr(self, 'dag_graph') else {}
+        model_metrics = self.model_handler.calculate_metrics() if hasattr(self, 'model') else {}
+        self.training_metrics['model_metrics'].update(model_metrics)
         return {
             'model_state_dict': self.model.state_dict() if self.model else None,
             'optimizer_state_dict': self.optimizer.state_dict() if hasattr(self.optimizer, 'state_dict') else None,
@@ -397,17 +286,15 @@ class Trainer(QThread):
             'p': self.p,
             'layer_count': self.layer_count,
             'batch_size': self.batch_size,
-            'pruning_history': self.pruning_history,
             'dag_graph': nx.node_link_data(self.dag_graph) if hasattr(self, 'dag_graph') else None,
             'model': self.model.__class__.__name__ if hasattr(self, 'model') else None,
             'optimizer_type': self.optimizer.__class__.__name__ if hasattr(self, 'optimizer') else None,
             'criterion': self.criterion.__class__.__name__ if hasattr(self, 'criterion') else None,
             'training_metrics': self.training_metrics if hasattr(self, 'training_metrics') else None,
             'graph_metrics': self.graph_metrics if hasattr(self, 'graph_metrics') else None,
-            'prune_type' : self.pruning_history[-1]['type'] if self.pruning_history else None,
+            'prune_type': pruning_metrics.get('prune_type') if hasattr(self, 'pruning_metrics') else None,
         }
-
-
+    
     
     def set_state(self, state):
         self.current_epoch = state.get('current_epoch', 0)
@@ -422,9 +309,7 @@ class Trainer(QThread):
         self.p = state.get('p', 0.05)
         self.layer_count = state.get('layer_count', 5)
         self.batch_size = state.get('batch_size', 64)
-        self.pruning_history = state.get('pruning_history', [])
 
-        #self.load_data_and_create_graph()
         if self.model and state.get('model_state_dict'):
             self.model.load_state_dict(state['model_state_dict'])
             
@@ -451,24 +336,10 @@ class Trainer(QThread):
                 self.model = model_class(self.hidden_sizes).to(self.device)
             else:
                 raise ValueError(f"Model class {state['model']} not found")
-        #if state.get('optimizer'):
-        #    optimizer_class = globals().get(state['optimizer'])
-        #    if optimizer_class:
-        #        self.optimizer = optimizer_class(self.model.parameters(), lr=self.lr or 0.001)
-        #    else:
-        #        raise ValueError(f"Optimizer class {state['optimizer']} not found")
-        #if state.get('criterion'):
-        #    criterion_class = globals().get(state['criterion'])
-        #    if criterion_class:
-        #        self.criterion = criterion_class()
-        #    else:
-        #        raise ValueError(f"Criterion class {state['criterion']} not found")
         if state.get('training_metrics'):
             self.training_metrics = state['training_metrics']
         if state.get('graph_metrics'):
             self.graph_metrics = state['graph_metrics']
-        if state.get('prune_type'):
-            self.pruning_history.append({'type': state['prune_type']})
 
     def save_model(self, path, neural_networks, action_queue):
         state = self.get_state()
@@ -486,247 +357,6 @@ class Trainer(QThread):
         return self.index
 
 
-    def calculate_graph_metrics(self, G):
-        if not G:
-            return {}
-        if self.model.named_parameters() is None:
-            return {}
-        metrics = {
-            'total_parameters': 0,
-            'trainable_parameters': 0,
-            'global_sparsity': 0.0,
-            'layer_sparsity': {},
-            'edge_betweenness': [],
-            'closeness': [],
-            'eccentricity': [],
-            'degree': [],
-            'betweenness': []
-        }
-        
-        total_weights = 0
-        zero_weights = 0
-        
-        for name, param in self.model.named_parameters():
-            metrics['total_parameters'] += param.numel()
-            if param.requires_grad:
-                metrics['trainable_parameters'] += param.numel()
-            
-            if 'weight' in name:
-                #sparsity
-                zeros = (param == 0).sum().item()
-                total = param.numel()
-                metrics['layer_sparsity'][name] = zeros / total
-                zero_weights += zeros
-                total_weights += total
-        
-        if total_weights > 0:
-            metrics['global_sparsity'] = zero_weights / total_weights
-
-        try:
-            metrics['edge_betweenness'] = nx.edge_betweenness_centrality(G)
-            metrics['node_betweenness'] = nx.betweenness_centrality(G)
-            metrics['closeness'] = nx.closeness_centrality(G)
-            metrics['degree'] = dict(G.degree())
-
-            if nx.is_strongly_connected(G):
-                metrics['eccentricity'] = nx.eccentricity(G)
-            else:
-                # Use the largest strongly connected component ?
-                largest_scc = max(nx.strongly_connected_components(G), key=len)
-                subgraph = G.subgraph(largest_scc)
-                metrics['eccentricity'] = nx.eccentricity(subgraph)
-
-        except Exception as e:
-            self.message.emit(f"Graph metric calculation error: {e}")
-
-        return metrics
-    
-
-    def calculate_model_metrics(self):
-        if isinstance(self.model, str):
-            return {
-                'total_parameters': 0,
-                'trainable_parameters': 0,
-                'global_sparsity': 0.0,
-                'layer_sparsity': {}
-            }
-        metrics = {
-            'total_parameters': 0,
-            'trainable_parameters': 0,
-            'global_sparsity': 0.0,
-            'layer_sparsity': {}
-        }
-        
-        total_weights = 0
-        zero_weights = 0
-        
-        for name, param in self.model.named_parameters():
-            metrics['total_parameters'] += param.numel()
-            if param.requires_grad:
-                metrics['trainable_parameters'] += param.numel()
-            
-            if 'weight' in name:
-                zeros = (param == 0).sum().item()
-                total = param.numel()
-                metrics['layer_sparsity'][name] = zeros / total
-                zero_weights += zeros
-                total_weights += total
-        
-        if total_weights > 0:
-            metrics['global_sparsity'] = zero_weights / total_weights
-        
-        return metrics
-    
-    def record_pruning_metrics(self, prune_type, prune_percent):
-        try:
-            val_loss, val_acc = self.validate()
-        except Exception as e:
-            print(f"Validation failed during pruning recording: {e}")
-            val_loss, val_acc = float('nan'), 0.0
-        
-        layer_sparsity = {}
-        for name, param in self.model.named_parameters():
-            if 'weight' in name:
-                try:
-                    layer_name = name.split('.')[0]
-                    zero_count = (param == 0).sum().item()
-                    layer_sparsity[layer_name] = zero_count / param.numel()
-                except Exception as e:
-                    print(f"Failed to calculate sparsity for {name}: {e}")
-        
-        try:
-            graph_metrics = self.calculate_graph_metrics(self.dag_graph) if hasattr(self, 'dag_graph') else {}
-        except Exception as e:
-            print(f"Failed to calculate graph metrics: {e}")
-            graph_metrics = {}
-        
-        self.pruning_history.append({
-            'step': len(self.pruning_history),
-            'type': prune_type,
-            'global_percent': prune_percent,
-            'val_loss': val_loss,
-            'val_accuracy': val_acc,
-            'layer_sparsity': layer_sparsity,
-            'graph_metrics': graph_metrics
-        })
-
-
-    def calculate_model_metrics(self):
-        metrics = {
-            'layer_parameters': {}, 
-            'layer_sparsity': {}
-        }
-        
-        for name, param in self.model.named_parameters():
-            if 'weight' in name:
-                layer_name = name.split('.')[0]
-                metrics['layer_parameters'][layer_name] = param.numel()
-                if isinstance(self.model, (SparseMLPNet, SparseLSTMNet)):
-                    metrics['layer_sparsity'][layer_name] = (param == 0).sum().item() / param.numel()
-        
-        return metrics
-    
-    def generate_fully_connected_graph(self, nodes):
-        G = nx.complete_graph(nodes, create_using=nx.DiGraph)
-        for u,v in list(G.edges):
-            if u > v:
-                G.remove_edge(u, v)
-        
-        layers = {node: node for node in G.nodes()}
-        nx.set_node_attributes(G, layers, 'layer')
-
-        return G
-
-    def generate_ws_graph(self, nodes, k=2, p=0.05):
-        return nx.watts_strogatz_graph(nodes, k, p)
-    def generate_ws_dag(self, nodes, k=2, p=0.7, target_layers=5):
-        # Try to generate a Ws graph until it is connected
-        while True:
-            ws = nx.watts_strogatz_graph(nodes, k, p)
-            if nx.is_connected(ws):
-                break
-        #DAG
-        dag = nx.DiGraph()
-        dag.add_nodes_from(range(nodes))
-        for u, v in ws.edges():
-            if u < v: #lower triangular part of the graph
-                dag.add_edge(u, v)
-        
-        # Getbalanced distribution
-        """     
-        layers = {}
-        for i, node in enumerate(nx.topological_sort(dag)):
-            layers[node] = i // (len(dag.nodes) // target_layers)
-        return layers
-        """
-        nodes_per_layer = nodes // target_layers
-        layers = {}
-        for i, node in enumerate(dag.nodes()):
-            layers[node] = min(i // nodes_per_layer, target_layers - 1)
-        
-        # This is here so that edges only go forward
-        for u, v in list(dag.edges()):
-            if layers[u] >= layers[v]:
-                dag.remove_edge(u, v)
-        
-        nx.set_node_attributes(dag, layers, 'layer')
-        return dag
-    
-
-    def generate_ba_dag(self, nodes, edges_per_node, target_layers=5):
-        ba_graph = nx.barabasi_albert_graph(nodes, edges_per_node)
-        dag = nx.DiGraph()
-        dag.add_nodes_from(ba_graph.nodes)
-        for u, v in ba_graph.edges():
-            if u < v:
-                dag.add_edge(u, v)
-
-        nodes_per_layer = nodes // target_layers
-        layers = {}
-        for i, node in enumerate(dag.nodes()):
-            layers[node] = min(i // nodes_per_layer, target_layers - 1)
-
-        for u, v in list(dag.edges()):
-            if layers[u] >= layers[v]:
-                dag.remove_edge(u, v)
-
-        nx.set_node_attributes(dag, layers, 'layer')
-        return dag
-
-    def dag_to_mlp_structure(self, G, input_size, output_size):
-        if isinstance(self.hidden_sizes, list) and len(self.hidden_sizes) > 0:
-            return [input_size] + self.hidden_sizes + [output_size]
-        else:
-            layers = nx.get_node_attributes(G, 'layer')
-            if not layers:
-                return [input_size, output_size]
-            layer_counts = defaultdict(int)
-            for node, layer in layers.items():
-                layer_counts[layer] += 1
-            layer_sizes = [layer_counts[l] for l in sorted(layer_counts)]
-            
-            if layer_sizes:
-                layer_sizes[0] = input_size
-                layer_sizes[-1] = output_size
-            
-            return layer_sizes
-        
-    def dag_to_lstm_structure(self, dag, input_size=None, output_size=None):
-        if self.graph_type == "Full":
-            return self.hidden_sizes
-        
-        node_layers = nx.get_node_attributes(dag, 'layer')
-        max_layer = max(node_layers.values()) if node_layers else 0
-        layer_sizes = []
-
-        for l in range(max_layer + 1):
-            count = sum(1 for layer in node_layers.values() if layer == l)
-            layer_sizes.append(count)
-
-        if input_size is not None and output_size is not None:
-            return [input_size] + layer_sizes + [output_size]
-        return layer_sizes
-    
 
     def print_summary(self): #just for testing/debug
         print("\n=== Model Summary ===")
@@ -759,19 +389,7 @@ class Trainer(QThread):
         print(f"Final Train Accuracy: {train_acc:.2f}%" if isinstance(train_acc, (int, float)) else "Final Train Accuracy: None")
         print(f"Final Val Accuracy: {val_acc:.2f}%" if isinstance(val_acc, (int, float)) else "Final Val Accuracy: None")
         
-        if self.pruning_history:
-            print("\n=== Pruning Summary ===")
-            print(f"Pruning Steps: {len(self.pruning_history)}")
-            last_prune = self.pruning_history[-1]
-            
-            prune_type = last_prune.get('type', 'N/A')
-            prune_percent = last_prune.get('global_percent')
-            prune_acc = last_prune.get('val_accuracy')
-            
-            print(f"Last Pruning: {prune_type} at {prune_percent:.0%}" if isinstance(prune_percent, (int, float)) 
-                else f"Last Pruning: {prune_type}")
-            print(f"Accuracy After Pruning: {prune_acc:.2f}%" if isinstance(prune_acc, (int, float)) 
-                else "Accuracy After Pruning: Not available")
+
         
         if hasattr(self, 'graph_metrics') and self.graph_metrics:
             print("\n=== Graph Metrics ===")

@@ -1,14 +1,19 @@
 from collections import defaultdict
 import networkx as nx
 
-class GraphManager:
-    def __init__(self, graph_type, hidden_sizes, k, p, layer_count):
-        self.graph_type = graph_type
-        self.hidden_sizes = hidden_sizes
-        self.k = k
-        self.p = p
-        self.layer_count = layer_count
+class GraphHandler:
+    def __init__(self):
+        pass
 
+    def create_dag_graph(self, nodes, graph_type, k=2, p=0.05, target_layers=5, layer_count=5):
+        if graph_type == "Full":
+            return self.generate_fully_connected_graph(nodes)
+        elif graph_type == "WS":
+            return self.generate_ws_dag(nodes, k=k, p=p, target_layers=target_layers)
+        elif graph_type == "BA":
+            return self.generate_ba_dag(nodes, edges_per_node=k, target_layers=target_layers)
+        else:
+            raise ValueError(f"Unsupported graph type: {graph_type}")
 
     def generate_fully_connected_graph(self, nodes):
         G = nx.complete_graph(nodes, create_using=nx.DiGraph)
@@ -23,6 +28,7 @@ class GraphManager:
 
     def generate_ws_graph(self, nodes, k=2, p=0.05):
         return nx.watts_strogatz_graph(nodes, k, p)
+    
     def generate_ws_dag(self, nodes, k=2, p=0.7, target_layers=5):
         # Try to generate a Ws graph until it is connected
         while True:
@@ -37,12 +43,7 @@ class GraphManager:
                 dag.add_edge(u, v)
         
         # Getbalanced distribution
-        """     
-        layers = {}
-        for i, node in enumerate(nx.topological_sort(dag)):
-            layers[node] = i // (len(dag.nodes) // target_layers)
-        return layers
-        """
+
         nodes_per_layer = nodes // target_layers
         layers = {}
         for i, node in enumerate(dag.nodes()):
@@ -57,8 +58,8 @@ class GraphManager:
         return dag
     
 
-    def generate_ba_dag(self, nodes, edges_per_node, target_layers=5):
-        ba_graph = nx.barabasi_albert_graph(nodes, edges_per_node)
+    def generate_ba_dag(self, nodes, k, target_layers=5):
+        ba_graph = nx.barabasi_albert_graph(nodes, k)
         dag = nx.DiGraph()
         dag.add_nodes_from(ba_graph.nodes)
         for u, v in ba_graph.edges():
@@ -111,3 +112,58 @@ class GraphManager:
             return [input_size] + layer_sizes + [output_size]
         return layer_sizes
     
+
+    def calculate_graph_metrics(self, G, model):
+        if not G:
+            return {}
+        if model.named_parameters() is None:
+            return {}
+        metrics = {
+            'total_parameters': 0,
+            'trainable_parameters': 0,
+            'global_sparsity': 0.0,
+            'layer_sparsity': {},
+            'edge_betweenness': [],
+            'closeness': [],
+            'eccentricity': [],
+            'degree': [],
+            'betweenness': []
+        }
+        
+        total_weights = 0
+        zero_weights = 0
+        
+        for name, param in model.named_parameters():
+            metrics['total_parameters'] += param.numel()
+            if param.requires_grad:
+                metrics['trainable_parameters'] += param.numel()
+            
+            if 'weight' in name:
+                #sparsity
+                zeros = (param == 0).sum().item()
+                total = param.numel()
+                metrics['layer_sparsity'][name] = zeros / total
+                zero_weights += zeros
+                total_weights += total
+        
+        if total_weights > 0:
+            metrics['global_sparsity'] = zero_weights / total_weights
+
+        try:
+            metrics['edge_betweenness'] = nx.edge_betweenness_centrality(G)
+            metrics['node_betweenness'] = nx.betweenness_centrality(G)
+            metrics['closeness'] = nx.closeness_centrality(G)
+            metrics['degree'] = dict(G.degree())
+
+            if nx.is_strongly_connected(G):
+                metrics['eccentricity'] = nx.eccentricity(G)
+            else:
+                # Use the largest strongly connected component ?
+                largest_scc = max(nx.strongly_connected_components(G), key=len)
+                subgraph = G.subgraph(largest_scc)
+                metrics['eccentricity'] = nx.eccentricity(subgraph)
+
+        except Exception as e:
+            self.message.emit(f"Graph metric calculation error: {e}")
+
+        return metrics

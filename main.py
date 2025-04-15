@@ -1,10 +1,24 @@
 
 try:
-    from PyQt6 import QtWidgets, uic
+    from PyQt6 import QtWidgets
     import psutil
     import GPUtil
-    import pandas
+    import torch
+    import torchvision
+    import torch
     import numpy
+    import flake8
+    import pytest
+    import pycodestyle
+    import pyflakes
+    import exceptiongroup
+    import iniconfig
+    import packaging
+    import PyQt6
+    import torchvision
+    import pandas
+    import matplotlib
+
 
 except ImportError as e:
     # Run libsinstaller.py
@@ -19,14 +33,11 @@ if __name__ == "__main__":
     import os
     from PyQt6 import QtWidgets, uic, QtGui, QtCore
 
-
-
     font_path = "./resources/fonts/DMSans-VariableFont_opsz.ttf"
 
     import os
     app = QtWidgets.QApplication(sys.argv)
     
-
     font_id = QtGui.QFontDatabase.addApplicationFont(font_path)
     if font_id == -1:
         print("Error: Font not loaded!")
@@ -36,7 +47,7 @@ if __name__ == "__main__":
     custom_font = QtGui.QFont(font_family, 12)
     app.setWindowIcon(QtGui.QIcon("./icon.ico"))
 
-    app.setFont(custom_font)
+    #app.setFont(custom_font)
 
     window = MainWindow()
     window.show()

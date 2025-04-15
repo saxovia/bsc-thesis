@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 from abc import ABC, abstractmethod
-from src.neuralnetwork import MLPNet, LSTMNet
 from PyQt6.QtCore import QThread, pyqtSignal
 
 class BasePruner(ABC): #abstract class for pruning
@@ -146,7 +145,7 @@ class PrunerThread(QThread):
             results = {
                 'total_parameters': total_params,
                 'global_sparsity': actual_sparsity,
-                'prune_mode': self.mode,
+                'prune_type': self.mode,
                 'target_sparsity': self.prune_ratio,
                 'actual_sparsity': actual_sparsity
             }
@@ -157,3 +156,4 @@ class PrunerThread(QThread):
         except Exception as e:
             self.progress_message.emit(f"Pruning failed: {str(e)}")
             self.finished.emit(False)
+    

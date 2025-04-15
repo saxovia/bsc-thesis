@@ -499,7 +499,7 @@ QTableWidget, QTableView {
           <property name="bottomMargin">
            <number>60</number>
           </property>
-          <item row="0" column="0">
+          <item row="1" column="0">
            <widget class="QStackedWidget" name="stackedWidget">
             <property name="autoFillBackground">
              <bool>false</bool>
@@ -893,6 +893,51 @@ Alternatively, import an already trained model and customize the pruning process
               <property name="verticalSpacing">
                <number>10</number>
               </property>
+              <item row="4" column="3">
+               <widget class="QPushButton" name="timeline_start_training_button">
+                <property name="text">
+                 <string>Start Training</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="timeline_header_label">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>50</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>70</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>20</pointsize>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Process Timeline</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="2">
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
               <item row="3" column="0" colspan="4">
                <widget class="QFrame" name="timeline_main_content_frame">
                 <property name="sizePolicy">
@@ -944,23 +989,18 @@ Alternatively, import an already trained model and customize the pruning process
                    <layout class="QHBoxLayout" name="horizontalLayout_7">
                     <item>
                      <widget class="QPushButton" name="multiply_rows_timeline_button">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>40</height>
+                       </size>
+                      </property>
                       <property name="text">
-                       <string>  Multiply rows</string>
+                       <string/>
                       </property>
                       <property name="icon">
                        <iconset>
                         <normaloff>resources/icons/copy.png</normaloff>resources/icons/copy.png</iconset>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QPushButton" name="delete_rows_timeline_button">
-                      <property name="text">
-                       <string>  Delete Rows</string>
-                      </property>
-                      <property name="icon">
-                       <iconset>
-                        <normaloff>resources/icons/delete.png</normaloff>resources/icons/delete.png</iconset>
                       </property>
                      </widget>
                     </item>
@@ -980,31 +1020,6 @@ Alternatively, import an already trained model and customize the pruning process
                 </layout>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="timeline_header_label">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>50</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>70</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <pointsize>20</pointsize>
-                  <bold>false</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Process Timeline</string>
-                </property>
-               </widget>
-              </item>
               <item row="1" column="2">
                <spacer name="horizontalSpacer_3">
                 <property name="maximumSize">
@@ -1013,26 +1028,6 @@ Alternatively, import an already trained model and customize the pruning process
                   <height>100</height>
                  </size>
                 </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="4" column="3">
-               <widget class="QPushButton" name="timeline_start_training_button">
-                <property name="text">
-                 <string>Start Training</string>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="2">
-               <spacer name="horizontalSpacer_2">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
@@ -2548,7 +2543,7 @@ Alternatively, import an already trained model and customize the pruning process
                              <x>0</x>
                              <y>0</y>
                              <width>820</width>
-                             <height>337</height>
+                             <height>303</height>
                             </rect>
                            </property>
                            <property name="styleSheet">
@@ -2726,7 +2721,45 @@ Alternatively, import an already trained model and customize the pruning process
                      <height>30</height>
                     </size>
                    </property>
-                   <layout class="QHBoxLayout" name="horizontalLayout_8"/>
+                   <layout class="QHBoxLayout" name="horizontalLayout_8">
+                    <item>
+                     <widget class="QLabel" name="training_process_label_2">
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="textFormat">
+                       <enum>Qt::PlainText</enum>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                      </property>
+                      <property name="wordWrap">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QScrollArea" name="scrollArea_2">
+                      <property name="widgetResizable">
+                       <bool>true</bool>
+                      </property>
+                      <widget class="QWidget" name="scrollAreaWidgetContents_2">
+                       <property name="geometry">
+                        <rect>
+                         <x>0</x>
+                         <y>0</y>
+                         <width>808</width>
+                         <height>458</height>
+                        </rect>
+                       </property>
+                       <property name="styleSheet">
+                        <string notr="true">background-color: #1c1b21; border-radius:5px; padding: 15px;</string>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_4"/>
+                      </widget>
+                     </widget>
+                    </item>
+                   </layout>
                   </widget>
                  </item>
                 </layout>

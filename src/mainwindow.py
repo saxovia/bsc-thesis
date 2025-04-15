@@ -8,7 +8,6 @@ from src.pagenavigationhandler import PageNavigationHandler
 from src.reordertable import ReorderTableView, ReorderTableModel
 from src.modeltraininghandler import ModelTrainingHandler
 
-#from temp.csvhandler import CSVHandler
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -194,7 +193,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.reorder_table_view2.resizeColumnToContents(col)
 
         self.reorder_table_view2.verticalHeader().hide()
-        self.reorder_table_view2.setColumnWidth(1, 0)
+        self.reorder_table_view2.setColumnWidth(1, 1)
         self.reorder_table_view2.setColumnWidth(6, 80)
         self.reorder_table_view2.setColumnWidth(7, 80)
         
@@ -209,7 +208,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         
 
-        self.delete_rows_timeline_button.clicked.connect(self.timelineTableModel.remove_selected_items)
+        #self.delete_rows_timeline_button.clicked.connect(self.timelineTableModel.remove_selected_items)
         self.reorder_table_view2.rowEdited.connect(lambda row: self.handle_row_edit(row))
 
     def multiply_rows_timeline(self, model):
