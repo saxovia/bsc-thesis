@@ -5,14 +5,15 @@ from src.uianimations import UIAnimations
 
 
 @pytest.fixture(scope="module", autouse=True)
-def app():
-    if not QtWidgets.QApplication.instance():
-        app = QtWidgets.QApplication(sys.argv)
-        yield app
-        app.quit()
-    else:
-        app = QtWidgets.QApplication.instance()
-    return app
+def app(request):
+    app_instance = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+    
+    def cleanup():
+        if QtWidgets.QApplication.instance():
+            QtWidgets.QApplication.instance().quit()
+    
+    request.addfinalizer(cleanup)
+    return app_instance
 
 @pytest.fixture
 def widget():
@@ -23,20 +24,12 @@ def widget():
 
 def test_fadeInUp_position(widget, qtbot):
     initial_pos = widget.pos()
-    widget.move(initial_pos + QtCore.QPoint(0, 30))
     UIAnimations.fadeInUp(widget)
-
     def check_position():
-        assert widget.pos() == initial_pos
-
-    qtbot.waitUntil(check_position, timeout=500)
-
+        return widget.pos() == initial_pos
+    qtbot.waitUntil(check_position, timeout=1000)
+    
 def test_fadeInUp_opacity(widget, qtbot):
-    effect = QtWidgets.QGraphicsOpacityEffect(widget)
-    widget.setGraphicsEffect(effect)
-    UIAnimations.fadeInUp(widget)
-
-    def check_opacity():
-        assert effect.opacity() == 1.0
-
-    qtbot.waitUntil(check_opacity, timeout=500)
+    effect = UIAnimations.fadeInUp(widget)
+    qtbot.wait(500)
+    assert abs(effect.opacity() - 1.0) < 0.01

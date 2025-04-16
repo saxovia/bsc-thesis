@@ -26,8 +26,8 @@ class UIAnimations:
         group=QtCore.QParallelAnimationGroup(widget)
         group.addAnimation(fade)
         group.addAnimation(move_anim)
-        group.start(QtCore.QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-
+        group.start(QtCore.QAbstractAnimation.DeletionPolicy.KeepWhenStopped)
+        return effect
     
     @staticmethod
     def type_text_effect(label, text, parent, interval=10):
