@@ -26,7 +26,10 @@ class ModelTrainingHandler:
         self.main_window.model_train_button.setEnabled(True)
         self.main_window.undo_button.setEnabled(True)
         self.main_window.model_train_button.setText("Start Training")
-        self.main_window.model_train_button.disconnect()
+        try:
+            self.main_window.model_train_button.disconnect()
+        except TypeError:
+            pass
         self.main_window.model_train_button.clicked.connect(self.parseThroughProcessesTable)
     
     def showLoadingAnimation(self):

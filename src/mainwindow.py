@@ -29,11 +29,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.maximize_button.clicked.connect(self.toggle_maximize_restore)
         self.close_button.clicked.connect(self.close)
         self.home_model_button.clicked.connect(self.page_navigation_handler.showTimelinePage)
-        self.home_results_button.clicked.connect(self.page_navigation_handler.showChooseResultsPage)
+        self.home_results_button.clicked.connect(self.page_navigation_handler.load_and_display_graphs)
         self.model_train_button.clicked.connect(self.page_navigation_handler.showModelTrainingPage)
         self.save_process_button.clicked.connect(self.model_training_handler.saveModel)
+        self.save_process_button.hide()
         self.load_process_button.clicked.connect(self.model_training_handler.loadModel)
+        self.load_process_button.hide()
         self.ui_handler = UIAnimations()
+        
+        self.save_results_button.clicked.connect(self.page_navigation_handler.save_graphs)
         self.settings_button.clicked.connect(self.page_navigation_handler.showSettingsPage)
 
         self.timeline_start_training_button.clicked.connect(self.model_training_handler.parseThroughProcessesTable)
@@ -172,39 +176,32 @@ class MainWindow(QtWidgets.QMainWindow):
         font = header.font()
         font.setPointSize(8)
         header.setFont(font)
+        self.reorder_table_view2.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.reorder_table_view2.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.MultiSelection)
 
         if self.tableWidgetPruning_2.layout():
             QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
 
         self.reorder_table_view2.resizeColumnsToContents()
-        self.reorder_table_view2.setColumnWidth(0, 20)
 
-        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Fixed)
-        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeMode.Fixed)
-        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 2, QtWidgets.QHeaderView.ResizeMode.Fixed)
-        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 1, QtWidgets.QHeaderView.ResizeMode.Fixed)
-        self.reorder_table_view2.setColumnWidth(self.timelineTableModel.columnCount() - 2, 10)
-        self.reorder_table_view2.setColumnWidth(self.timelineTableModel.columnCount() - 1, 10)  # Delete col
-        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Fixed)
-        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 2, QtWidgets.QHeaderView.ResizeMode.Fixed)
-        self.reorder_table_view2.horizontalHeader().setSectionResizeMode(self.timelineTableModel.columnCount() - 1, QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.reorder_table_view2.setColumnWidth(0,20)
+        self.reorder_table_view2.setColumnWidth(1,1)
+        self.reorder_table_view2.setColumnWidth(6,80)
+        self.reorder_table_view2.setColumnWidth(7,80)
+        self.reorder_table_view2.setColumnWidth(8,60)
+        self.reorder_table_view2.setColumnWidth(11,30)
+        self.reorder_table_view2.setColumnWidth(12,30)
 
+        header = self.reorder_table_view2.horizontalHeader()
         for col in range(2, self.timelineTableModel.columnCount() - 2):
-            self.reorder_table_view2.resizeColumnToContents(col)
+            header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeMode.Stretch)
 
         self.reorder_table_view2.verticalHeader().hide()
-        self.reorder_table_view2.setColumnWidth(1, 1)
-        self.reorder_table_view2.setColumnWidth(6, 80)
-        self.reorder_table_view2.setColumnWidth(7, 80)
-        
-        self.reorder_table_view2.setColumnWidth(9, 40)
-        self.reorder_table_view2.setColumnWidth(8, 60)
-        self.reorder_table_view2.setColumnWidth(10, 30)
-        self.reorder_table_view2.setColumnWidth(11, 30)
-        self.reorder_table_view2.setColumnWidth(12, 30)
+
         self.tableWidgetPruning_2.setLayout(layout)
         self.tableWidgetPruning_2.resizeColumnsToContents()
         self.multiply_rows_timeline_button.clicked.connect(lambda: self.multiply_rows_timeline(self.timelineTableModel))
+        self.multiply_rows_pruning_button.clicked.connect(lambda: self.multiply_rows_timeline(self.pruningTableModel))
 
         
 
@@ -280,7 +277,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.reorder_table_view.verticalHeader().hide()
         self.reorder_table_view.resizeColumnsToContents()
         self.reorder_table_view.setColumnWidth(0, 20)
+        if self.tableWidgetPruning_2.layout():
+            QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
 
+
+        header = self.reorder_table_view.horizontalHeader()
+        for col in range(2, self.pruningTableModel.columnCount() - 2):
+            header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeMode.Stretch)
+
+        self.reorder_table_view.verticalHeader().hide()
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view)
 
@@ -307,6 +312,10 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.listWidget_2.clearSelection()
         self.model_training_handler.updateTrainingProcessLabel("")
         self.training_process_label.setText("")
+        #reset selections of the tables
+        for child in self.findChildren(QtWidgets.QAbstractItemView):
+            child.clearSelection()
+        self.saved_label.setText("")
 
 
     def show_warning(self, title="Warning", message="Are you sure you want to proceed?", actions=None):

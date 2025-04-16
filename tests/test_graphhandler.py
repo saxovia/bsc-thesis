@@ -1,7 +1,9 @@
 import pytest
 import networkx as nx
 from src.training.graphhandler import GraphHandler
-
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 class MockModel:

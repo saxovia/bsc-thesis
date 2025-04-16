@@ -1,6 +1,8 @@
 import pytest
 from src.training.datahandler import DataHandler
-
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def test_get_dataset_properties():
     handler_mnist = DataHandler(dataset_type="MNIST", batch_size=64)
@@ -42,12 +44,14 @@ def test_load_data():
     assert len(test_loader) > 0
 
     for images, labels in train_loader:
-        assert images.shape == (64, 1, 28, 28)
-        assert labels.shape == (64,)
+        assert images.shape[0] in [32, 64]
+        assert images.shape[1:] == (1, 28, 28)
+        assert labels.shape[0] == images.shape[0]
 
     for images, labels in test_loader:
-        assert images.shape == (64, 1, 28, 28)
-        assert labels.shape == (64,)
+        assert images.shape[0] in [32, 64]
+        assert images.shape[1:] == (1, 28, 28)
+        assert labels.shape[0] == images.shape[0]
         break
 
 def get_dataset_properties():

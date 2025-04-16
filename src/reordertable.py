@@ -2,7 +2,8 @@ from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QThread, pyqtSignal
 
-# TODO fix multiplication issues
+#TODO Undo? with Crtl Z
+#TODO Shift selection!!
 class ReorderTableModel(QtCore.QAbstractTableModel):
     def __init__(self, data, headers=None, editable=True, show_edit_column=True, parent=None):
         super().__init__(parent)
@@ -249,8 +250,9 @@ class ReorderTableView(QtWidgets.QTableView):
     def __init__(self, parent):
         super().__init__(parent)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
-        self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.MultiSelection)
         self.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.InternalMove)
+        self.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.setDragDropOverwriteMode(False)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
@@ -332,23 +334,20 @@ class ReorderTableView(QtWidgets.QTableView):
         else:
             event.ignore()
     def selectionChanged(self, selected, deselected):
+        super().selectionChanged(selected, deselected)
         model = self.model()
         if not model:
             return
 
-        # First handle deselections
-        for index in deselected.indexes():
-            # Only uncheck if this is a real deselection (not just clicking elsewhere)
-            if index.column() == 0 and self.selectionModel().isSelected(index):
-                model.setData(index, False, QtCore.Qt.ItemDataRole.EditRole)
-        
-        # Then handle new selections
         for index in selected.indexes():
-            if index.column() == 0: 
+            if index.column() == 0:
                 model.setData(index, True, QtCore.Qt.ItemDataRole.EditRole)
-        
+
+        # Handle deselections
+        for index in deselected.indexes():
+            if index.column() == 0:
+                model.setData(index, False, QtCore.Qt.ItemDataRole.EditRole)
         self.viewport().update()
-        super().selectionChanged(selected, deselected)
 
 
 

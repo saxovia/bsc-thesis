@@ -1,15 +1,10 @@
 import PyQt6 as Qt
-from src.trainer import Trainer
-from PyQt6.QtGui import QMovie
 from PyQt6.QtCore import QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 from PyQt6.QtWidgets import QVBoxLayout
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-
-from matplotlib.gridspec import GridSpec
+import os
 
 
 class PageNavigationHandler:
@@ -17,6 +12,7 @@ class PageNavigationHandler:
         self.main_window = main_window
         self.trainer = None
         self.trainers = []
+        self.metrics = {}
         
     def fadeToPage(self, new_page):
         #force it to wait at first - for the padding to apply
@@ -120,8 +116,7 @@ class PageNavigationHandler:
         if not self.main_window.previous_results:
             print("No results available for visualization.")
             return
-
-        metrics = {
+        self.metrics = {
             "train_loss": [],
             "train_accuracy": [],
             "val_loss": [],
@@ -138,37 +133,45 @@ class PageNavigationHandler:
             "edge_betweenness": []
         }
         for result in self.main_window.previous_results:
-            metrics["model_type"].append(result["model_type"])
-            metrics["graph_type"].append(result["graph_type"])
+            self.metrics["model_type"].append(result["model_type"])
+            self.metrics["graph_type"].append(result["graph_type"])
 
             training_metrics = result["training_metrics"]
-            metrics["train_loss"].append(training_metrics["final_train_loss"])
-            metrics["train_accuracy"].append(training_metrics["final_train_accuracy"])
-            metrics["val_loss"].append(training_metrics["final_val_loss"])
-            metrics["val_accuracy"].append(training_metrics["final_val_accuracy"])
+            self.metrics["train_loss"].append(training_metrics["final_train_loss"])
+            self.metrics["train_accuracy"].append(training_metrics["final_train_accuracy"])
+            self.metrics["val_loss"].append(training_metrics["final_val_loss"])
+            self.metrics["val_accuracy"].append(training_metrics["final_val_accuracy"])
             graph_metrics = result["graph_metrics"]
 
             model_metrics = training_metrics['model_metrics']
-            metrics["global_sparsity"].append(model_metrics["global_sparsity"])
-            metrics["total_parameters"].append(model_metrics["total_parameters"])
+            self.metrics["global_sparsity"].append(model_metrics["global_sparsity"])
+            self.metrics["total_parameters"].append(model_metrics["total_parameters"])
 
             if "prune_type" in model_metrics:
-                metrics["prune_type"].append(model_metrics["prune_type"])
+                self.metrics["prune_type"].append(model_metrics["prune_type"])
             else:
-                metrics["prune_type"].append("None")
+                self.metrics["prune_type"].append("None")
 
-            metrics["degree"].append(graph_metrics.get("degree", {}))
-            metrics["eccentricity"].append(graph_metrics.get("eccentricity", {}))
-            metrics["closeness"].append(graph_metrics.get("closeness", {}))
-            metrics["betweenness"].append(graph_metrics.get("betweenness", {}))
-            metrics["edge_betweenness"].append(graph_metrics.get("edge_betweenness", {}))
+            self.metrics["degree"].append(graph_metrics.get("degree", {}))
+            self.metrics["eccentricity"].append(graph_metrics.get("eccentricity", {}))
+            self.metrics["closeness"].append(graph_metrics.get("closeness", {}))
+            self.metrics["betweenness"].append(graph_metrics.get("betweenness", {}))
+            self.metrics["edge_betweenness"].append(graph_metrics.get("edge_betweenness", {}))
 
         #TODO REMOVE!! just tests
-        metrics['graph_type'].extend(['WS', 'Full'])
-        metrics['total_parameters'].extend([30000, 1500])
-        metrics['val_accuracy'].extend([85.0, 25.0])
-        metrics['model_type'].extend(['MLP', 'LSTM'])
-        self.display_graphs(metrics)
+        self.metrics['graph_type'].extend(['Full', 'Full'])
+        self.metrics['total_parameters'].extend([30000, 1500])
+        self.metrics['val_accuracy'].extend([85.0, 25.0])
+        self.metrics['model_type'].extend(['MLP', 'MLP'])
+        self.metrics['prune_type'].extend(['IH', 'HH'])
+        self.metrics['global_sparsity'].extend([0.5, 0.2])
+        self.metrics['degree'].extend([{'node1': 0.5, 'node2': 0.7}, {'node1': 0.3, 'node2': 0.4}])
+        self.metrics['eccentricity'].extend([{'node1': 0.1, 'node2': 0.2}, {'node1': 0.3, 'node2': 0.4}])
+        self.metrics['closeness'].extend([{'node1': 0.6, 'node2': 0.8}, {'node1': 0.4, 'node2': 0.5}])
+        self.metrics['betweenness'].extend([{'node1': 0.2, 'node2': 0.3}, {'node1': 0.4, 'node2': 0.5}])
+        self.metrics['edge_betweenness'].extend([{'node1': 0.3, 'node2': 0.4}, {'node1': 0.5, 'node2': 0.6}])
+
+        self.display_graphs(self.metrics)
 
     def display_graphs(self, metrics):
         scroll_content = self.main_window.scrollAreaWidgetContents_2
@@ -188,6 +191,7 @@ class PageNavigationHandler:
             self.create_prune_metric_graph(metrics, "edge_betweenness", "Mean Edge Betweenness")
         ]
         
+        plt.style.use('dark_background')
         for fig in graphs:
             container = Qt.QtWidgets.QWidget()
             container.setMinimumSize(800, 500)
@@ -204,15 +208,15 @@ class PageNavigationHandler:
         # Ensure proper updating
         scroll_content.adjustSize()
     def clear_layout(self, layout):
-        """Clean up existing widgets in layout"""
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
+
     def add_graph_widget(self, layout, figure):
         widget = Qt.QtWidgets.QWidget()
         widget_layout = QVBoxLayout(widget)
-        widget_layout.setContentsMargins(0, 0, 0, 0)
+        widget_layout.setContentsMargins(0,0,0,0)
         
         canvas = FigureCanvas(figure)
         widget_layout.addWidget(canvas)
@@ -225,8 +229,8 @@ class PageNavigationHandler:
         fig = plt.figure(figsize=(8, 3))
         ax = fig.add_subplot(111)
         
-        graph_types = ['BA', 'WS', 'Full']
-        colors = {'BA': 'r', 'WS': 'g', 'Full': 'b'}
+        graph_types = ['BA','WS','Full']
+        colors = {'BA':'r','WS':'g','Full':'b'}
         
         for graph_type in graph_types:
             indices = [i for i, gt in enumerate(metrics['graph_type']) if gt == graph_type]
@@ -285,3 +289,51 @@ class PageNavigationHandler:
         
         plt.tight_layout()
         return fig
+    
+
+    def save_graphs(self, save_dir="savedgraphs"):
+        save_dir = "savedgraphs" #TODO Temporary fix, remove later
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        
+        graphs = [
+            ("parameters_vs_accuracy.png", self.create_parameters_vs_accuracy_graph(self.metrics)),
+            ("mean_eccentricity.png", self.create_prune_metric_graph(self.metrics, "eccentricity", "Mean Eccentricity")),
+            ("mean_degree.png", self.create_prune_metric_graph(self.metrics, "degree", "Mean Degree")),
+            ("mean_closeness.png", self.create_prune_metric_graph(self.metrics, "closeness", "Mean Closeness")),
+            ("mean_betweenness.png", self.create_prune_metric_graph(self.metrics, "betweenness", "Mean Betweenness")),
+            ("mean_edge_betweenness.png", self.create_prune_metric_graph(self.metrics, "edge_betweenness", "Mean Edge Betweenness"))
+        ]
+        
+        for filename, fig in graphs:
+            fig.savefig(os.path.join(save_dir, filename))
+            plt.close(fig)
+        self.main_window.saved_label.setText("Graphs saved successfully!")
+                
+    def load_and_display_graphs(self, save_dir="savedgraphs"):
+        self.showChooseResultsPage()
+        self.main_window.previous_page = self.main_window.current_page
+        save_dir = "savedgraphs"
+        scroll_content = self.main_window.scrollAreaWidgetContents_2
+        layout = scroll_content.layout()
+        if layout is None:
+            layout = QVBoxLayout(scroll_content)
+            scroll_content.setLayout(layout)
+        else:
+            self.clear_layout(layout)
+        scroll_area_width = self.main_window.scrollArea_2.width()
+
+        for filename in os.listdir(save_dir):
+            if filename.endswith(".png"):
+                graph_path = os.path.join(save_dir, filename)
+                label = Qt.QtWidgets.QLabel()
+                pixmap = Qt.QtGui.QPixmap(graph_path)
+                scaled_pixmap = pixmap.scaled(scroll_area_width - 20, pixmap.height(),Qt.QtCore.Qt.AspectRatioMode.KeepAspectRatio,Qt.QtCore.Qt.TransformationMode.SmoothTransformation)
+                label.setPixmap(scaled_pixmap)
+                label.setPixmap(pixmap)
+                label.setScaledContents(False)
+                label.setAlignment(Qt.QtCore.Qt.AlignmentFlag.AlignCenter)
+                layout.addWidget(label)
+                layout.addSpacing(15)
+        
+        scroll_content.adjustSize()

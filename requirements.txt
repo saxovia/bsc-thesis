@@ -1,9 +1,5 @@
-flake8
 pytest
-pycodestyle
-pyflakes
 exceptiongroup
-iniconfig
 packaging
 PyQt6
 PyQt6-Qt6
