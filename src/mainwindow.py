@@ -30,7 +30,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.close_button.clicked.connect(self.close)
         self.home_model_button.clicked.connect(self.page_navigation_handler.showTimelinePage)
         self.home_results_button.clicked.connect(self.page_navigation_handler.load_and_display_graphs)
-        self.model_train_button.clicked.connect(self.page_navigation_handler.showModelTrainingPage)
         self.save_process_button.clicked.connect(self.model_training_handler.saveModel)
         self.save_process_button.hide()
         self.load_process_button.clicked.connect(self.model_training_handler.loadModel)
@@ -41,6 +40,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settings_button.clicked.connect(self.page_navigation_handler.showSettingsPage)
 
         self.timeline_start_training_button.clicked.connect(self.model_training_handler.parseThroughProcessesTable)
+        self.save_settings_button.clicked.connect(self.page_navigation_handler.saveSettings)
 
         self.old_pos = self.pos()
         self.is_maximized = False
@@ -318,27 +318,37 @@ class MainWindow(QtWidgets.QMainWindow):
         self.saved_label.setText("")
 
 
-    def show_warning(self, title="Warning", message="Are you sure you want to proceed?", actions=None):
+    def show_warning(self, title="Warning", message= "Warning!\nAre you sure you want to restart? Your progress will be lost.", actions=None, buttons=["discard, cancel"]):
         #TODO generalize this function to be used in other places as well
         def discard_action():
             self.complete_reset()
 
 
         if actions is None:
-            # Default actions if none are provided
             actions = [
                 ("OK", QtWidgets.QMessageBox.ButtonRole.AcceptRole, lambda: print("OK clicked")),
                 ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, lambda: print("Cancel clicked"))
             ]
-        def cancel_action():
-            print("User canceled.")
 
+        def cancel_action():
+            pass
+
+        def save_action():
+            self.page_navigation_handler.save_graphs()
+
+        for row in buttons:
+            if row == 'discard':
+                buttonaccept = ("Discard", QtWidgets.QMessageBox.ButtonRole.AcceptRole, discard_action)
+            elif row == "cancel":
+                buttonreject = ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
+            if row == 'save':
+                buttonaccept = ("Save", QtWidgets.QMessageBox.ButtonRole.AcceptRole, save_action)
         msg = CustomMessageBox(
-            "Restart Action",
-            "Warning!\nAre you sure you want to restart? Your progress will be lost.",
+            title,
+            message,
             [
-            ("Discard", QtWidgets.QMessageBox.ButtonRole.AcceptRole, discard_action),
-            ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
+            buttonaccept,
+            buttonreject
             ],
             self
         )

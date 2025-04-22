@@ -1,4 +1,4 @@
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtCore, QtWidgets
 
 class WindowControl:
     def __init__(self, window):
@@ -9,19 +9,20 @@ class WindowControl:
         self.title_bar.setMouseTracking(True)
 
     def mousePressEvent(self, event):
-        if event.button()==QtCore.Qt.MouseButton.LeftButton and self.title_bar.underMouse():
-            self.mousePressed=True
-            self.old_pos=event.globalPosition().toPoint()
+        if event.button() == QtCore.Qt.MouseButton.LeftButton and self.title_bar.underMouse():
+            self.mousePressed = True
+            self.old_pos = QtCore.QPoint(event.globalPosition().x(), event.globalPosition().y())
 
     def mouseMoveEvent(self, event):
         if self.mousePressed:
-            delta=event.globalPosition().toPoint()-self.old_pos
-            self.window.move(self.window.x()+delta.x(),self.window.y()+delta.y())
-            self.old_pos=event.globalPosition().toPoint()
+            delta = QtCore.QPoint(event.globalPosition().x(), event.globalPosition().y()) - self.old_pos
+            self.window.move(self.window.x() + delta.x(), self.window.y() + delta.y())
+            self.old_pos = QtCore.QPoint(event.globalPosition().x(), event.globalPosition().y())
+
 
     def mouseReleaseEvent(self, event):
-        if event.button()==QtCore.Qt.MouseButton.LeftButton:
-            self.mousePressed=False
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            self.mousePressed = False
             screen = QtWidgets.QApplication.primaryScreen().geometry()
             window_pos = self.window.geometry()
             if window_pos.top() <= screen.top() + 10:

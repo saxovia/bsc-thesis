@@ -66,8 +66,6 @@ class PageNavigationHandler:
         self.main_window.undo_button.hide()
         self.main_window.model_training_handler.resetUI()
 
-
-
     def showSettingsPage(self):
         self.fadeToPage(self.main_window.settings_page)
         self.main_window.previous_page = self.main_window.current_page
@@ -91,7 +89,6 @@ class PageNavigationHandler:
         self.main_window.model_train_button.setText("Start Training")
         if self.main_window.model_train_button.signalsBlocked():
             self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.showModelTrainingPage)
 
     def showPruningStartPage(self):
         self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_pruning_page)
@@ -105,12 +102,9 @@ class PageNavigationHandler:
         self.main_window.model_train_button.setText("Start Training")
         if self.main_window.model_train_button.signalsBlocked():
             self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.showModelTrainingPage)
         self.main_window.undo_button.setEnabled(True)
         self.main_window.undo_button.clicked.connect(self.showTimelinePage)
 
-    def showModelTrainingPage(self): # TODO delete later safely
-        pass
 
     def visualize_results(self): #TODO migrate this elsewhere ?
         if not self.main_window.previous_results:
@@ -291,11 +285,27 @@ class PageNavigationHandler:
         return fig
     
 
-    def save_graphs(self, save_dir="savedgraphs"):
-        save_dir = "savedgraphs" #TODO Temporary fix, remove later
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+    def load_default_graph_directory(self):
+        settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
+        fallback_path = os.path.join(os.path.dirname(__file__), "..\savedgraphs")
         
+        default_dir = fallback_path
+        
+        try:
+            with open(settings_file, 'r') as f:
+                for i in range.len(f):
+                    f[i] = f[i].strip()
+                    if (f[i] == "# Saved graphs file location"):
+                        default_dir = f[i+1]
+                        break
+        except (FileNotFoundError, IOError) as e:
+            print(f"Note: Using fallback path ({fallback_path}) because: {str(e)}")
+
+        return default_dir
+        
+
+    def save_graphs(self):
+        default_dir = self.load_default_graph_directory()
         graphs = [
             ("parameters_vs_accuracy.png", self.create_parameters_vs_accuracy_graph(self.metrics)),
             ("mean_eccentricity.png", self.create_prune_metric_graph(self.metrics, "eccentricity", "Mean Eccentricity")),
@@ -306,14 +316,14 @@ class PageNavigationHandler:
         ]
         
         for filename, fig in graphs:
-            fig.savefig(os.path.join(save_dir, filename))
+            fig.savefig(os.path.join(default_dir, filename))
             plt.close(fig)
         self.main_window.saved_label.setText("Graphs saved successfully!")
                 
-    def load_and_display_graphs(self, save_dir="savedgraphs"):
+    def load_and_display_graphs(self):
         self.showChooseResultsPage()
         self.main_window.previous_page = self.main_window.current_page
-        save_dir = "savedgraphs"
+        default_dir = self.load_default_graph_directory()
         scroll_content = self.main_window.scrollAreaWidgetContents_2
         layout = scroll_content.layout()
         if layout is None:
@@ -323,9 +333,9 @@ class PageNavigationHandler:
             self.clear_layout(layout)
         scroll_area_width = self.main_window.scrollArea_2.width()
 
-        for filename in os.listdir(save_dir):
+        for filename in os.listdir(default_dir):
             if filename.endswith(".png"):
-                graph_path = os.path.join(save_dir, filename)
+                graph_path = os.path.join(default_dir, filename)
                 label = Qt.QtWidgets.QLabel()
                 pixmap = Qt.QtGui.QPixmap(graph_path)
                 scaled_pixmap = pixmap.scaled(scroll_area_width - 20, pixmap.height(),Qt.QtCore.Qt.AspectRatioMode.KeepAspectRatio,Qt.QtCore.Qt.TransformationMode.SmoothTransformation)
@@ -337,3 +347,13 @@ class PageNavigationHandler:
                 layout.addSpacing(15)
         
         scroll_content.adjustSize()
+
+
+    def saveSettings(self):
+        settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
+        self.main_window.input_prior_graph_save_dir
+        #Is it a valid path
+        # if it is, overwrite the path location in settings.txt
+        self.main_window.input_prior_model_save_dir
+        self.main_window.saved_settings_label.setText("Succesfully saved!")
+        pass

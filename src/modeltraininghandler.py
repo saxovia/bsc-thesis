@@ -255,13 +255,10 @@ class ModelTrainingHandler:
         
         try:
             with open(settings_file, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        if not os.path.isabs(line):
-                            line = os.path.join(os.path.dirname(__file__), line)
-                        if os.path.isdir(line):
-                            default_dir = line
+                for i in range.len(f):
+                    f[i] = f[i].strip()
+                    if (f[i] == "# Saved models file location"):
+                        default_dir = f[i+1]
                         break
         except (FileNotFoundError, IOError) as e:
             print(f"Note: Using fallback path ({fallback_path}) because: {str(e)}")
@@ -296,10 +293,9 @@ class ModelTrainingHandler:
 
     def loadModel(self, model):
         
-        settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
         fallback_path = os.path.join(os.path.dirname(__file__), "..\savedmodels")
         
-        default_dir = fallback_path
+        default_dir = fallback_path # TODO
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self.main_window,
             "Load Model",
@@ -322,7 +318,6 @@ class ModelTrainingHandler:
             else:
                 print("Invalid model file format")
             #self.trainer.start()
-            self.main_window.page_navigation_handler.showModelTrainingPage()
             self.mainTrainLoop()
             #self.trainer.finished.connect(self.onTrainingFinished)
                 

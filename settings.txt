@@ -1,1 +1,4 @@
-.\savedmodels
+# Saved models file location
+.\savedmodel#s
+# Saved graphs file location
+.\savedgraphs
