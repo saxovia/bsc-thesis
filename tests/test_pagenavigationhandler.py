@@ -2,9 +2,8 @@ import pytest
 from unittest.mock import MagicMock, patch
 from src.pagenavigationhandler import PageNavigationHandler
 import PyQt6.QtWidgets as QtWidgets
-from unittest.mock import MagicMock, patch
 import pytest
-from unittest.mock import MagicMock, patch
+import os
 
 @pytest.fixture
 def handler(mock_main_window):
@@ -129,7 +128,7 @@ def test_empty_results(handler):
     assert not any(handler.metrics.values())
 
 
-def test_save_graphs(mock_main_window):
+def test_save_graphs(mock_main_window, tmp_path):
     handler = PageNavigationHandler(mock_main_window)
     handler.metrics = {
         'model_type': ['MLP', 'MLP'],
@@ -144,13 +143,25 @@ def test_save_graphs(mock_main_window):
         'betweenness': [{'node1': 0.2}, {'node1': 0.4}],
         'edge_betweenness': [{'node1': 0.3}, {'node1': 0.5}]
     }
-    with patch("matplotlib.pyplot.savefig") as mock_savefig, \
-         patch.object(handler, 'create_parameters_vs_accuracy_graph') as mock_param_graph, \
-         patch.object(handler, 'create_prune_metric_graph') as mock_prune_graph:
-        mock_param_graph.return_value = MagicMock()
-        mock_prune_graph.return_value = MagicMock()
+    mock_main_window.load_default_graph_directory.return_value = str(tmp_path)
+    mock_fig = MagicMock()
+    mock_fig.savefig = MagicMock()
+    
+    with patch('matplotlib.pyplot.figure', return_value=mock_fig), \
+         patch.object(handler, 'create_parameters_vs_accuracy_graph', return_value=mock_fig), \
+         patch.object(handler, 'create_prune_metric_graph', return_value=mock_fig):
         handler.save_graphs()
-
-        assert mock_savefig.call_count == 6
-        mock_param_graph.assert_called_once()
-        assert mock_prune_graph.call_count == 5
+        assert mock_fig.savefig.call_count == 6
+        saved_paths = [call[0][0] for call in mock_fig.savefig.call_args_list]
+        expected_filenames = [
+            "parameters_vs_accuracy.png",
+            "mean_eccentricity.png",
+            "mean_degree.png",
+            "mean_closeness.png",
+            "mean_betweenness.png",
+            "mean_edge_betweenness.png"
+        ]
+        
+        for filename in expected_filenames:
+            assert any(filename in path for path in saved_paths), f"{filename} not found in saved paths"
+        mock_main_window.saved_label.setText.assert_called_with("Graphs saved successfully!")
