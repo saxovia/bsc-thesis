@@ -24,7 +24,7 @@ class ModelTrainingHandler:
 
     def resetUI(self):
         self.main_window.model_train_button.setEnabled(True)
-        self.main_window.undo_button.setEnabled(True)
+        self.main_window.undo_button.setEnabled(True)   
         self.main_window.model_train_button.setText("Start Training")
         try:
             self.main_window.model_train_button.disconnect()

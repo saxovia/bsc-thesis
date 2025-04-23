@@ -2863,7 +2863,7 @@ Alternatively, import an already trained model and customize the pruning process
                  <item row="3" column="0">
                   <widget class="QLineEdit" name="input_prior_model_save_dir">
                    <property name="placeholderText">
-                    <string>./</string>
+                    <string>./savedmodels</string>
                    </property>
                   </widget>
                  </item>
@@ -2873,7 +2873,7 @@ Alternatively, import an already trained model and customize the pruning process
                     <string/>
                    </property>
                    <property name="placeholderText">
-                    <string>./</string>
+                    <string>./savedgraphs</string>
                    </property>
                   </widget>
                  </item>

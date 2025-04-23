@@ -286,18 +286,18 @@ class PageNavigationHandler:
     
 
     def load_default_graph_directory(self):
-        settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
-        fallback_path = os.path.join(os.path.dirname(__file__), "..\savedgraphs")
+        settings_file = os.path.join(os.path.dirname(__file__), "..", "settings.txt")
+        fallback_path = os.path.join(os.path.dirname(__file__), "..", ".")
         
         default_dir = fallback_path
-        
+
         try:
             with open(settings_file, 'r') as f:
-                for i in range.len(f):
-                    f[i] = f[i].strip()
-                    if (f[i] == "# Saved graphs file location"):
-                        default_dir = f[i+1]
-                        break
+                lines = [line.strip() for line in f.readlines()]
+                if "# Saved graphs file location" in lines:
+                    index = lines.index("# Saved graphs file location")
+                    if index + 1 < len(lines):
+                        default_dir = lines[index + 1]
         except (FileNotFoundError, IOError) as e:
             print(f"Note: Using fallback path ({fallback_path}) because: {str(e)}")
 
@@ -348,12 +348,31 @@ class PageNavigationHandler:
         
         scroll_content.adjustSize()
 
-
     def saveSettings(self):
-        settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
-        self.main_window.input_prior_graph_save_dir
-        #Is it a valid path
-        # if it is, overwrite the path location in settings.txt
-        self.main_window.input_prior_model_save_dir
-        self.main_window.saved_settings_label.setText("Succesfully saved!")
-        pass
+        settings_file = os.path.join(os.path.dirname(__file__), "..", "settings.txt")
+        
+        prior_graph_save_dir = self.main_window.input_prior_graph_save_dir.text()
+        prior_model_save_dir = self.main_window.input_prior_model_save_dir.text()
+
+        messages = []
+
+        if not os.path.isdir(prior_graph_save_dir):
+            prior_graph_save_dir = os.path.join(os.path.dirname(__file__), "..", "savedgraphs")
+            messages.append("Default graph save directory used!")
+
+        if not os.path.isdir(prior_model_save_dir):
+            prior_model_save_dir = os.path.join(os.path.dirname(__file__), "..", "savedmodels")
+            messages.append("Default model save directory used!")
+        if messages:
+            self.main_window.saved_settings_label.setText(" ".join(messages))
+
+        try:
+            with open(settings_file, 'w') as f:
+                f.write("# Saved graphs file location\n")
+                f.write(f"{prior_graph_save_dir}\n")
+                f.write("# Saved models file location\n")
+                f.write(f"{prior_model_save_dir}\n")
+            
+            self.main_window.saved_settings_label.setText("Settings successfully saved!")
+        except (FileNotFoundError, IOError) as e:
+            self.main_window.saved_settings_label.setText(f"Error saving settings: {str(e)}")
