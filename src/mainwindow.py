@@ -29,7 +29,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.maximize_button.clicked.connect(self.toggle_maximize_restore)
         self.close_button.clicked.connect(self.close)
         self.home_model_button.clicked.connect(self.page_navigation_handler.showTimelinePage)
-        self.home_results_button.clicked.connect(self.page_navigation_handler.load_and_display_graphs)
+        self.home_results_button.clicked.connect(self.page_navigation_handler.load_graphs_from_main_menu)
         self.save_process_button.clicked.connect(self.model_training_handler.saveModel)
         self.save_process_button.hide()
         self.load_process_button.clicked.connect(self.model_training_handler.loadModel)
@@ -302,6 +302,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.model_train_button.setText("Train Model")
         self.model_train_button.disconnect()
         self.model_train_button.setEnabled(True)
+        self.save_results_button.show()
         if self.model_training_handler.trainer is not None:
             self.model_training_handler.trainer.running = False
             self.model_training_handler.trainer.quit()

@@ -176,6 +176,7 @@ class ModelTrainingHandler:
             self.main_window.page_navigation_handler.visualize_results()
             self.main_window.model_train_button.setEnabled(True)
             self.main_window.model_train_button.setText("Show Results")
+            self.save_results_button.show()
 
 
     def handleReadingPruningTable(self, model):

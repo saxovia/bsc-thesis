@@ -5,6 +5,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtWidgets import QVBoxLayout
 import matplotlib.pyplot as plt
 import os
+from datetime import datetime
 
 
 class PageNavigationHandler:
@@ -306,6 +307,10 @@ class PageNavigationHandler:
 
     def save_graphs(self):
         default_dir = self.load_default_graph_directory()
+        timestamp = datetime.now().strftime("model-%Y-%m-%d-%H-%M-%S")
+        save_dir = os.path.join(default_dir, timestamp)
+        os.makedirs(save_dir, exist_ok=True)
+
         graphs = [
             ("parameters_vs_accuracy.png", self.create_parameters_vs_accuracy_graph(self.metrics)),
             ("mean_eccentricity.png", self.create_prune_metric_graph(self.metrics, "eccentricity", "Mean Eccentricity")),
@@ -314,16 +319,27 @@ class PageNavigationHandler:
             ("mean_betweenness.png", self.create_prune_metric_graph(self.metrics, "betweenness", "Mean Betweenness")),
             ("mean_edge_betweenness.png", self.create_prune_metric_graph(self.metrics, "edge_betweenness", "Mean Edge Betweenness"))
         ]
-        
+
         for filename, fig in graphs:
-            fig.savefig(os.path.join(default_dir, filename))
+            fig.savefig(os.path.join(save_dir, filename))
             plt.close(fig)
-        self.main_window.saved_label.setText("Graphs saved successfully!")
-                
-    def load_and_display_graphs(self):
+        self.main_window.saved_label.setText(f"Graphs saved successfully in {save_dir}!")
+
+    def load_graphs_from_main_menu(self):
+        self.main_window.save_results_button.hide()
+        self.main_window.saved_label.setText("")
+        self.load_and_display_graphs()
+
+    def load_and_display_graphs(self, folder_path=None):
+        if folder_path is None:
+            folder_path = Qt.QtWidgets.QFileDialog.getExistingDirectory(
+                self.main_window, "Select Folder", self.load_default_graph_directory()
+            )
+            if not folder_path:
+                return
+
         self.showChooseResultsPage()
         self.main_window.previous_page = self.main_window.current_page
-        default_dir = self.load_default_graph_directory()
         scroll_content = self.main_window.scrollAreaWidgetContents_2
         layout = scroll_content.layout()
         if layout is None:
@@ -333,19 +349,22 @@ class PageNavigationHandler:
             self.clear_layout(layout)
         scroll_area_width = self.main_window.scrollArea_2.width()
 
-        for filename in os.listdir(default_dir):
+        for filename in os.listdir(folder_path):
             if filename.endswith(".png"):
-                graph_path = os.path.join(default_dir, filename)
+                graph_path = os.path.join(folder_path, filename)
                 label = Qt.QtWidgets.QLabel()
                 pixmap = Qt.QtGui.QPixmap(graph_path)
-                scaled_pixmap = pixmap.scaled(scroll_area_width - 20, pixmap.height(),Qt.QtCore.Qt.AspectRatioMode.KeepAspectRatio,Qt.QtCore.Qt.TransformationMode.SmoothTransformation)
+                scaled_pixmap = pixmap.scaled(
+                    scroll_area_width - 20, pixmap.height(),
+                    Qt.QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.QtCore.Qt.TransformationMode.SmoothTransformation
+                )
                 label.setPixmap(scaled_pixmap)
-                label.setPixmap(pixmap)
                 label.setScaledContents(False)
                 label.setAlignment(Qt.QtCore.Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(label)
                 layout.addSpacing(15)
-        
+
         scroll_content.adjustSize()
 
     def saveSettings(self):
