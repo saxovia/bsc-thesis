@@ -15,7 +15,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle('Sparse Neural Network Generator')
         uic.loadUi('mainwindowui.ui', self)
-        self.restart_button.clicked.connect(self.show_warning)
+        self.restart_button.clicked.connect(lambda: self.show_warning(title="Warning", message="Warning!\nAre you sure you want to restart? Your progress will be lost.", actions=None, buttons=["discard", "cancel"]))
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
         self.maximize_button.setCheckable(True)
@@ -320,6 +320,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def show_warning(self, title="Warning", message= "Warning!\nAre you sure you want to restart? Your progress will be lost.", actions=None, buttons=["discard, cancel"]):
+        if not isinstance(title, str):
+            title = str(title)
+
         #TODO generalize this function to be used in other places as well
         def discard_action():
             self.complete_reset()
@@ -337,13 +340,22 @@ class MainWindow(QtWidgets.QMainWindow):
         def save_action():
             self.page_navigation_handler.save_graphs()
 
+        buttonaccept = None
+        buttonreject = None
+
         for row in buttons:
             if row == 'discard':
                 buttonaccept = ("Discard", QtWidgets.QMessageBox.ButtonRole.AcceptRole, discard_action)
             elif row == "cancel":
                 buttonreject = ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, cancel_action)
-            if row == 'save':
+            elif row == 'save':
                 buttonaccept = ("Save", QtWidgets.QMessageBox.ButtonRole.AcceptRole, save_action)
+
+        if buttonaccept is None:
+            buttonaccept = ("OK", QtWidgets.QMessageBox.ButtonRole.AcceptRole, lambda: None)
+        if buttonreject is None:
+            buttonreject = ("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole, lambda: None)
+
         msg = CustomMessageBox(
             title,
             message,

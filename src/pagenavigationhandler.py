@@ -338,6 +338,11 @@ class PageNavigationHandler:
             if not folder_path:
                 return
 
+        png_files = [f for f in os.listdir(folder_path) if f.endswith(".png")]
+        if not png_files:
+            self.main_window.show_warning("No Graphs Found", "The selected folder does not contain any PNG files.")
+            return
+
         self.showChooseResultsPage()
         self.main_window.previous_page = self.main_window.current_page
         scroll_content = self.main_window.scrollAreaWidgetContents_2
@@ -349,21 +354,20 @@ class PageNavigationHandler:
             self.clear_layout(layout)
         scroll_area_width = self.main_window.scrollArea_2.width()
 
-        for filename in os.listdir(folder_path):
-            if filename.endswith(".png"):
-                graph_path = os.path.join(folder_path, filename)
-                label = Qt.QtWidgets.QLabel()
-                pixmap = Qt.QtGui.QPixmap(graph_path)
-                scaled_pixmap = pixmap.scaled(
-                    scroll_area_width - 20, pixmap.height(),
-                    Qt.QtCore.Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.QtCore.Qt.TransformationMode.SmoothTransformation
-                )
-                label.setPixmap(scaled_pixmap)
-                label.setScaledContents(False)
-                label.setAlignment(Qt.QtCore.Qt.AlignmentFlag.AlignCenter)
-                layout.addWidget(label)
-                layout.addSpacing(15)
+        for filename in png_files:
+            graph_path = os.path.join(folder_path, filename)
+            label = Qt.QtWidgets.QLabel()
+            pixmap = Qt.QtGui.QPixmap(graph_path)
+            scaled_pixmap = pixmap.scaled(
+                scroll_area_width - 20, pixmap.height(),
+                Qt.QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.QtCore.Qt.TransformationMode.SmoothTransformation
+            )
+            label.setPixmap(scaled_pixmap)
+            label.setScaledContents(False)
+            label.setAlignment(Qt.QtCore.Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(label)
+            layout.addSpacing(15)
 
         scroll_content.adjustSize()
 

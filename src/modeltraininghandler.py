@@ -1,4 +1,3 @@
-
 from PyQt6.QtGui import QMovie
 from src.trainer import Trainer
 from PyQt6 import QtWidgets
@@ -27,7 +26,7 @@ class ModelTrainingHandler:
         self.main_window.undo_button.setEnabled(True)   
         self.main_window.model_train_button.setText("Start Training")
         try:
-            self.main_window.model_train_button.disconnect()
+            self.main_window.model_train_button.clicked.disconnect()
         except TypeError:
             pass
         self.main_window.model_train_button.clicked.connect(self.parseThroughProcessesTable)
