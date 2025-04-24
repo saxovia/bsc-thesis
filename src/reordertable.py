@@ -261,15 +261,19 @@ class ReorderTableView(QtWidgets.QTableView):
         header.setStretchLastSection(False)
         
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.MouseButton.RightButton:
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            modifiers = QtWidgets.QApplication.keyboardModifiers()
             index = self.indexAt(event.position().toPoint())
-            if index.isValid():
-                self.edit(index)
-                return
-            
-        index = self.indexAt(event.position().toPoint())
-        if index.isValid() or event.button() != QtCore.Qt.MouseButton.LeftButton:
-            super().mousePressEvent(event)
+
+            if modifiers == QtCore.Qt.KeyboardModifier.ShiftModifier and index.isValid():
+                if hasattr(self, '_last_selected_index') and self._last_selected_index.isValid():
+                    self.shift_selection(self._last_selected_index, index)
+                else:
+                    self.selectionModel().select(index, QtCore.QItemSelectionModel.SelectionFlag.Select)
+            else:
+                self._last_selected_index = index
+
+        super().mousePressEvent(event)
 
     def setModel(self, model):
         super().setModel(model)
@@ -348,7 +352,29 @@ class ReorderTableView(QtWidgets.QTableView):
                 model.setData(index, False, QtCore.Qt.ItemDataRole.EditRole)
         self.viewport().update()
 
+    def shift_selection(self, start_index, end_index):
+        if not start_index.isValid() or not end_index.isValid():
+            return
 
+        start_row, end_row = start_index.row(), end_index.row()
+        if start_row > end_row:
+            start_row, end_row = end_row, start_row
+
+        model = self.model()
+        if not model:
+            return
+
+        for row in range(start_row, end_row + 1):
+            index = model.index(row, 0)
+            model.setData(index, True, QtCore.Qt.ItemDataRole.EditRole)
+
+        # Ensure the first and last rows are explicitly selected
+        first_index = model.index(start_row, 0)
+        last_index = model.index(end_row, 0)
+        model.setData(first_index, True, QtCore.Qt.ItemDataRole.EditRole)
+        model.setData(last_index, True, QtCore.Qt.ItemDataRole.EditRole)
+
+        self.viewport().update()
 
 class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
     def __init__(self, editable=True, show_edit_column=True):
