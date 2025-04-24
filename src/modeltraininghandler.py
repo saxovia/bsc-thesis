@@ -44,6 +44,18 @@ class ModelTrainingHandler:
         self.main_window.undo_button.setEnabled(False)
 
         data = self.main_window.reorder_table_view2.model().get_table_data()
+        if len(data) < 1:
+            self.main_window.show_warning(
+                title="No Data Found",
+                message="The pruning table is empty. Please add data before proceeding.",
+                actions=None,
+                buttons=["ok"]
+            )
+            return
+
+        if not self.validate_table_data(self.main_window.reorder_table_view2.model()):
+            return
+
         print("Data from pruning table:", data)
 
         for row in data:
@@ -51,6 +63,23 @@ class ModelTrainingHandler:
 
         self.current_model_index = 0
         self.mainTrainLoop()
+
+    def validate_table_data(self, table_model):
+        for row_index in range(table_model.rowCount()):
+            try:
+                row_data = [
+                    table_model.index(row_index, col).data() for col in range(table_model.columnCount())
+                ]
+                self.extractTrainingParameters(row_data[2:])
+            except Exception as e:
+                self.main_window.show_warning(
+                    title="Invalid Data",
+                    message=f"Row {row_index + 1} contains invalid data: {str(e)}",
+                    actions=None,
+                    buttons=["ok"]
+                )
+                return False
+        return True
 
     def processTableRow(self, row):
         index = row[0]

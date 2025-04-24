@@ -28,7 +28,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.minimize_button.clicked.connect(self.showMinimized)
         self.maximize_button.clicked.connect(self.toggle_maximize_restore)
         self.close_button.clicked.connect(self.close)
-        self.home_model_button.clicked.connect(self.page_navigation_handler.showTimelinePage)
+        self.home_model_button.clicked.connect(self.show_timeline_button_pressed)
         self.home_results_button.clicked.connect(self.page_navigation_handler.load_graphs_from_main_menu)
         self.save_process_button.clicked.connect(self.model_training_handler.saveModel)
         self.save_process_button.hide()
@@ -367,3 +367,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         msg.exec()
         self.setGraphicsEffect(None)
+
+    def add_default_timeline_data(self):
+        default_data = [
+            ["", "1", "MLP", "Prune", "MNIST", "[50, 25, 10]", "CrossEntropy", "Adam", "10", "", "", "32", "0.001", "Full"],
+            ["", "2", "MLP", "Prior", "CIFAR-10", "[100, 50, 20]", "CrossEntropy", "SGD", "20", "2", "0.8", "64", "0.01", "WS"]
+        ]
+
+        for row in default_data:
+            self.timelineTableModel.add_row(row)
+
+    def show_timeline_button_pressed(self):
+        self.add_default_timeline_data()
+        self.page_navigation_handler.showTimelinePage()
