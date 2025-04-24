@@ -66,10 +66,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
     
     def get_hidden_data(self, row):
         if 0 <= row < len(self._data):
-            print(f"Hidden data for row {row}: {self._data[row][-1]}")
             return self._data[row][-1]
-        print(f"Row {row} is out of range")
-        print("Hidden data not found")
         return None
 
     def set_hidden_data(self, row, value):
@@ -97,10 +94,10 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return True
     
     def remove_selected_items(self):
-        selected_rows = [i for i, row in enumerate(self._data[:-1]) if row[0]] 
+        selected_rows = [i for i, row in enumerate(self._data[:-1]) if row[0] and i != len(self._data) - 2]
         if not selected_rows:
             return False
-        
+
         for rowi in sorted(selected_rows, reverse=True):
             self.beginRemoveRows(QtCore.QModelIndex(), rowi, rowi)
             self._data.pop(rowi)
@@ -210,7 +207,6 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
 
     def dropMimeData(self, data, action, row, column, parent):
         if not data.hasFormat("application/x-qabstractitemmodeldatalist"):
-            print("Format not supported")
             return False
             
         stream = QtCore.QDataStream(data.data("application/x-qabstractitemmodeldatalist"), QtCore.QIODevice.OpenModeFlag.ReadOnly)
@@ -294,20 +290,23 @@ class ReorderTableView(QtWidgets.QTableView):
     def on_click(self, index):
         if not index.isValid():
             return
-            
+
         row, col = index.row(), index.column()
         model = self.model()
-        
-        if col == model.columnCount() - 1:
-            if model._data[row][0]:
+
+        if row == model.rowCount()-1:
+            return
+
+        if col == model.columnCount()-1:
+            selected_rows = [i for i, row_data in enumerate(model._data[:-1]) if row_data[0]]
+            if selected_rows:
                 model.remove_selected_items()
             else:
                 model.beginRemoveRows(QtCore.QModelIndex(), row, row)
                 model._data.pop(row)
                 model.endRemoveRows()
-            
+
         elif col == model.columnCount() - 2 and row < model.rowCount() - 1:
-            print(f"Edit row {row}")
             self.rowEdited.emit(row)
 
     def dragEnterEvent(self, event):
