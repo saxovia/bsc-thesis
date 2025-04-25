@@ -151,7 +151,7 @@ class GraphHandler:
 
         try:
             metrics['edge_betweenness'] = nx.edge_betweenness_centrality(G)
-            metrics['node_betweenness'] = nx.betweenness_centrality(G)
+            metrics['betweenness'] = nx.betweenness_centrality(G)
             metrics['closeness'] = nx.closeness_centrality(G)
             metrics['degree'] = dict(G.degree())
 

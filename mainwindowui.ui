@@ -142,7 +142,7 @@ QPushButton:disabled {
 	color: #fff;
 
 }
-#timeline_page .QPushButton,
+#timeline_start_training_button,
 #choose_results_page .QPushButton,
 #side_widget .QPushButton,
 #model_pruning_table_page .QPushButton,
@@ -160,7 +160,7 @@ QPushButton:disabled {
 	max-height: 40px;
 	border-radius: 15px;
 }
-#undo_button, #save_process_button{
+#undo_button, #save_process_button, #multiply_rows_pruning_button, #multiply_rows_timeline_button{
 	min-width: 40px;
 	max-width: 40px;
 	min-height: 40px;
@@ -514,7 +514,7 @@ QTableWidget, QTableView {
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>2</number>
+             <number>1</number>
             </property>
             <widget class="QWidget" name="home_page">
              <property name="autoFillBackground">
@@ -886,6 +886,9 @@ Alternatively, import an already trained model and customize the pruning process
              </layout>
             </widget>
             <widget class="QWidget" name="timeline_page">
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
              <layout class="QGridLayout" name="gridLayout_9">
               <property name="leftMargin">
                <number>0</number>
@@ -902,40 +905,14 @@ Alternatively, import an already trained model and customize the pruning process
               <property name="verticalSpacing">
                <number>10</number>
               </property>
-              <item row="4" column="3">
-               <widget class="QPushButton" name="timeline_start_training_button">
-                <property name="text">
-                 <string>Start Training</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="timeline_header_label">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>50</height>
-                 </size>
-                </property>
+              <item row="1" column="2">
+               <spacer name="horizontalSpacer_3">
                 <property name="maximumSize">
                  <size>
                   <width>16777215</width>
-                  <height>70</height>
+                  <height>100</height>
                  </size>
                 </property>
-                <property name="font">
-                 <font>
-                  <pointsize>20</pointsize>
-                  <bold>false</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Process Timeline</string>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="2">
-               <spacer name="horizontalSpacer_2">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
@@ -954,6 +931,9 @@ Alternatively, import an already trained model and customize the pruning process
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true"/>
                 </property>
                 <property name="frameShape">
                  <enum>QFrame::StyledPanel</enum>
@@ -977,50 +957,18 @@ Alternatively, import an already trained model and customize the pruning process
                  <property name="horizontalSpacing">
                   <number>0</number>
                  </property>
-                 <item row="4" column="0">
-                  <widget class="Line" name="line">
-                   <property name="styleSheet">
-                    <string notr="true">color: transparent; border:none;</string>
-                   </property>
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="0">
-                  <widget class="QWidget" name="widget_10" native="true">
-                   <property name="minimumSize">
-                    <size>
-                     <width>0</width>
-                     <height>30</height>
-                    </size>
-                   </property>
-                   <layout class="QHBoxLayout" name="horizontalLayout_7">
-                    <item>
-                     <widget class="QPushButton" name="multiply_rows_timeline_button">
-                      <property name="minimumSize">
-                       <size>
-                        <width>200</width>
-                        <height>40</height>
-                       </size>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="icon">
-                       <iconset>
-                        <normaloff>resources/icons/copy.png</normaloff>resources/icons/copy.png</iconset>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
                  <item row="1" column="0">
-                  <widget class="QTableWidget" name="tableWidgetPruning_2"/>
+                  <widget class="QTableWidget" name="tableWidgetPruning_2">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                  </widget>
                  </item>
                  <item row="0" column="0">
                   <widget class="QLabel" name="label_2">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
                    <property name="text">
                     <string>    To edit a cell without losing the selection, use right click to edit! Use Control or Shift to select multiple rows.</string>
                    </property>
@@ -1029,24 +977,97 @@ Alternatively, import an already trained model and customize the pruning process
                 </layout>
                </widget>
               </item>
-              <item row="1" column="2">
-               <spacer name="horizontalSpacer_3">
+              <item row="1" column="0">
+               <widget class="QLabel" name="timeline_header_label">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>50</height>
+                 </size>
+                </property>
                 <property name="maximumSize">
                  <size>
                   <width>16777215</width>
-                  <height>100</height>
+                  <height>70</height>
                  </size>
                 </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                <property name="font">
+                 <font>
+                  <pointsize>20</pointsize>
+                  <bold>false</bold>
+                 </font>
                 </property>
-                <property name="sizeHint" stdset="0">
+                <property name="styleSheet">
+                 <string notr="true"/>
+                </property>
+                <property name="text">
+                 <string>Process Timeline</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0" colspan="3">
+               <widget class="QWidget" name="widget_10" native="true">
+                <property name="minimumSize">
                  <size>
-                  <width>40</width>
-                  <height>20</height>
+                  <width>0</width>
+                  <height>30</height>
                  </size>
                 </property>
-               </spacer>
+                <layout class="QHBoxLayout" name="horizontalLayout_7">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>20</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>9</number>
+                 </property>
+                 <item>
+                  <widget class="QPushButton" name="multiply_rows_timeline_button">
+                   <property name="minimumSize">
+                    <size>
+                     <width>40</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset>
+                     <normaloff>resources/icons/copy.png</normaloff>resources/icons/copy.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_14">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="timeline_start_training_button">
+                   <property name="text">
+                    <string>Start Training</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
               </item>
              </layout>
             </widget>
@@ -1070,7 +1091,7 @@ Alternatively, import an already trained model and customize the pruning process
               <property name="verticalSpacing">
                <number>10</number>
               </property>
-              <item row="3" column="3">
+              <item row="3" column="4">
                <widget class="QPushButton" name="undo_button">
                 <property name="text">
                  <string/>
@@ -1081,7 +1102,41 @@ Alternatively, import an already trained model and customize the pruning process
                 </property>
                </widget>
               </item>
-              <item row="2" column="0" colspan="5">
+              <item row="3" column="2">
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="3" column="0">
+               <widget class="QPushButton" name="save_process_button">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>resources/icons/diskette.png</normaloff>resources/icons/diskette.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="5">
+               <widget class="QPushButton" name="model_train_button">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>Start Training</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="6">
                <widget class="QWidget" name="model_page_handler" native="true">
                 <property name="maximumSize">
                  <size>
@@ -1139,7 +1194,7 @@ Alternatively, import an already trained model and customize the pruning process
                  <item row="3" column="0" colspan="2">
                   <widget class="QStackedWidget" name="stackedWidget_2">
                    <property name="currentIndex">
-                    <number>2</number>
+                    <number>0</number>
                    </property>
                    <widget class="QWidget" name="model_starting_page">
                     <layout class="QGridLayout" name="gridLayout_23">
@@ -1811,19 +1866,7 @@ Alternatively, import an already trained model and customize the pruning process
                          <height>30</height>
                         </size>
                        </property>
-                       <layout class="QHBoxLayout" name="horizontalLayout_6">
-                        <item>
-                         <widget class="QPushButton" name="multiply_rows_pruning_button">
-                          <property name="text">
-                           <string/>
-                          </property>
-                          <property name="icon">
-                           <iconset>
-                            <normaloff>resources/icons/copy.png</normaloff>resources/icons/copy.png</iconset>
-                          </property>
-                         </widget>
-                        </item>
-                       </layout>
+                       <layout class="QHBoxLayout" name="horizontalLayout_6"/>
                       </widget>
                      </item>
                      <item row="0" column="0">
@@ -2586,41 +2629,7 @@ Alternatively, import an already trained model and customize the pruning process
                 </layout>
                </widget>
               </item>
-              <item row="3" column="0">
-               <widget class="QPushButton" name="save_process_button">
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="icon">
-                 <iconset>
-                  <normaloff>resources/icons/diskette.png</normaloff>resources/icons/diskette.png</iconset>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="4">
-               <widget class="QPushButton" name="model_train_button">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="text">
-                 <string>Start Training</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1">
-               <spacer name="horizontalSpacer_4">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="3" column="2">
+              <item row="3" column="3">
                <widget class="QLabel" name="loading_label">
                 <property name="minimumSize">
                  <size>
@@ -2639,6 +2648,17 @@ Alternatively, import an already trained model and customize the pruning process
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QPushButton" name="multiply_rows_pruning_button">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>resources/icons/copy.png</normaloff>resources/icons/copy.png</iconset>
                 </property>
                </widget>
               </item>
@@ -2673,13 +2693,6 @@ Alternatively, import an already trained model and customize the pruning process
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QLabel" name="label">
-                <property name="text">
-                 <string>Finished!</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
                <widget class="QFrame" name="timeline_main_content_frame_2">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -2755,7 +2768,7 @@ Alternatively, import an already trained model and customize the pruning process
                          <x>0</x>
                          <y>0</y>
                          <width>808</width>
-                         <height>394</height>
+                         <height>416</height>
                         </rect>
                        </property>
                        <property name="styleSheet">

@@ -3,30 +3,36 @@ from PyQt6 import QtCore, QtWidgets
 class UIAnimations:
     @staticmethod
     def fadeInUp(widget):
-        final_pos=widget.pos()
-        start_pos=final_pos+QtCore.QPoint(0,30)
+        final_pos = widget.pos()
+        start_pos = final_pos + QtCore.QPoint(0, 30)
         widget.move(start_pos)
 
-        effect=QtWidgets.QGraphicsOpacityEffect(widget)
+        effect = QtWidgets.QGraphicsOpacityEffect(widget)
         widget.setGraphicsEffect(effect)
         effect.setOpacity(0)
 
-        fade=QtCore.QPropertyAnimation(effect,b"opacity")
+        fade = QtCore.QPropertyAnimation(effect, b"opacity")
         fade.setDuration(400)
         fade.setStartValue(0)
         fade.setEndValue(1)
         fade.setEasingCurve(QtCore.QEasingCurve.Type.InOutQuad)
 
-        move_anim=QtCore.QPropertyAnimation(widget,b"pos")
+        move_anim = QtCore.QPropertyAnimation(widget, b"pos")
         move_anim.setDuration(400)
         move_anim.setStartValue(start_pos)
         move_anim.setEndValue(final_pos)
         move_anim.setEasingCurve(QtCore.QEasingCurve.Type.OutCubic)
 
-        group=QtCore.QParallelAnimationGroup(widget)
+        def on_animation_finished():
+            widget.move(final_pos)  # Ensure the widget is at the final position
+            widget.updateGeometry()  # Update the layout to reflect the new position
+
+        group = QtCore.QParallelAnimationGroup(widget)
         group.addAnimation(fade)
         group.addAnimation(move_anim)
+        group.finished.connect(on_animation_finished)  # Connect the finished signal
         group.start(QtCore.QAbstractAnimation.DeletionPolicy.KeepWhenStopped)
+
         return effect
     
     @staticmethod

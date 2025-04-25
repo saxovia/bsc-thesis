@@ -155,8 +155,10 @@ class MainWindow(QtWidgets.QMainWindow):
         hidden_data = [
             [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"] ],
         ]
-        for i in range(min(len(data), len(hidden_data))):
-            self.timelineTableModel.set_hidden_data(i, hidden_data[i])
+        for i in range(len(data)):
+            for j in range(len(hidden_data)):
+                self.timelineTableModel.set_hidden_data(i, hidden_data[j])
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view2)
 
@@ -217,21 +219,25 @@ class MainWindow(QtWidgets.QMainWindow):
             
     def handle_row_edit(self, row):
         data = self.timelineTableModel.get_hidden_data(row)
-        
+
+        if len(data) <= 1:
+            data = [
+                [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"] ],
+                ]
         self.pruningTableModel.beginResetModel()
         self.pruningTableModel._data = []
-        
+
         for hidden_row in data:
             new_row = [""] * self.pruningTableModel.columnCount()
-            
+
             for j in range(min(len(hidden_row), self.pruningTableModel.columnCount())):
                 new_row[j] = hidden_row[j]
-            
             self.pruningTableModel._data.append(new_row)
-        
+
         self.pruningTableModel.endResetModel()
         self.page_navigation_handler.showModelPage()
         self.page_navigation_handler.showModelPruningTablePage()
+
 
     def overwrite_table_data(self, table, data):
         table.beginResetModel()
@@ -337,7 +343,8 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
 
         def save_action():
-            self.page_navigation_handler.save_graphs()
+            #self.page_navigation_handler.save_graphs()
+            pass
 
         buttonaccept = None
         buttonreject = None
@@ -401,7 +408,3 @@ class MainWindow(QtWidgets.QMainWindow):
         
         for i in range(min(len(default_data), len(hidden_data))):
             self.timelineTableModel.set_hidden_data(i, hidden_data[i])
-        
-    def show_timeline_button_pressed(self):
-        self.add_default_timeline_data()
-        self.page_navigation_handler.showTimelinePage()

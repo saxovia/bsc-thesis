@@ -51,6 +51,9 @@ class PageNavigationHandler:
         self.resetSettingsButton()
 
     def showTimelinePage(self):
+        self.main_window.stackedWidget.setCurrentWidget(self.main_window.timeline_page)
+        for child in self.main_window.findChildren(Qt.QtWidgets.QAbstractItemView):
+            child.clearSelection()
         self.fadeToPage(self.main_window.timeline_page)
         self.main_window.previous_page = self.main_window.current_page
         self.main_window.current_page = "Timeline"
@@ -58,6 +61,8 @@ class PageNavigationHandler:
         self.resetSettingsButton()
         self.main_window.model_train_button.setText("Start Training")
         self.main_window.model_train_button.clicked.connect(self.main_window.model_training_handler.parseThroughProcessesTable)
+        self.main_window.undo_button.hide()
+
 
     def showChooseResultsPage(self):
         self.fadeToPage(self.main_window.choose_results_page)
@@ -104,6 +109,7 @@ class PageNavigationHandler:
         self.main_window.model_train_button.setText("Start Training")
         if self.main_window.model_train_button.signalsBlocked():
             self.main_window.model_train_button.disconnect()
+        self.main_window.undo_button.show()
         self.main_window.undo_button.setEnabled(True)
         self.main_window.undo_button.clicked.connect(self.showTimelinePage)
 
@@ -253,7 +259,7 @@ class PageNavigationHandler:
         layout.addSpacing(10)
 
     def create_parameters_vs_accuracy_graph(self, metrics):
-        fig = plt.figure(figsize=(8, 3))
+        fig = plt.figure(figsize=(7, 3))
         ax = fig.add_subplot(111)
         
         graph_types = ['BA','WS','Full']
