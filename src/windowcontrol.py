@@ -15,10 +15,14 @@ class WindowControl:
 
     def mouseMoveEvent(self, event):
         if self.mousePressed:
-            delta = QtCore.QPoint(event.globalPosition().x(), event.globalPosition().y()) - self.old_pos
-            self.window.move(self.window.x() + delta.x(), self.window.y() + delta.y())
-            self.old_pos = QtCore.QPoint(event.globalPosition().x(), event.globalPosition().y())
-
+            if self.window.is_maximized:
+                self.window.showNormal()
+                self.window.is_maximized = False
+                self.old_pos = event.globalPosition().toPoint()
+            else:
+                delta = event.globalPosition().toPoint() - self.old_pos
+                self.window.move(self.window.x() + delta.x(), self.window.y() + delta.y())
+                self.old_pos = event.globalPosition().toPoint()
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.MouseButton.LeftButton:

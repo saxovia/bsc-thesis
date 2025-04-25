@@ -79,15 +79,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.setCurrentWidget(new_page)
         self.ui_handler.fadeInUp(new_page)
 
-    def toggle_maximize_restore(self):
-        if self.isFullScreen():
-            self.showNormal()
-            self.is_maximized = False
-        else:
-            self.showFullScreen()
-            self.is_maximized = True
 
-    # Dragging functions
+    def toggle_maximize_restore(self):
+        if self.is_maximized:
+            self.showNormal()
+        else:
+            self.showMaximized()
+        self.is_maximized = not self.is_maximized
+
     def mousePressEvent(self, event):
         self.window_control.mousePressEvent(event)
 
