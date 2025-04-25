@@ -21,11 +21,11 @@ def test_mainwindow_initialization(app):
 def test_toggle_maximize_restore(app):
     app.showNormal()
     app.toggle_maximize_restore()
-    assert app.isFullScreen()
+    assert app.isMaximized()
     assert app.is_maximized
 
     app.toggle_maximize_restore()
-    assert not app.isFullScreen()
+    assert not app.isMaximized()
     assert not app.is_maximized
 def test_type_text_effect(app, qtbot):
     label = QtWidgets.QLabel()
