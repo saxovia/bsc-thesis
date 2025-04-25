@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QVBoxLayout
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime
+import csv
 
 
 class PageNavigationHandler:
@@ -118,6 +119,13 @@ class PageNavigationHandler:
             "val_accuracy": [],
             "global_sparsity": [],
             "total_parameters": [],
+            "trainable_parameters": [],
+            "layer_sparsity": [],
+            "feature_size": [],
+            "sequence_length": [],
+            "input_size": [],
+            "num_classes": [],
+            "dataset_type": [],
             "model_type": [],
             "graph_type": [],
             "prune_type": [],
@@ -125,8 +133,17 @@ class PageNavigationHandler:
             "eccentricity": [],
             "closeness": [],
             "betweenness": [],
-            "edge_betweenness": []
+            "edge_betweenness": [],
+            "graph_type": [],
+            "hidden_sizes": [],
+            "lr": [],
+            "batch_size": [],
+            "k": [],
+            "p": [],
+            "optimizer_type": [],
+            "loss": [],
         }
+
         for result in self.main_window.previous_results:
             self.metrics["model_type"].append(result["model_type"])
             self.metrics["graph_type"].append(result["graph_type"])
@@ -152,6 +169,20 @@ class PageNavigationHandler:
             self.metrics["closeness"].append(graph_metrics.get("closeness", {}))
             self.metrics["betweenness"].append(graph_metrics.get("betweenness", {}))
             self.metrics["edge_betweenness"].append(graph_metrics.get("edge_betweenness", {}))
+            self.metrics["hidden_sizes"].append(result.get("hidden_sizes", []))
+            self.metrics["lr"].append(result.get("lr", 0))
+            self.metrics["batch_size"].append(result.get("batch_size", 0))
+            self.metrics["k"].append(result.get("k", 0))
+            self.metrics["p"].append(result.get("p", 0))
+            self.metrics["optimizer_type"].append(result.get("optimizer_type", ""))
+            self.metrics["dataset_type"].append(result.get("dataset_type", ""))
+            self.metrics["feature_size"].append(result.get("feature_size", 0))
+            self.metrics["sequence_length"].append(result.get("sequence_length", 0))
+            self.metrics["input_size"].append(result.get("input_size", 0))
+            self.metrics["num_classes"].append(result.get("num_classes", 0))
+            self.metrics["layer_sparsity"].append(model_metrics.get("layer_sparsity", []))
+            self.metrics["trainable_parameters"].append(model_metrics.get("trainable_parameters", 0))
+            self.metrics["loss"].append(result.get("criterion", 0))
 
         #TODO REMOVE!! just tests
         self.metrics['graph_type'].extend(['Full', 'Full'])
@@ -202,6 +233,7 @@ class PageNavigationHandler:
         
         # Ensure proper updating
         scroll_content.adjustSize()
+
     def clear_layout(self, layout):
         while layout.count():
             child = layout.takeAt(0)
@@ -323,7 +355,52 @@ class PageNavigationHandler:
         for filename, fig in graphs:
             fig.savefig(os.path.join(save_dir, filename))
             plt.close(fig)
-        self.main_window.saved_label.setText(f"Graphs saved successfully in {save_dir}!")
+
+        csv_file_path = os.path.join(save_dir, "model_results.csv")
+        with open(csv_file_path, "w", newline="") as csvfile:
+            fieldnames = [
+                "model_type", "graph_type", "prune_type", "global_sparsity", "total_parameters", 
+                "train_loss", "train_accuracy", "val_loss", "val_accuracy",
+                "degree", "eccentricity", "closeness", "betweenness", "edge_betweenness",
+                "hidden_sizes", "lr", "batch_size", "k", "p", "optimizer_type",
+                "dataset_type", "feature_size", "sequence_length", "input_size", "num_classes",
+                "layer_sparsity", "trainable_parameters"
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for i in range(len(self.main_window.neural_networks)):
+                writer.writerow({
+                    "model_type": self.metrics["model_type"][i],
+                    "graph_type": self.metrics["graph_type"][i],
+                    "prune_type": self.metrics["prune_type"][i],
+                    "global_sparsity": self.metrics["global_sparsity"][i],
+                    "total_parameters": self.metrics["total_parameters"][i],
+                    "train_loss": self.metrics["train_loss"][i],
+                    "train_accuracy": self.metrics["train_accuracy"][i],
+                    "val_loss": self.metrics["val_loss"][i],
+                    "val_accuracy": self.metrics["val_accuracy"][i],
+                    "degree": self.metrics["degree"][i],
+                    "eccentricity": self.metrics["eccentricity"][i],
+                    "closeness": self.metrics["closeness"][i],
+                    "betweenness": self.metrics["betweenness"][i],
+                    "edge_betweenness": self.metrics["edge_betweenness"][i],
+                    "hidden_sizes": self.metrics["hidden_sizes"][i],
+                    "lr": self.metrics["lr"][i],
+                    "batch_size": self.metrics["batch_size"][i],
+                    "k": self.metrics["k"][i],
+                    "p": self.metrics["p"][i],
+                    "optimizer_type": self.metrics["optimizer_type"][i],
+                    "dataset_type": self.metrics["dataset_type"][i],
+                    "feature_size": self.metrics["feature_size"][i],
+                    "sequence_length": self.metrics["sequence_length"][i],
+                    "input_size": self.metrics["input_size"][i],
+                    "num_classes": self.metrics["num_classes"][i],
+                    "layer_sparsity": self.metrics["layer_sparsity"][i],
+                    "trainable_parameters": self.metrics["trainable_parameters"][i]
+                })
+
+        self.main_window.saved_label.setText(f"Graphs and results saved successfully in {save_dir}!")
 
     def load_graphs_from_main_menu(self):
         self.main_window.save_results_button.hide()

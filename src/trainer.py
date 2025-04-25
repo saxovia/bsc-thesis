@@ -65,11 +65,11 @@ class Trainer(QThread):
 
         self.train_loader, self.test_loader = data_handler.load_data()
 
-        dataset_properties = data_handler.dataset_info.get(self.dataset_type, None)
-        input_size = dataset_properties["input_size"] if dataset_properties else None
-        num_classes = dataset_properties["num_classes"] if dataset_properties else None
-        self.feature_size = dataset_properties["feature_size"] if dataset_properties else None
-        self.sequence_length = dataset_properties["sequence_length"] if dataset_properties else None
+        self.dataset_properties = data_handler.dataset_info.get(self.dataset_type, None)
+        input_size = self.dataset_properties["input_size"] if self.dataset_properties else None
+        num_classes = self.dataset_properties["num_classes"] if self.dataset_properties else None
+        self.feature_size = self.dataset_properties["feature_size"] if self.dataset_properties else None
+        self.sequence_length = self.dataset_properties["sequence_length"] if self.dataset_properties else None
 
         self.graph_handler = GraphHandler()
         self.dag_graph = self.graph_handler.create_dag_graph(self.hidden_sizes, self.graph_type, self.k, self.p, self.layer_count)
@@ -293,6 +293,10 @@ class Trainer(QThread):
             'training_metrics': self.training_metrics if hasattr(self, 'training_metrics') else None,
             'graph_metrics': self.graph_metrics if hasattr(self, 'graph_metrics') else None,
             'prune_type': pruning_metrics.get('prune_type') if hasattr(self, 'pruning_metrics') else None,
+            'input_size': self.dataset_properties.get('input_size') if hasattr(self, 'dataset_properties') else None,
+            'num_classes': self.dataset_properties.get('num_classes') if hasattr(self, 'dataset_properties') else None,
+            'feature_size': self.dataset_properties.get('feature_size') if hasattr(self, 'dataset_properties') else None,
+            'sequence_length': self.dataset_properties.get('sequence_length') if hasattr(self, 'dataset_properties') else None,
         }
     
     

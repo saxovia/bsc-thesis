@@ -1139,7 +1139,7 @@ Alternatively, import an already trained model and customize the pruning process
                  <item row="3" column="0" colspan="2">
                   <widget class="QStackedWidget" name="stackedWidget_2">
                    <property name="currentIndex">
-                    <number>1</number>
+                    <number>2</number>
                    </property>
                    <widget class="QWidget" name="model_starting_page">
                     <layout class="QGridLayout" name="gridLayout_23">
@@ -1434,7 +1434,7 @@ Alternatively, import an already trained model and customize the pruning process
                            <bool>false</bool>
                           </property>
                           <property name="text">
-                           <string>MLP</string>
+                           <string/>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -1815,7 +1815,11 @@ Alternatively, import an already trained model and customize the pruning process
                         <item>
                          <widget class="QPushButton" name="multiply_rows_pruning_button">
                           <property name="text">
-                           <string>Multiply Rows</string>
+                           <string/>
+                          </property>
+                          <property name="icon">
+                           <iconset>
+                            <normaloff>resources/icons/copy.png</normaloff>resources/icons/copy.png</iconset>
                           </property>
                          </widget>
                         </item>
@@ -1908,7 +1912,7 @@ Alternatively, import an already trained model and customize the pruning process
                            <bool>false</bool>
                           </property>
                           <property name="text">
-                           <string>MLP</string>
+                           <string/>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -2121,7 +2125,7 @@ Alternatively, import an already trained model and customize the pruning process
                            <bool>false</bool>
                           </property>
                           <property name="text">
-                           <string>MLP</string>
+                           <string/>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -2544,8 +2548,8 @@ Alternatively, import an already trained model and customize the pruning process
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>54</width>
-                             <height>64</height>
+                             <width>820</width>
+                             <height>337</height>
                             </rect>
                            </property>
                            <property name="styleSheet">
