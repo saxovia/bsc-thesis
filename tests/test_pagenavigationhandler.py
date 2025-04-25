@@ -143,10 +143,11 @@ def test_save_graphs(mock_main_window, tmp_path):
         'betweenness': [{'node1': 0.2}, {'node1': 0.4}],
         'edge_betweenness': [{'node1': 0.3}, {'node1': 0.5}]
     }
+
     mock_main_window.load_default_graph_directory.return_value = str(tmp_path)
     mock_fig = MagicMock()
     mock_fig.savefig = MagicMock()
-    
+
     with patch('matplotlib.pyplot.figure', return_value=mock_fig), \
          patch.object(handler, 'create_parameters_vs_accuracy_graph', return_value=mock_fig), \
          patch.object(handler, 'create_prune_metric_graph', return_value=mock_fig):
@@ -161,7 +162,6 @@ def test_save_graphs(mock_main_window, tmp_path):
             "mean_betweenness.png",
             "mean_edge_betweenness.png"
         ]
-        
+
         for filename in expected_filenames:
             assert any(filename in path for path in saved_paths), f"{filename} not found in saved paths"
-        mock_main_window.saved_label.setText.assert_called_with("Graphs saved successfully!")

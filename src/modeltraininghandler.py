@@ -59,7 +59,8 @@ class ModelTrainingHandler:
         print("Data from pruning table:", data)
 
         for row in data:
-            self.processTableRow(row)
+            if row and len(row) > 0:  # Ensure the row is not empty and has valid data
+                self.processTableRow(row)
 
         self.current_model_index = 0
         self.mainTrainLoop()

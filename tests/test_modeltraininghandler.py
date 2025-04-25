@@ -22,13 +22,13 @@ def test_resetUI(mock_window, handler):
     mock_window.model_train_button.clicked.connect.assert_called()
 
 
-from unittest.mock import MagicMock
 
 def test_parseThroughProcessesTable(mock_window, handler):
     mock_window.reorder_table_view2.model().get_table_data.return_value = [
         [1, "MLP", "Prior", "MNIST", "", "CrossEntropy", "Adam", 30, 2, 0.5, 64, 0.001, "WS"]
     ]
-    
+
+    handler.validate_table_data = MagicMock(return_value=True)
     handler.processTableRow = MagicMock()
     handler.mainTrainLoop = MagicMock()
 
