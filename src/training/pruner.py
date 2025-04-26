@@ -10,13 +10,13 @@ class BasePruner(ABC): #abstract class for pruning
     def compute_mask(self, weight_tensor, prune_percent):
         pass
     
-    def apply_pruning(self, model, prune_percent, mode="FULL", prune_type="Magnitude"):
+    def apply_pruning(self, model, prune_percent, mode="FULL", prune_mode="Magnitude"):
         if isinstance(model, nn.LSTM) or (hasattr(model, 'lstm')) and isinstance(model.lstm, nn.LSTM):
-            self._prune_lstm(model, prune_percent, mode, prune_type)
+            self._prune_lstm(model, prune_percent, mode, prune_mode)
         else:
-            self._prune_mlp(model, prune_percent, mode, prune_type)
+            self._prune_mlp(model, prune_percent, mode, prune_mode)
 
-    def _prune_lstm(self, model, prune_percent, mode="FULL", prune_type="Magnitude"):
+    def _prune_lstm(self, model, prune_percent, mode="FULL", prune_mode="Magnitude"):
         lstm = model.lstm if hasattr(model, 'lstm') else model
         
         for name, param in lstm.named_parameters():
@@ -31,7 +31,7 @@ class BasePruner(ABC): #abstract class for pruning
                 param.data[param.data == 0] = 0
 
 
-    def _prune_mlp(self, model, prune_percent, mode="FULL", prune_type="Magnitude"):
+    def _prune_mlp(self, model, prune_percent, mode="FULL", prune_mode="Magnitude"):
         layers = []
         #Get
         for module in model.modules():
@@ -86,12 +86,12 @@ class PrunerThread(QThread):
     results_ready = pyqtSignal(dict)
 
     
-    def __init__(self, model, prune_ratio, mode="FULL", prune_type="Magnitude"):
+    def __init__(self, model, prune_ratio, mode="FULL", prune_mode="Magnitude"):
         super().__init__()
         self.model = model
         self.prune_ratio = prune_ratio
         self.mode = mode
-        self.prune_type = prune_type
+        self.prune_mode = prune_mode
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     def run(self):
@@ -119,11 +119,11 @@ class PrunerThread(QThread):
             }
             self.validation_info.emit(validation_data)
             
-            self.progress_message.emit(f"\nApplying {self.mode} pruning at {self.prune_ratio:.0%} ratio with {self.prune_type} method.")
+            self.progress_message.emit(f"\nApplying {self.mode} pruning at {self.prune_ratio:.0%} ratio with {self.prune_mode} method.")
             
-            if self.prune_type == "Random":
+            if self.prune_mode == "Random":
                 pruner = RandomPruner()
-            elif self.prune_type == "Magnitude":
+            elif self.prune_mode == "Magnitude":
                 pruner = MagnitudePruner()
 
                 
@@ -136,7 +136,8 @@ class PrunerThread(QThread):
             results = {
                 'total_parameters': total_params,
                 'global_sparsity': actual_sparsity,
-                'prune_type': self.prune_type,
+                'prune_mode': self.prune_mode,
+                'prune_type': self.mode,
                 'target_sparsity': self.prune_ratio,
                 'actual_sparsity': actual_sparsity
             }

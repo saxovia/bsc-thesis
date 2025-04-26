@@ -92,7 +92,7 @@ def test_async_prune(trainer, mocker):
 
     mock_pruner_thread = mocker.patch("src.trainer.PrunerThread")
     spy=QSignalSpy(trainer.message)
-    trainer.async_prune(0.2, mode="FULL")
+    trainer.async_prune(0.2, prune_type="FULL")
     mock_pruner_thread.assert_called_once()
     assert len(spy)==0
 

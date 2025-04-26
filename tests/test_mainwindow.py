@@ -10,7 +10,8 @@ def app(qtbot):
         test_app = QtWidgets.QApplication([])
     main_win = MainWindow()
     qtbot.addWidget(main_win)
-    return main_win
+    yield main_win
+    main_win.close()
 
 def test_mainwindow_initialization(app):
     assert app.windowTitle() == 'MainWindow'
@@ -27,6 +28,7 @@ def test_toggle_maximize_restore(app):
     app.toggle_maximize_restore()
     assert not app.isMaximized()
     assert not app.is_maximized
+
 def test_type_text_effect(app, qtbot):
     label = QtWidgets.QLabel()
     app.type_text_effect(label, "Test", interval=10)
@@ -56,7 +58,7 @@ def test_show_warning_calls_discard(monkeypatch, app):
     called = {"discarded": False}
 
     def fake_msgbox(*args, **kwargs):
-        called["discarded"]=True
+        called["discarded"] = True
         return type("FakeBox", (), {"exec": lambda self: None})()
 
     monkeypatch.setattr("src.mainwindow.CustomMessageBox", fake_msgbox)

@@ -103,12 +103,12 @@ class Trainer(QThread):
         self.finished.emit()
 
     # Pruning methods
-    def async_prune(self, prune_ratio, mode="FULL", prune_type="Magnitude"):
+    def async_prune(self, prune_ratio, prune_type="FULL", prune_mode="Magnitude"):
         if self.pruner_thread and self.pruner_thread.isRunning():
             self.message.emit("Pruning already in progress")
             return False
 
-        self.pruner_thread = PrunerThread(self.model, prune_ratio, mode, prune_type)
+        self.pruner_thread = PrunerThread(self.model, prune_ratio, prune_type, prune_mode)
 
         self.pruner_thread.progress_message.connect(self.handle_pruning_message)
         self.pruner_thread.validation_info.connect(self.handle_validation_info)

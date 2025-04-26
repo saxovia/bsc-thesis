@@ -163,6 +163,7 @@ class PageNavigationHandler:
             "model_type": [],
             "graph_type": [],
             "prune_type": [],
+            "prune_mode": [],
             "degree": [],
             "eccentricity": [],
             "closeness": [],
@@ -195,8 +196,10 @@ class PageNavigationHandler:
 
             if "prune_type" in model_metrics:
                 self.metrics["prune_type"].append(model_metrics["prune_type"])
+                self.metrics["prune_mode"].append(model_metrics["prune_model"])
             else:
                 self.metrics["prune_type"].append("None")
+                self.metrics["prune_mode"].append("None")
 
             self.metrics["degree"].append(graph_metrics.get("degree", {}))
             self.metrics["eccentricity"].append(graph_metrics.get("eccentricity", {}))
