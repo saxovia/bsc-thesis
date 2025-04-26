@@ -196,9 +196,11 @@ class PageNavigationHandler:
 
             if "prune_type" in model_metrics:
                 self.metrics["prune_type"].append(model_metrics["prune_type"])
-                self.metrics["prune_mode"].append(model_metrics["prune_model"])
             else:
                 self.metrics["prune_type"].append("None")
+            if "prune_mode" in model_metrics:
+                self.metrics["prune_mode"].append(model_metrics["prune_mode"])
+            else:
                 self.metrics["prune_mode"].append("None")
 
             self.metrics["degree"].append(graph_metrics.get("degree", {}))
