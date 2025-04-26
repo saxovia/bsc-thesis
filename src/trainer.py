@@ -273,6 +273,7 @@ class Trainer(QThread):
         self.graph_metrics = self.graph_handler.calculate_graph_metrics(self.dag_graph, self.model) if hasattr(self, 'dag_graph') else {}
         model_metrics = self.model_handler.calculate_metrics() if hasattr(self, 'model') else {}
         self.training_metrics['model_metrics'].update(model_metrics)
+        serialized_graph = self.model_handler.serialize_graph(self.dag_graph) if hasattr(self, 'dag_graph') else None
         return {
             'model_state_dict': self.model.state_dict() if self.model else None,
             'optimizer_state_dict': self.optimizer.state_dict() if hasattr(self.optimizer, 'state_dict') else None,
@@ -299,6 +300,7 @@ class Trainer(QThread):
             'num_classes': self.dataset_properties.get('num_classes') if hasattr(self, 'dataset_properties') else None,
             'feature_size': self.dataset_properties.get('feature_size') if hasattr(self, 'dataset_properties') else None,
             'sequence_length': self.dataset_properties.get('sequence_length') if hasattr(self, 'dataset_properties') else None,
+            'serialized_graph': serialized_graph if hasattr(self, 'dag_graph') else None,
         }
     
     

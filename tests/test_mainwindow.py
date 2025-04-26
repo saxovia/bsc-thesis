@@ -33,17 +33,25 @@ def test_type_text_effect(app, qtbot):
     label = QtWidgets.QLabel()
     app.type_text_effect(label, "Test", interval=10)
 
-    with qtbot.waitSignal(app.typing_timer.timeout, timeout=100, raising=False):
+    timer = app.typing_timer
+    qtbot.addWidget(label)
+
+    with qtbot.waitSignal(timer.timeout, timeout=100, raising=False):
         pass
 
     assert label.text().startswith("T")
 
 
 
-def test_complete_reset(app):
+def test_complete_reset(app, qtbot):
     app.model_train_button.setEnabled(False)
     app.saved_label.setText("Saved!")
-    app.complete_reset()
+    
+    if hasattr(app, "typing_timer") and app.typing_timer:
+        with qtbot.waitSignal(app.typing_timer.timeout, timeout=1000, raising=False):
+            app.complete_reset()
+    else:
+        app.complete_reset()
 
     assert app.model_train_button.isEnabled()
     assert app.saved_label.text() == ""

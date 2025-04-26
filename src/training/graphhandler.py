@@ -167,3 +167,9 @@ class GraphHandler:
             self.message.emit(f"Graph metric calculation error: {e}")
 
         return metrics
+    
+    def serialize_graph(self, G):
+        if not isinstance(G, nx.Graph):
+            raise ValueError("Provided object is not a networkx Graph.")
+
+        self.saved_graph_data = pickle.dumps(G)

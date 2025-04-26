@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import os
 from datetime import datetime
 import csv
+from io import BytesIO
+import networkx as nx
+import pickle
 
 
 class PageNavigationHandler:
@@ -177,6 +180,43 @@ class PageNavigationHandler:
             "p": [],
             "optimizer_type": [],
             "loss": [],
+            "serialized_graph": [],
+
+            "avg_degree": [],
+            "avg_eccentricity": [],
+            "avg_closeness": [],
+            "avg_betweenness": [],
+            "avg_edge_betweenness": [],
+            "avg_global_sparsity": [],
+
+            "min_degree": [],
+            "min_eccentricity": [],
+            "min_closeness": [],
+            "min_betweenness": [],
+            "min_edge_betweenness": [],
+            "min_global_sparsity": [],
+
+            "max_degree": [],
+            "max_eccentricity": [],
+            "max_closeness": [],
+            "max_betweenness": [],
+            "max_edge_betweenness": [],
+            "max_global_sparsity": [],
+
+            "std_degree": [],
+            "std_eccentricity": [],
+            "std_closeness": [],
+            "std_betweenness": [],
+            "std_edge_betweenness": [],
+            "std_global_sparsity": [],
+            
+            "variance_degree": [],
+            "variance_eccentricity": [],
+            "variance_closeness": [],
+            "variance_betweenness": [],
+            "variance_edge_betweenness": [],
+            "variance_global_sparsity": [],
+
         }
 
         for result in self.main_window.previous_results:
@@ -222,6 +262,53 @@ class PageNavigationHandler:
             self.metrics["layer_sparsity"].append(model_metrics.get("layer_sparsity", []))
             self.metrics["trainable_parameters"].append(model_metrics.get("trainable_parameters", 0))
             self.metrics["loss"].append(result.get("criterion", 0))
+            self.metrics["serialized_graph"].append(result.get("serialized_graph", ""))
+
+            # Calculated metrics
+            self.metrics["avg_degree"].append(sum(graph_metrics["degree"].values()) / len(graph_metrics["degree"]))
+            self.metrics["avg_eccentricity"].append(sum(graph_metrics["eccentricity"].values()) / len(graph_metrics["eccentricity"]))
+            self.metrics["avg_closeness"].append(sum(graph_metrics["closeness"].values()) / len(graph_metrics["closeness"]))
+            self.metrics["avg_betweenness"].append(sum(graph_metrics["betweenness"].values()) / len(graph_metrics["betweenness"]))
+            self.metrics["avg_edge_betweenness"].append(sum(graph_metrics["edge_betweenness"].values()) / len(graph_metrics["edge_betweenness"]))
+
+            self.metrics["min_degree"].append(min(graph_metrics["degree"].values()))
+            self.metrics["min_eccentricity"].append(min(graph_metrics["eccentricity"].values()))
+            self.metrics["min_closeness"].append(min(graph_metrics["closeness"].values()))
+            self.metrics["min_betweenness"].append(min(graph_metrics["betweenness"].values()))
+            self.metrics["min_edge_betweenness"].append(min(graph_metrics["edge_betweenness"].values()))
+
+            self.metrics["max_degree"].append(max(graph_metrics["degree"].values()))
+            self.metrics["max_eccentricity"].append(max(graph_metrics["eccentricity"].values()))
+            self.metrics["max_closeness"].append(max(graph_metrics["closeness"].values()))
+            self.metrics["max_betweenness"].append(max(graph_metrics["betweenness"].values()))
+            self.metrics["max_edge_betweenness"].append(max(graph_metrics["edge_betweenness"].values()))
+
+            self.metrics["std_degree"].append(sum((x - self.metrics["avg_degree"][-1]) ** 2 for x in graph_metrics["degree"].values()) / len(graph_metrics["degree"]))
+            self.metrics["std_eccentricity"].append(sum((x - self.metrics["avg_eccentricity"][-1]) ** 2 for x in graph_metrics["eccentricity"].values()) / len(graph_metrics["eccentricity"]))
+            self.metrics["std_closeness"].append(sum((x - self.metrics["avg_closeness"][-1]) ** 2 for x in graph_metrics["closeness"].values()) / len(graph_metrics["closeness"]))
+            self.metrics["std_betweenness"].append(sum((x - self.metrics["avg_betweenness"][-1]) ** 2 for x in graph_metrics["betweenness"].values()) / len(graph_metrics["betweenness"]))
+            self.metrics["std_edge_betweenness"].append(sum((x - self.metrics["avg_edge_betweenness"][-1]) ** 2 for x in graph_metrics["edge_betweenness"].values()) / len(graph_metrics["edge_betweenness"]))
+
+            self.metrics["variance_degree"].append(
+                sum((x - self.metrics["avg_degree"][-1]) ** 2 for x in graph_metrics["degree"].values()) / len(graph_metrics["degree"])
+                if len(graph_metrics["degree"]) > 0 else 0
+            )
+            self.metrics["variance_eccentricity"].append(
+                sum((x - self.metrics["avg_eccentricity"][-1]) ** 2 for x in graph_metrics["eccentricity"].values()) / len(graph_metrics["eccentricity"])
+                if len(graph_metrics["eccentricity"]) > 0 else 0
+            )
+            self.metrics["variance_closeness"].append(
+                sum((x - self.metrics["avg_closeness"][-1]) ** 2 for x in graph_metrics["closeness"].values()) / len(graph_metrics["closeness"])
+                if len(graph_metrics["closeness"]) > 0 else 0
+            )
+            self.metrics["variance_betweenness"].append(
+                sum((x - self.metrics["avg_betweenness"][-1]) ** 2 for x in graph_metrics["betweenness"].values()) / len(graph_metrics["betweenness"])
+                if len(graph_metrics["betweenness"]) > 0 else 0
+            )
+            self.metrics["variance_edge_betweenness"].append(
+                sum((x - self.metrics["avg_edge_betweenness"][-1]) ** 2 for x in graph_metrics["edge_betweenness"].values()) / len(graph_metrics["edge_betweenness"])
+                if len(graph_metrics["edge_betweenness"]) > 0 else 0
+            )
 
         #TODO REMOVE!! just tests
         self.metrics['graph_type'].extend(['Full', 'Full'])
@@ -440,7 +527,12 @@ class PageNavigationHandler:
                 "degree", "eccentricity", "closeness", "betweenness", "edge_betweenness",
                 "hidden_sizes", "lr", "batch_size", "k", "p", "optimizer_type",
                 "dataset_type", "feature_size", "sequence_length", "input_size", "num_classes",
-                "layer_sparsity", "trainable_parameters"
+                "layer_sparsity", "trainable_parameters",
+                "avg_degree", "avg_eccentricity", "avg_closeness", "avg_betweenness", "avg_edge_betweenness",
+                "min_degree", "min_eccentricity", "min_closeness", "min_betweenness", "min_edge_betweenness",
+                "max_degree", "max_eccentricity", "max_closeness", "max_betweenness", "max_edge_betweenness",
+                "std_degree", "std_eccentricity", "std_closeness", "std_betweenness", "std_edge_betweenness",
+                "variance_degree", "variance_eccentricity", "variance_closeness", "variance_betweenness", "variance_edge_betweenness"
             ]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
@@ -473,11 +565,53 @@ class PageNavigationHandler:
                     "input_size": self.metrics["input_size"][i],
                     "num_classes": self.metrics["num_classes"][i],
                     "layer_sparsity": self.metrics["layer_sparsity"][i],
-                    "trainable_parameters": self.metrics["trainable_parameters"][i]
+                    "trainable_parameters": self.metrics["trainable_parameters"][i],
+                    "avg_degree": self.metrics["avg_degree"][i],
+                    "avg_eccentricity": self.metrics["avg_eccentricity"][i],
+                    "avg_closeness": self.metrics["avg_closeness"][i],
+                    "avg_betweenness": self.metrics["avg_betweenness"][i],
+                    "avg_edge_betweenness": self.metrics["avg_edge_betweenness"][i],
+                    "min_degree": self.metrics["min_degree"][i],
+                    "min_eccentricity": self.metrics["min_eccentricity"][i],
+                    "min_closeness": self.metrics["min_closeness"][i],
+                    "min_betweenness": self.metrics["min_betweenness"][i],
+                    "min_edge_betweenness": self.metrics["min_edge_betweenness"][i],
+                    "max_degree": self.metrics["max_degree"][i],
+                    "max_eccentricity": self.metrics["max_eccentricity"][i],
+                    "max_closeness": self.metrics["max_closeness"][i],
+                    "max_betweenness": self.metrics["max_betweenness"][i],
+                    "max_edge_betweenness": self.metrics["max_edge_betweenness"][i],
+                    "std_degree": self.metrics["std_degree"][i],
+                    "std_eccentricity": self.metrics["std_eccentricity"][i],
+                    "std_closeness": self.metrics["std_closeness"][i],
+                    "std_betweenness": self.metrics["std_betweenness"][i],
+                    "std_edge_betweenness": self.metrics["std_edge_betweenness"][i],
+                    "variance_degree": self.metrics["variance_degree"][i],
+                    "variance_eccentricity": self.metrics["variance_eccentricity"][i],
+                    "variance_closeness": self.metrics["variance_closeness"][i],
+                    "variance_betweenness": self.metrics["variance_betweenness"][i],
+                    "variance_edge_betweenness": self.metrics["variance_edge_betweenness"][i],
                 })
 
-        self.main_window.saved_label.setText(f"Graphs and results saved successfully in {save_dir}!")
+        graph_dir = os.path.join(save_dir, "graphs")
+        os.makedirs(graph_dir, exist_ok=True)
 
+        for i, serialized_graph in enumerate(self.metrics["serialized_graph"]):
+            graph_file_path = os.path.join(graph_dir, f"graph_{i}.gpickle")
+            try:
+                deserialized_graph = self.deserialize_graph(serialized_graph)
+                with open(graph_file_path, "wb") as f:
+                    pickle.dump(deserialized_graph, f)
+            except Exception as e:
+                print(f"Error saving graph {i}: {e}")
+        self.main_window.saved_label.setText(f"Graphs and results saved successfully in {graph_dir}!")
+
+
+    def deserialize_graph(self, byte_data):
+        buffer = BytesIO(byte_data)
+        buffer.seek(0)
+        return pickle.load(buffer)
+    
     def load_graphs_from_main_menu(self):
         self.main_window.save_results_button.hide()
         self.main_window.saved_label.setText("")

@@ -2,6 +2,8 @@ from src.training.neuralnetwork import MLPNet, LSTMNet, SparseMLPNet, SparseLSTM
 import networkx as nx
 from collections import defaultdict
 import torch
+import io
+import pickle
 
 class ModelHandler:
     def __init__(self, model_type, hidden_sizes, device):
@@ -122,3 +124,9 @@ class ModelHandler:
             return [input_size] + layer_sizes + [output_size]
         
         return layer_sizes
+    
+    def serialize_graph(self, dag_graph):
+        buffer = io.BytesIO()
+        pickle.dump(dag_graph, buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
