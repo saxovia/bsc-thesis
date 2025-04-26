@@ -299,7 +299,7 @@ class ModelTrainingHandler:
 
     def handleReadingPruningTable(self, model):
         try:
-            hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index-2)
+            hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index - 2)
             if hidden_data == '' or hidden_data is None:
                 self.trainer.message.emit("No hidden data for model. Skipping pruning actions.")
                 self.trainer.finished.emit()
@@ -311,12 +311,12 @@ class ModelTrainingHandler:
                 if row == '':
                     continue
                 action = row[1]
-                if action == "Prune": 
+                if action == "Prune":
                     self.action_queue.append(("Prune", row))
                 elif action == "Retrain":
                     self.action_queue.append(("Retrain", row))
                 else:
-                    print(f"Unknown action: {action}")
+                    print(f"Unknown action: {action}. Skipping this action.")
 
             if not self.action_queue:
                 self.trainer.finished.emit()

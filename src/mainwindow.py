@@ -137,14 +137,6 @@ class MainWindow(QtWidgets.QMainWindow):
             ["", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64,0.01, "WS"],
             ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64,0.01, "WS"],
         ]
-        """
-                data = [
-            ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
-            ["", "3", "LSTM", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["", "1", "LSTM", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "30", 2, 1.0, 64,0.001, "WS"],
-            ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "30", 2, 0.7, 64,0.01, "WS"],
-        ]
-        """
 
         self.timelineTableModel = ReorderTableModel(data, headers=["", "", "Model\nType", "Start", "Dataset", "Hidden\nsizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch\nSize", "Learning\nRate", "Graph\nType"])
 
@@ -329,7 +321,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if not isinstance(title, str):
             title = str(title)
 
-        #TODO generalize this function to be used in other places as well
         def discard_action():
             self.complete_reset()
 
@@ -375,37 +366,3 @@ class MainWindow(QtWidgets.QMainWindow):
         msg.exec()
         self.setGraphicsEffect(None)
 
-    def add_default_timeline_data(self):
-        """
-        default_data = [
-            ["", "1", "MLP", "Prune", "MNIST", "[50, 25, 10]", "CrossEntropy", "Adam", "10", "", "", "32", "0.001", "Full"],
-            ["", "2", "MLP", "Prior", "CIFAR-10", "[100, 50, 20]", "CrossEntropy", "SGD", "20", "2", "0.8", "64", "0.01", "WS"],
-            ["", "3", "", "", "", "", "", "", "", "", "", "", "", ""]
-        ]
-        """
-        default_data =[
-            ["", "", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "5", "", "", 32, 0.001, "Full"],
-            ["", "", "3", "MLP", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["", "", "3", "MLP", "Prune", "MNIST", "[11,3,6,4,2,8]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["", "", "1", "MLP", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "1", 2, 1.0, 64,0.001, "WS"],
-            ["", "", "4", "MLP", "Prior", "MNIST", "70", "CrossEntropy", "Adam", "1", 2, 0.8, 64,0.01, "WS"],
-            ["", "", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64,0.01, "WS"],
-            ["", "", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64,0.01, "WS"],
-            ["", "", "4", "", "", "", "", "", "", "", "", "", "", ""],
-            ]
-        hidden_data = [
-            [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"] ],
-        ]
-
-            
-        self.timelineTableModel.beginResetModel()
-        self.timelineTableModel._data = []
-        self.timelineTableModel.endResetModel()
-        for row in default_data:
-            new_row = [""] * self.timelineTableModel.columnCount()
-            for j in range(min(len(row), self.timelineTableModel.columnCount())):
-                new_row[j] = row[j]
-            self.timelineTableModel._data.append(new_row)
-        
-        for i in range(min(len(default_data), len(hidden_data))):
-            self.timelineTableModel.set_hidden_data(i, hidden_data[i])
