@@ -3,6 +3,9 @@ from PyQt6 import QtCore, QtWidgets
 class UIAnimations:
     @staticmethod
     def fadeInUp(widget):
+        if widget is None:
+            return None
+    
         final_pos = widget.pos()
         start_pos = final_pos + QtCore.QPoint(0, 30)
         widget.move(start_pos)
@@ -12,13 +15,13 @@ class UIAnimations:
         effect.setOpacity(0)
 
         fade = QtCore.QPropertyAnimation(effect, b"opacity")
-        fade.setDuration(400)
+        fade.setDuration(200)
         fade.setStartValue(0)
         fade.setEndValue(1)
         fade.setEasingCurve(QtCore.QEasingCurve.Type.InOutQuad)
 
         move_anim = QtCore.QPropertyAnimation(widget, b"pos")
-        move_anim.setDuration(400)
+        move_anim.setDuration(200)
         move_anim.setStartValue(start_pos)
         move_anim.setEndValue(final_pos)
         move_anim.setEasingCurve(QtCore.QEasingCurve.Type.OutCubic)

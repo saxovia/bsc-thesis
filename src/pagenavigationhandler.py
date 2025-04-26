@@ -18,7 +18,8 @@ class PageNavigationHandler:
         
     def fadeToPage(self, new_page):
         #force it to wait at first - for the padding to apply
-        
+        if new_page == None:
+            return
         QTimer.singleShot(100, lambda: self.performFadeIn(new_page))
         #set the page to the new page
         #self.main_window.stackedWidget.setCurrentWidget(new_page)
@@ -51,7 +52,7 @@ class PageNavigationHandler:
         self.resetSettingsButton()
 
     def showTimelinePage(self):
-        self.main_window.stackedWidget.setCurrentWidget(self.main_window.timeline_page)
+        QTimer.singleShot(100, lambda: self.fadeToPage(self.main_window.stackedWidget.setCurrentWidget(self.main_window.timeline_page)))
         for child in self.main_window.findChildren(Qt.QtWidgets.QAbstractItemView):
             child.clearSelection()
         self.fadeToPage(self.main_window.timeline_page)

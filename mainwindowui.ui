@@ -514,7 +514,7 @@ QTableWidget, QTableView {
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>2</number>
             </property>
             <widget class="QWidget" name="home_page">
              <property name="autoFillBackground">
@@ -1194,7 +1194,7 @@ Alternatively, import an already trained model and customize the pruning process
                  <item row="3" column="0" colspan="2">
                   <widget class="QStackedWidget" name="stackedWidget_2">
                    <property name="currentIndex">
-                    <number>0</number>
+                    <number>2</number>
                    </property>
                    <widget class="QWidget" name="model_starting_page">
                     <layout class="QGridLayout" name="gridLayout_23">
@@ -1884,7 +1884,7 @@ Alternatively, import an already trained model and customize the pruning process
                         </size>
                        </property>
                        <layout class="QGridLayout" name="gridLayout_20">
-                        <item row="0" column="1">
+                        <item row="0" column="0">
                          <spacer name="horizontalSpacer_6">
                           <property name="orientation">
                            <enum>Qt::Horizontal</enum>
@@ -1897,41 +1897,7 @@ Alternatively, import an already trained model and customize the pruning process
                           </property>
                          </spacer>
                         </item>
-                        <item row="0" column="0">
-                         <widget class="QLabel" name="label_22">
-                          <property name="minimumSize">
-                           <size>
-                            <width>0</width>
-                            <height>50</height>
-                           </size>
-                          </property>
-                          <property name="maximumSize">
-                           <size>
-                            <width>16777215</width>
-                            <height>50</height>
-                           </size>
-                          </property>
-                          <property name="font">
-                           <font>
-                            <pointsize>22</pointsize>
-                            <bold>true</bold>
-                           </font>
-                          </property>
-                          <property name="autoFillBackground">
-                           <bool>false</bool>
-                          </property>
-                          <property name="text">
-                           <string>Pruning</string>
-                          </property>
-                          <property name="alignment">
-                           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                          </property>
-                          <property name="wordWrap">
-                           <bool>true</bool>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="0" column="2">
+                        <item row="0" column="1">
                          <widget class="QLabel" name="current_model_architecture_label_2">
                           <property name="minimumSize">
                            <size>
