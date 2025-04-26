@@ -108,11 +108,30 @@ class PageNavigationHandler:
     def showModelPruningTablePage(self):
         self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_pruning_table_page)
         self.main_window.model_train_button.setText("Start Training")
-        if self.main_window.model_train_button.signalsBlocked():
-            self.main_window.model_train_button.disconnect()
+        self.main_window.undo_button.show()
+        try:
+            self.main_window.undo_button.clicked.disconnect()
+        except:
+            pass
+            
         self.main_window.undo_button.show()
         self.main_window.undo_button.setEnabled(True)
-        self.main_window.undo_button.clicked.connect(self.showTimelinePage)
+        self.main_window.undo_button.clicked.connect(self.savePruningChangesAndGoBack)
+
+    def savePruningChangesAndGoBack(self):
+        current_row = self.main_window.reorder_table_view2.currentIndex().row()
+        
+        if current_row >= 0:
+            pruning_data = []
+            for row in range(self.main_window.pruningTableModel.rowCount()):
+                row_data = []
+                for col in range(self.main_window.pruningTableModel.columnCount()):
+                    index = self.main_window.pruningTableModel.index(row, col)
+                    row_data.append(self.main_window.pruningTableModel.data(index, Qt.QtCore.Qt.ItemDataRole.DisplayRole))
+                pruning_data.append(row_data)
+            
+            self.main_window.timelineTableModel.set_hidden_data(current_row, pruning_data)
+        self.showTimelinePage()
 
 
     def visualize_results(self): #TODO migrate this elsewhere ?

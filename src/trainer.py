@@ -97,7 +97,7 @@ class Trainer(QThread):
     def stop(self):
         self.running = False
         if self.pruner_thread and self.pruner_thread.isRunning():
-            self.pruner_thread.stop()
+            self.pruner_thread.terminate()
         self.terminate()
         self.wait()
         self.finished.emit()
@@ -175,6 +175,9 @@ class Trainer(QThread):
             total_loss, correct, total = 0, 0, 0
 
             for images, labels in train_loader:
+                if not self.running:
+                    print("Training stopped early")
+                    return
                 images, labels = images.to(self.device), labels.to(self.device)
                 
                 # Handle different input formats

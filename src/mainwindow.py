@@ -218,6 +218,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
             
     def handle_row_edit(self, row):
+        
+        self.reorder_table_view2.selectRow(row)
         data = self.timelineTableModel.get_hidden_data(row)
 
         if len(data) <= 1:
@@ -237,8 +239,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pruningTableModel.endResetModel()
         self.page_navigation_handler.showModelPage()
         self.page_navigation_handler.showModelPruningTablePage()
-
-
+  
     def overwrite_table_data(self, table, data):
         table.beginResetModel()
         table._data = []
@@ -310,7 +311,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.save_results_button.show()
         if self.model_training_handler.trainer is not None:
             self.model_training_handler.trainer.running = False
-            self.model_training_handler.trainer.quit()
+            self.model_training_handler.trainer.terminate()
             self.model_training_handler.trainer.wait()
             self.model_training_handler.trainer = None
         self.neural_networks = []

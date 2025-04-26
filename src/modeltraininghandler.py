@@ -43,11 +43,11 @@ class ModelTrainingHandler:
         self.main_window.model_train_button.setEnabled(False)
         self.main_window.undo_button.setEnabled(False)
 
-        data = self.main_window.reorder_table_view2.model().get_table_data()
-        if len(data) < 1:
+        data=self.main_window.reorder_table_view2.model().get_table_data()
+        if len(data)<1:
             self.main_window.show_warning(
                 title="No Data Found",
-                message="The pruning table is empty. Please add data before proceeding.",
+                message="The table is empty. Please add data before proceeding.",
                 actions=None,
                 buttons=["ok"]
             )
@@ -57,13 +57,27 @@ class ModelTrainingHandler:
             return
 
         print("Data from pruning table:", data)
+        try:
+            for row in data:
+                if row and len(row)>0:
+                    success=self.processTableRow(row)
+                    if not success:
+                        self.resetUI()
+                        return # <-- Important: stop if invalid row
 
-        for row in data:
-            if row and len(row) > 0:  # Ensure the row is not empty and has valid data
-                self.processTableRow(row)
+            self.current_model_index=0
+            self.mainTrainLoop()
 
-        self.current_model_index = 0
-        self.mainTrainLoop()
+        except Exception as e:
+            print(f"Error processing table data: {str(e)}")
+            self.main_window.show_warning(
+                title="Invalid Data",
+                message=f"Error processing table data: {str(e)}",
+                actions=None,
+                buttons=["ok"]
+            )
+            self.resetUI()
+            return
 
     def validate_table_data(self, table_model):
         for row_index in range(table_model.rowCount()):
@@ -83,24 +97,98 @@ class ModelTrainingHandler:
         return True
 
     def processTableRow(self, row):
-        index = row[0]
-        model = row[1] if row[1] != "" else "MLP"
-        start = row[2] if row[2] != "" else "Prior"
-        dataset = row[3] if row[3] != "" else "MNIST"
-        N = self.parseNValue(row[4], start)
-        loss = row[5] if row[5] != "" else "CrossEntropy"
-        optimizer = row[6] if row[6] != "" else "Adam"
-        epochs = int(row[7]) if row[7] != "" else 30
-        k = int(row[8]) if row[8] != "" else 2 
-        p = float(row[9]) if row[9] != "" else 0.5 
-        batch_size = int(row[10]) if row[10] != "" else 64 
-        learning_rate = float(row[11]) if row[11] != "" else 0.001
-        graph_type = row[12] if row[12] != "" else "WS"
+        try:
+            index=row[0]
+            if not index:
+                raise ValueError("Index is missing or invalid.")
 
-        self.main_window.neural_networks.append([
-            index, model, start, dataset, N, loss, optimizer, 
-            epochs, k, p, batch_size, learning_rate, graph_type
-        ])
+            model=row[1]
+            valid_models=["MLP", "LSTM"]
+            if not model or model not in valid_models:
+                raise ValueError("Model type is missing or invalid.")
+
+            start=row[2]
+            valid_starts=["Prior", "Prune"]
+            if not start or start not in valid_starts:
+                raise ValueError("Start type is missing or invalid.")
+
+            dataset=row[3]
+            valid_datasets=["MNIST", "CIFAR10", "CIFAR100"]
+            if not dataset or dataset not in valid_datasets:
+                raise ValueError("Dataset is missing or invalid.")
+
+            N=self.parseNValue(row[4], start)
+            if not N:
+                raise ValueError("N value is missing or invalid.")
+
+            loss=row[5]
+            valid_losses=["CrossEntropy", "MSE"]
+            if not loss or loss not in valid_losses:
+                raise ValueError("Loss function is missing or invalid.")
+
+            optimizer=row[6]
+            valid_optimizers=["SGD", "Adam", "RMSprop", "Adagrad", "Adadelta"]
+            if not optimizer or optimizer not in valid_optimizers:
+                raise ValueError("Optimizer is missing or invalid.")
+
+            epochs=row[7]
+            if not epochs or not str(epochs).isdigit():
+                raise ValueError("Epochs value is missing or invalid.")
+            epochs=int(epochs)
+
+            k=row[8]
+            if start != "Prune":
+                if not k or not str(k).isdigit():
+                    raise ValueError("K value is missing or invalid.")
+                k=int(k)
+
+            p=row[9]
+            if start != "Prune":
+                try:
+                    p=float(p)
+                except (ValueError, TypeError):
+                    raise ValueError("P value is missing or invalid.")
+
+            batch_size=row[10]
+            if not batch_size or not str(batch_size).isdigit():
+                raise ValueError("Batch size is missing or invalid.")
+            batch_size=int(batch_size)
+
+            learning_rate=row[11]
+            try:
+                learning_rate=float(learning_rate)
+            except (ValueError, TypeError):
+                raise ValueError("Learning rate is missing or invalid.")
+
+            graph_type=row[12]
+            valid_graph_types=["Full", "WS", "BA"]
+            if not graph_type or graph_type not in valid_graph_types:
+                raise ValueError("Graph type is missing or invalid.")
+
+            self.main_window.neural_networks.append([
+                index, model, start, dataset, N, loss, optimizer,
+                epochs, k, p, batch_size, learning_rate, graph_type
+            ])
+            return True
+
+        except ValueError as ve:
+            self.main_window.show_warning(
+                title="Invalid Row Data",
+                message=f"Error processing row: {str(ve)}",
+                actions=None,
+                buttons=["ok"]
+            )
+            return False
+
+        except Exception as e:
+            print(f"Error processing row {row}: {str(e)}")
+            self.main_window.show_warning(
+                title="Invalid Data",
+                message=f"Row {row} contains invalid data: {str(e)}",
+                actions=None,
+                buttons=["ok"]
+            )
+            return False
 
     def parseNValue(self, n_value, start_type):
         if n_value == "":
@@ -209,32 +297,39 @@ class ModelTrainingHandler:
 
 
     def handleReadingPruningTable(self, model):
-        hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index-2)
-        if hidden_data == '' or hidden_data is None:
-            self.trainer.message.emit("No hidden data for model. Skipping pruning actions.")
+        try:
+            hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index-2)
+            if hidden_data == '' or hidden_data is None:
+                self.trainer.message.emit("No hidden data for model. Skipping pruning actions.")
+                self.trainer.finished.emit()
+                self.onTrainingFinished()
+                return
+            self.action_queue = []
+            for row in hidden_data:
+                row = row[2:]
+                if row == '':
+                    continue
+                action = row[1]
+                if action == "Prune": 
+                    self.action_queue.append(("Prune", row))
+                elif action == "Retrain":
+                    self.action_queue.append(("Retrain", row))
+                else:
+                    print(f"Unknown action: {action}")
+
+            if not self.action_queue:
+                self.trainer.finished.emit()
+                self.onTrainingFinished()
+                return
+
+            self.processNextAction()
+        except Exception as e:
+            print(f"Error reading pruning table: {str(e)}")
+            self.trainer.message.emit(f"Error reading pruning table: {str(e)}")
             self.trainer.finished.emit()
             self.onTrainingFinished()
             return
-        self.action_queue = []
-        for row in hidden_data:
-            row = row[2:]
-            if row == '':
-                continue
-            action = row[1]
-            if action == "Prune": 
-                self.action_queue.append(("Prune", row))
-            elif action == "Retrain":
-                self.action_queue.append(("Retrain", row))
-            else:
-                print(f"Unknown action: {action}")
-
-        if not self.action_queue:
-            self.trainer.finished.emit()
-            self.onTrainingFinished()
-            return
-
-        self.processNextAction()
-
+        
     def processNextAction(self):
         if not self.action_queue or len(self.action_queue) == 0 or self.trainer is None:
             return

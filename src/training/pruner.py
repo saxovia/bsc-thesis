@@ -125,6 +125,8 @@ class PrunerThread(QThread):
                 pruner = RandomPruner()
             elif self.prune_type == "Magnitude":
                 pruner = MagnitudePruner()
+
+                
             pruner.apply_pruning(self.model, self.prune_ratio * 100, mode=self.mode)
             
             total_params = sum(p.numel() for p in self.model.parameters())

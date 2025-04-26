@@ -2,8 +2,6 @@ from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QThread, pyqtSignal
 
-#TODO Undo? with Crtl Z
-#TODO Shift selection!!
 class ReorderTableModel(QtCore.QAbstractTableModel):
     def __init__(self, data, headers=None, editable=True, show_edit_column=True, parent=None):
         super().__init__(parent)
