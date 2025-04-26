@@ -284,13 +284,6 @@ class ReorderTableView(QtWidgets.QTableView):
             modifiers = QtWidgets.QApplication.keyboardModifiers()
             index = self.indexAt(event.position().toPoint())
 
-            if modifiers == QtCore.Qt.KeyboardModifier.ShiftModifier and index.isValid():
-                if hasattr(self, '_last_selected_index') and self._last_selected_index.isValid():
-                    self.shift_selection(self._last_selected_index, index)
-                else:
-                    self.selectionModel().select(index, QtCore.QItemSelectionModel.SelectionFlag.Select)
-            else:
-                self._last_selected_index = index
 
         super().mousePressEvent(event)
 
@@ -361,14 +354,18 @@ class ReorderTableView(QtWidgets.QTableView):
         if not model:
             return
 
-        for index in selected.indexes():
-            if index.column() == 0:
-                model.setData(index, True, QtCore.Qt.ItemDataRole.EditRole)
+        # Get currently selected rows
+        selected_rows = {index.row() for index in self.selectionModel().selectedIndexes()}
 
-        # Handle deselections
-        for index in deselected.indexes():
-            if index.column() == 0:
-                model.setData(index, False, QtCore.Qt.ItemDataRole.EditRole)
+        # Update checkboxes
+        for row in range(model.rowCount()):
+            index = model.index(row, 0)
+            current_state = model.data(index, QtCore.Qt.ItemDataRole.EditRole)
+            should_be_checked = row in selected_rows
+            
+            if current_state != should_be_checked:
+                model.setData(index, should_be_checked, QtCore.Qt.ItemDataRole.EditRole)
+
         self.viewport().update()
 
     def shift_selection(self, start_index, end_index):
@@ -383,15 +380,17 @@ class ReorderTableView(QtWidgets.QTableView):
         if not model:
             return
 
+        selection = QtCore.QItemSelection()
+        first_col = model.index(start_row, 0)
+        last_col = model.index(end_row, model.columnCount() - 1)
+        selection.select(first_col, last_col)
+
+        selection_model = self.selectionModel()
+        selection_model.select(selection, QtCore.QItemSelectionModel.SelectionFlag.Select)
+
         for row in range(start_row, end_row + 1):
             index = model.index(row, 0)
             model.setData(index, True, QtCore.Qt.ItemDataRole.EditRole)
-
-        # Ensure the first and last rows are explicitly selected
-        first_index = model.index(start_row, 0)
-        last_index = model.index(end_row, 0)
-        model.setData(first_index, True, QtCore.Qt.ItemDataRole.EditRole)
-        model.setData(last_index, True, QtCore.Qt.ItemDataRole.EditRole)
 
         self.viewport().update()
 

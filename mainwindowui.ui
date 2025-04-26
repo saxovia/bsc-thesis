@@ -514,7 +514,7 @@ QTableWidget, QTableView {
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>2</number>
+             <number>1</number>
             </property>
             <widget class="QWidget" name="home_page">
              <property name="autoFillBackground">
@@ -970,7 +970,7 @@ Alternatively, import an already trained model and customize the pruning process
                     <string notr="true"/>
                    </property>
                    <property name="text">
-                    <string>    To edit a cell without losing the selection, use right click to edit! Use Control or Shift to select multiple rows.</string>
+                    <string>    To edit a cell without losing the selection, use right click to edit!</string>
                    </property>
                   </widget>
                  </item>
@@ -2557,8 +2557,8 @@ Alternatively, import an already trained model and customize the pruning process
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>820</width>
-                             <height>337</height>
+                             <width>98</width>
+                             <height>64</height>
                             </rect>
                            </property>
                            <property name="styleSheet">
@@ -2733,8 +2733,8 @@ Alternatively, import an already trained model and customize the pruning process
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>808</width>
-                         <height>416</height>
+                         <width>98</width>
+                         <height>28</height>
                         </rect>
                        </property>
                        <property name="styleSheet">

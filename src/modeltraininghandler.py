@@ -42,6 +42,7 @@ class ModelTrainingHandler:
     def parseThroughProcessesTable(self):
         self.main_window.model_train_button.setEnabled(False)
         self.main_window.undo_button.setEnabled(False)
+        self.main_window.page_navigation_handler.savePruningChangesAndGoBack()
 
         data=self.main_window.reorder_table_view2.model().get_table_data()
         if len(data)<1:

@@ -120,8 +120,14 @@ class PageNavigationHandler:
 
     def savePruningChangesAndGoBack(self):
         current_row = self.main_window.reorder_table_view2.currentIndex().row()
-        
-        if current_row >= 0:
+            
+        selection_model = self.main_window.reorder_table_view2.selectionModel()
+        selected_rows = set(index.row() for index in selection_model.selectedRows())
+        if not selected_rows:
+            current_row = self.main_window.reorder_table_view2.currentIndex().row()
+            if current_row >= 0:
+                selected_rows = {current_row}
+        if selected_rows:
             pruning_data = []
             for row in range(self.main_window.pruningTableModel.rowCount()):
                 row_data = []
@@ -130,7 +136,9 @@ class PageNavigationHandler:
                     row_data.append(self.main_window.pruningTableModel.data(index, Qt.QtCore.Qt.ItemDataRole.DisplayRole))
                 pruning_data.append(row_data)
             
-            self.main_window.timelineTableModel.set_hidden_data(current_row, pruning_data)
+            for row in selected_rows:
+                if 0 <= row < self.main_window.timelineTableModel.rowCount():
+                    self.main_window.timelineTableModel.set_hidden_data(row, pruning_data)
         self.showTimelinePage()
 
 
