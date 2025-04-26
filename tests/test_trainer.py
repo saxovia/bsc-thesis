@@ -85,12 +85,6 @@ def test_stop_training(trainer, mocker):
     mock_wait.assert_called_once()
     trainer.finished.emit.assert_called_once()
 
-def test_magnitude_prune(trainer, mocker):
-    mock_async_prune = mocker.patch.object(trainer, "async_prune")
-
-    trainer.magnitude_prune(0.2, mode="FULL")
-
-    mock_async_prune.assert_called_once_with(0.2, 'FULL')
 
 
 def test_async_prune(trainer, mocker):

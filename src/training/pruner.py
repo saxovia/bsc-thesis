@@ -136,7 +136,7 @@ class PrunerThread(QThread):
             results = {
                 'total_parameters': total_params,
                 'global_sparsity': actual_sparsity,
-                'prune_type': self.mode,
+                'prune_type': self.prune_type,
                 'target_sparsity': self.prune_ratio,
                 'actual_sparsity': actual_sparsity
             }

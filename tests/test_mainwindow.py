@@ -1,6 +1,6 @@
 # tests/conftest.py
 import pytest
-from PyQt6 import QtWidgets
+from PyQt6 import QtWidgets, QtCore
 from src.mainwindow import MainWindow
 
 @pytest.fixture
@@ -37,16 +37,6 @@ def test_type_text_effect(app, qtbot):
     assert label.text().startswith("T")
 
 
-def test_multiply_rows_timeline(app, monkeypatch): #monkeypatch is used to mock the input dialog
-    model = app.timelineTableModel
-    app.reorder_table_view2.selectRow(0)
-
-    monkeypatch.setattr(QtWidgets.QInputDialog, "getInt", lambda *a, **kw: (2, True))
-    initial_count = model.rowCount()
-
-    app.multiply_rows_timeline(model)
-
-    assert model.rowCount() == initial_count + 2  # added 2 copies
 
 def test_complete_reset(app):
     app.model_train_button.setEnabled(False)

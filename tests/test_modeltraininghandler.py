@@ -56,4 +56,4 @@ def test_handlePruneAction(mock_window, handler):
     mock_trainer = MagicMock(spec=Trainer)
     handler.trainer = mock_trainer
     handler.handlePruneAction(row)
-    mock_trainer.magnitude_prune.assert_called_with(0.5, "Layer1")
+    mock_trainer.async_prune.assert_called_with(0.5, "Layer1", "Magnitude")

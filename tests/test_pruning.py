@@ -251,16 +251,33 @@ def test_run_ho_pruning(mock_model):
     assert results['target_sparsity']==0.5
 
 def test_run_random_pruning(mock_model):
-    pruner_thread = PrunerThread(mock_model, prune_ratio=0.5, mode="Random")
+    pruner_thread = PrunerThread(mock_model, prune_ratio=0.5, prune_type="Random")
     pruner_thread.progress_message = MagicMock()
     pruner_thread.results_ready = MagicMock()
     pruner_thread.finished = MagicMock()
 
     pruner_thread.run()
 
-    pruner_thread.progress_message.emit.assert_called_with("\nApplying Random pruning at 50% ratio")
+    pruner_thread.progress_message.emit.assert_called_with("\nApplying FULL pruning at 50% ratio with Random method.")
+                                                           
     pruner_thread.results_ready.emit.assert_called_once()
     results = pruner_thread.results_ready.emit.call_args[0][0]
     assert results['prune_type'] == "Random"
+    assert 0 <= results['actual_sparsity'] <= 1
+    pruner_thread.finished.emit.assert_called_with(True)
+
+def test_run_magnitude_pruning(mock_model):
+    pruner_thread = PrunerThread(mock_model, prune_ratio=0.5, prune_type="Magnitude")
+    pruner_thread.progress_message = MagicMock()
+    pruner_thread.results_ready = MagicMock()
+    pruner_thread.finished = MagicMock()
+
+    pruner_thread.run()
+
+    pruner_thread.progress_message.emit.assert_called_with("\nApplying FULL pruning at 50% ratio with Magnitude method.")
+                                                           
+    pruner_thread.results_ready.emit.assert_called_once()
+    results = pruner_thread.results_ready.emit.call_args[0][0]
+    assert results['prune_type'] == "Magnitude"
     assert 0 <= results['actual_sparsity'] <= 1
     pruner_thread.finished.emit.assert_called_with(True)
