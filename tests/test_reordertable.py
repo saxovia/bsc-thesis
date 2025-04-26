@@ -49,7 +49,7 @@ def test_remove_selected_items(model):
     model._data[1][0] = True
     model._data[2][0] = True
     assert model.remove_selected_items() is True
-    assert model.rowCount() == 3
+    assert model.rowCount() == 2
 
 def test_set_data_on_last_row_adds_new_row(model):
     last_row_idx = model.rowCount() - 1
