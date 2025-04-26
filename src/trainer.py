@@ -7,7 +7,7 @@ import networkx as nx
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from PyQt6.QtCore import QThread, pyqtSignal
-from src.training.pruner import MagnitudePruner, RandomPruner, L1Pruner, L2Pruner, PrunerThread
+from src.training.pruner import MagnitudePruner, RandomPruner, PrunerThread
 from collections import defaultdict
 from src.training.datahandler import DataHandler
 from src.training.modelhandler import ModelHandler
@@ -102,23 +102,21 @@ class Trainer(QThread):
         self.wait()
         self.finished.emit()
 
+    # Pruning methods
+    def async_prune(self, prune_ratio, mode="FULL", prune_type="Magnitude"):
+        if self.pruner_thread and self.pruner_thread.isRunning():
+            self.message.emit("Pruning already in progress")
+            return False
+
+        self.pruner_thread = PrunerThread(self.model, prune_ratio, mode, prune_type)
+
+        self.pruner_thread.progress_message.connect(self.handle_pruning_message)
+        self.pruner_thread.validation_info.connect(self.handle_validation_info)
+        self.pruner_thread.results_ready.connect(self.handle_pruning_results)
+        self.pruner_thread.finished.connect(self.handle_pruning_finished)
+        self.pruner_thread.start()
+        return True
     
-    def magnitude_prune(self, prune_ratio, mode="FULL"):
-        self.async_prune(prune_ratio, mode)
-
-    def async_prune(self, prune_ratio, mode="FULL"):
-            if self.pruner_thread and self.pruner_thread.isRunning():
-                self.message.emit("Pruning already in progress")
-                return False
-
-            self.pruner_thread = PrunerThread(self.model, prune_ratio, mode)
-
-            self.pruner_thread.progress_message.connect(self.handle_pruning_message)
-            self.pruner_thread.validation_info.connect(self.handle_validation_info)
-            self.pruner_thread.results_ready.connect(self.handle_pruning_results)
-            self.pruner_thread.finished.connect(self.handle_pruning_finished)
-            self.pruner_thread.start()
-            return True
     def handle_pruning_message(self, message):
         print(message)
         self.message.emit(message)
@@ -152,7 +150,7 @@ class Trainer(QThread):
             self.message.emit("Pruning completed successfully")
         self.pruner_thread = None
         
-
+    # Training methods
     def train(self, model, train_loader, epochs=30, lr=0.001):
         print("Training started...")
         model.to(self.device)
@@ -266,6 +264,7 @@ class Trainer(QThread):
         
         return total_loss / len(self.test_loader), 100. * correct / total
 
+    # Results and state management methods
     def get_state(self):
         pruning_metrics = self.training_metrics['model_metrics']
         self.graph_metrics = self.graph_handler.calculate_graph_metrics(self.dag_graph, self.model) if hasattr(self, 'dag_graph') else {}
@@ -345,6 +344,7 @@ class Trainer(QThread):
         if state.get('graph_metrics'):
             self.graph_metrics = state['graph_metrics']
 
+    # Unused methods
     def save_model(self, path, neural_networks, action_queue):
         state = self.get_state()
         state['neural_networks'] = neural_networks

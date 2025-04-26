@@ -249,24 +249,16 @@ class ModelTrainingHandler:
         layer = row[2]
         prune_ratio = float(row[3]) / 100
         prune_method = row[4]
-        #print(f"Pruning {layer} with ratio {prune_ratio}% using {prune_method} method.")
 
-        if prune_method == "Magnitude":
-            #print("Magnitude Pruning")
-            self.trainer.magnitude_prune(prune_ratio, layer)
-        elif prune_method == "Random":
-            pass #TODO make sure this goes over the methods of all prunings by classes of pruner.py
-            #print("Random Pruning")
+        self.trainer.async_prune(prune_ratio, layer, prune_method)
         self.processNextAction()
 
     def handleRetrainAction(self, row):
         epochs = row[5]
         learning_rate = row[6]
-        #print(f"Training {layer} for {epochs} epochs with learning rate {learning_rate}.")
         self.trainer.epochs = int(epochs)
         self.trainer.lr = float(learning_rate)
         self.trainer.start()
-        #self.trainer.finished.connect(self.processNextAction)
 
     def saveModel(self, model):
         if hasattr(self, 'trainer') and self.trainer is not None:

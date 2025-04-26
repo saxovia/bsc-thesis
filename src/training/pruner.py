@@ -10,13 +10,13 @@ class BasePruner(ABC): #abstract class for pruning
     def compute_mask(self, weight_tensor, prune_percent):
         pass
     
-    def apply_pruning(self, model, prune_percent, mode="FULL"):
+    def apply_pruning(self, model, prune_percent, mode="FULL", prune_type="Magnitude"):
         if isinstance(model, nn.LSTM) or (hasattr(model, 'lstm')) and isinstance(model.lstm, nn.LSTM):
-            self._prune_lstm(model, prune_percent, mode)
+            self._prune_lstm(model, prune_percent, mode, prune_type)
         else:
-            self._prune_mlp(model, prune_percent, mode)
+            self._prune_mlp(model, prune_percent, mode, prune_type)
 
-    def _prune_lstm(self, model, prune_percent, mode="FULL", ):
+    def _prune_lstm(self, model, prune_percent, mode="FULL", prune_type="Magnitude"):
         lstm = model.lstm if hasattr(model, 'lstm') else model
         
         for name, param in lstm.named_parameters():
@@ -31,7 +31,7 @@ class BasePruner(ABC): #abstract class for pruning
                 param.data[param.data == 0] = 0
 
 
-    def _prune_mlp(self, model, prune_percent, mode="FULL"):
+    def _prune_mlp(self, model, prune_percent, mode="FULL", prune_type="Magnitude"):
         layers = []
         #Get
         for module in model.modules():
@@ -78,21 +78,6 @@ class RandomPruner(BasePruner):
         mask = torch.rand_like(weight_tensor) > (prune_percent / 100)
         return mask.float()
 
-class L1Pruner(BasePruner):
-    
-    def compute_mask(self, weight_tensor, prune_percent):
-        threshold = torch.kthvalue(torch.abs(weight_tensor.flatten()), int(prune_percent / 100 * weight_tensor.numel())).values
-        mask = (torch.abs(weight_tensor) > threshold).float()
-        return mask
-
-class L2Pruner(BasePruner):
-    def compute_mask(self, weight_tensor, prune_percent):
-        norm = torch.norm(weight_tensor, p=2)
-        threshold = norm * (prune_percent / 100)
-        mask = (torch.abs(weight_tensor) > threshold).float()
-        return mask
-
-
 class PrunerThread(QThread):
     finished = pyqtSignal(bool)
     progress = pyqtSignal(str)
@@ -101,11 +86,12 @@ class PrunerThread(QThread):
     results_ready = pyqtSignal(dict)
 
     
-    def __init__(self, model, prune_ratio, mode="FULL"):
+    def __init__(self, model, prune_ratio, mode="FULL", prune_type="Magnitude"):
         super().__init__()
         self.model = model
         self.prune_ratio = prune_ratio
         self.mode = mode
+        self.prune_type = prune_type
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     def run(self):
@@ -133,9 +119,12 @@ class PrunerThread(QThread):
             }
             self.validation_info.emit(validation_data)
             
-            self.progress_message.emit(f"\nApplying {self.mode} pruning at {self.prune_ratio:.0%} ratio")
+            self.progress_message.emit(f"\nApplying {self.mode} pruning at {self.prune_ratio:.0%} ratio with {self.prune_type} method.")
             
-            pruner = MagnitudePruner()
+            if self.prune_type == "Random":
+                pruner = RandomPruner()
+            elif self.prune_type == "Magnitude":
+                pruner = MagnitudePruner()
             pruner.apply_pruning(self.model, self.prune_ratio * 100, mode=self.mode)
             
             total_params = sum(p.numel() for p in self.model.parameters())
