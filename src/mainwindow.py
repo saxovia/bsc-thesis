@@ -202,13 +202,68 @@ class MainWindow(QtWidgets.QMainWindow):
         self.reorder_table_view2.rowEdited.connect(lambda row: self.handle_row_edit(row))
 
     def multiply_rows_timeline(self, model):
-        count, response = QtWidgets.QInputDialog.getInt(
-            self, "Multiply Items", "How many copies?", 2, 1, 100, 1
-        )
-        if response:
-            model.multiply_selected_items(count+1)
-        
-            
+        popup = QtWidgets.QDialog(self)
+        popup.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
+        popup.setMinimumSize(300, 150)
+        popup.setStyleSheet("""
+            QDialog {
+                background-color: #121212;
+                border: 1px solid #333333;
+                border-radius: 10px;
+            }
+            QLabel {
+                color: #ffffff;
+                font-size: 14px;
+            }
+            QSpinBox {
+                background-color: #1e1e1e;
+                color: #ffffff;           
+                border: 1px solid #333333;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            QPushButton {
+                background-color: #1e1e1e;
+                color: #ffffff;           
+                border: 1px solid #333333;
+                border-radius: 5px;
+                padding: 5px 10px;
+            }
+            QPushButton:hover {
+                background-color: #333333;
+            }
+        """)
+
+        layout = QtWidgets.QVBoxLayout(popup)
+        label = QtWidgets.QLabel("How many times would you like to multiply the selected rows?")
+        layout.addWidget(label)
+
+        spin_box = QtWidgets.QSpinBox()
+        spin_box.setRange(1, 100)
+        spin_box.setValue(1)
+        layout.addWidget(spin_box)
+
+        button_layout = QtWidgets.QHBoxLayout()
+        ok_button = QtWidgets.QPushButton("OK")
+        cancel_button = QtWidgets.QPushButton("Cancel")
+        button_layout.addWidget(ok_button)
+        button_layout.addWidget(cancel_button)
+        layout.addLayout(button_layout)
+
+        ok_button.clicked.connect(popup.accept)
+        cancel_button.clicked.connect(popup.reject)
+
+        window_rect = self.geometry()
+        dialog_rect = popup.geometry()
+        x = window_rect.center().x() - dialog_rect.center().x()
+        y = window_rect.center().y() - dialog_rect.center().y()
+        popup.move(x, y)
+
+        # Show the popup and handle the result
+        if popup.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            count = spin_box.value()
+            model.multiply_selected_items(count + 1)
+                
     def handle_row_edit(self, row):
         
         self.reorder_table_view2.selectRow(row)
