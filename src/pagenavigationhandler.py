@@ -300,7 +300,8 @@ class PageNavigationHandler:
         ax = fig.add_subplot(111)
         
         graph_types = ['BA','WS','Full']
-        colors = {'BA':'r','WS':'g','Full':'b'}
+        colors = {'BA':'#a386fc','WS':'#86a9fc','Full':'#86dffc'}
+        
         
         for graph_type in graph_types:
             indices = [i for i, gt in enumerate(metrics['graph_type']) if gt == graph_type]
