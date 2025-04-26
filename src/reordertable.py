@@ -94,14 +94,26 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return True
     
     def remove_selected_items(self):
-        selected_rows = [i for i, row in enumerate(self._data[:-1]) if row[0] and i != len(self._data) - 2]
+        selected_rows = [i for i, row in enumerate(self._data[:-1]) if row[0]]
         if not selected_rows:
             return False
+        selected_rows.sort(reverse=True)
 
-        for rowi in sorted(selected_rows, reverse=True):
+        for row in selected_rows:
+            self._data[row][0] = False
+
+        view = self.parent()
+        if isinstance(view, QtWidgets.QTableView):
+            view.selectionModel().clearSelection()
+
+        for rowi in selected_rows:
             self.beginRemoveRows(QtCore.QModelIndex(), rowi, rowi)
             self._data.pop(rowi)
             self.endRemoveRows()
+
+        if isinstance(view, QtWidgets.QTableView):
+            view.viewport().update()
+
         return True
     
 
@@ -261,6 +273,15 @@ class ReorderTableView(QtWidgets.QTableView):
         header.setStretchLastSection(False)
         
     def mousePressEvent(self, event):
+        index = self.indexAt(event.position().toPoint())
+        if index.isValid():
+            col = index.column()
+            model = self.model()
+
+            if model and (col == model.columnCount() - 1 or col == model.columnCount() - 2):
+                self.clicked.emit(index)
+                return
+
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
             modifiers = QtWidgets.QApplication.keyboardModifiers()
             index = self.indexAt(event.position().toPoint())

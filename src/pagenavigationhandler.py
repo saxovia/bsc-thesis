@@ -207,6 +207,43 @@ class PageNavigationHandler:
         self.display_graphs(self.metrics)
 
     def display_graphs(self, metrics):
+
+        custom_theme = {
+            'axes.facecolor': '#303338',
+            'axes.edgecolor': '#FFF7ED',
+            'axes.labelcolor': '#FFF7ED',
+            'axes.spines.top': False,
+            'axes.spines.right': False,
+            'axes.xmargin': 0.02,
+            'axes.ymargin': 0.02,
+            'xtick.color': '#F2E6D4',
+            'ytick.color': '#F2E6D4',
+            'xtick.direction': 'inout',
+            'ytick.direction': 'inout',
+            'xtick.major.size': 10,
+            'ytick.major.size': 10,
+            'xtick.minor.size': 3,
+            'ytick.minor.size': 3,
+            'xtick.major.width': 2,
+            'ytick.major.width': 2,
+            'xtick.minor.width': 0.75,
+            'ytick.minor.width': 0.75,
+            'grid.color': '#F2E6D4',
+            'grid.linewidth': 0.5,
+            'grid.alpha': 0.7,
+            'figure.facecolor': '#24272B',
+            'text.color': '#FFFDFB',
+            'font.family': 'sans-serif',
+            'font.sans-serif': ['Arial'],
+            'lines.color': '#FFF7ED',
+            'legend.facecolor': '#303338',
+            'legend.edgecolor': '#FFF7ED',
+            'axes.titleweight': 'bold',
+            'axes.titlepad': 10, 
+            'axes.titlelocation': 'left', 
+        }
+        
+        plt.rcParams.update(custom_theme)
         scroll_content = self.main_window.scrollAreaWidgetContents_2
         layout = scroll_content.layout()
         if layout is None:
@@ -224,7 +261,6 @@ class PageNavigationHandler:
             self.create_prune_metric_graph(metrics, "edge_betweenness", "Mean Edge Betweenness")
         ]
         
-        plt.style.use('dark_background')
         for fig in graphs:
             container = Qt.QtWidgets.QWidget()
             container.setMinimumSize(800, 500)
@@ -304,7 +340,7 @@ class PageNavigationHandler:
                         prune_labels.append(current_prune_type)
                         metric_values.append(sum(metric_dict.values()) / len(metric_dict))
         
-        prune_colors = {'IH': 'red', 'HH': 'blue', 'HO': 'green', 'FULL': 'purple'}
+        prune_colors = {'IH': '#a386fc', 'HH': '#86a9fc', 'HO': '#86dffc', 'FULL': '#86fcdf'}
         
         for prune_type in ['IH', 'HH', 'HO', 'FULL']:
             indices = [i for i, pt in enumerate(prune_labels) if pt == prune_type]
