@@ -1,13 +1,11 @@
 pytest
 pytest-mock
-exceptiongroup
-packaging
 PyQt6
 PyQt6-Qt6
 pytest-qt
+torch
 torchvision
 psutil
 GPUtil
-pandas
 numpy
 matplotlib

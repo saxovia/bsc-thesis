@@ -15,7 +15,7 @@ class WindowControl:
 
     def mouseMoveEvent(self, event):
         if self.mousePressed:
-            if not self.old_pos or not event.globalPosition().isValid():
+            if not self.old_pos:
                 return
             if self.window.is_maximized:
                 self.window.showNormal()
@@ -25,7 +25,7 @@ class WindowControl:
                 delta = event.globalPosition().toPoint() - self.old_pos
                 self.window.move(self.window.x() + delta.x(), self.window.y() + delta.y())
                 self.old_pos = event.globalPosition().toPoint()
-
+                
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
             self.mousePressed = False

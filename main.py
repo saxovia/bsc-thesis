@@ -8,11 +8,8 @@ try:
     import torch
     import numpy
     import pytest
-    import exceptiongroup
-    import packaging
     import PyQt6
     import torchvision
-    import pandas
     import matplotlib
 
 

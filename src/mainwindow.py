@@ -63,14 +63,30 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.home_button.clicked.connect(self.page_navigation_handler.showHomePage)
 
         self.page_navigation_handler.showHomePage() #this ensures to start at the home page
-        self.showTableWidget()
-        self.showTableWidget2()
+
 
         self.model_train_button.setEnabled(True)
 
         self.neural_networks = []
         self.previous_results = []
-        self.previous_results = []
+
+
+        self.data = [
+            ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
+            ["", "3", "MLP", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
+            ["", "3", "MLP", "Prune", "MNIST", "[11,3,6,4,2,8]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
+            ["", "1", "MLP", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "1", 2, 1.0, 64,0.001, "WS"],
+            ["", "4", "MLP", "Prior", "MNIST", "70", "CrossEntropy", "Adam", "1", 2, 0.8, 64,0.01, "WS"],
+            ["", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64,0.01, "WS"],
+            ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64,0.01, "WS"],
+        ]
+        self.hidden_data = [
+            ["1", "Prune", "FULL", "50", "Magnitude", "-", "-"],
+            ["2", "Retrain", "-", "-", "-", "10", "0.001"],
+        ]
+        
+        self.showTableWidget()
+        self.showTableWidget2()
 
     def fadeInUp(self, widget):
         self.ui_handler.fadeInUp(widget) #this redirects the pagenavigationhandler.py to the animations.py
@@ -128,28 +144,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showTableWidget2(self):
         # sample data
-        data = [
-            ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
-            ["", "3", "MLP", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["", "3", "MLP", "Prune", "MNIST", "[11,3,6,4,2,8]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["", "1", "MLP", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "1", 2, 1.0, 64,0.001, "WS"],
-            ["", "4", "MLP", "Prior", "MNIST", "70", "CrossEntropy", "Adam", "1", 2, 0.8, 64,0.01, "WS"],
-            ["", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64,0.01, "WS"],
-            ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64,0.01, "WS"],
-        ]
-
-        self.timelineTableModel = ReorderTableModel(data, headers=["", "", "Model\nType", "Start", "Dataset", "Hidden\nsizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch\nSize", "Learning\nRate", "Graph\nType"])
+        self.timelineTableModel = ReorderTableModel(self.data, headers=["", "", "Model\nType", "Start", "Dataset", "Hidden\nsizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch\nSize", "Learning\nRate", "Graph\nType"])
 
         self.reorder_table_view2 = ReorderTableView(self)
         self.reorder_table_view2.setModel(self.timelineTableModel)
         self.reorder_table_view2.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
-        hidden_data = [
-            [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"] ],
-        ]
-        for i in range(len(data)):
-            for j in range(len(hidden_data)):
-                self.timelineTableModel.set_hidden_data(i, hidden_data[j])
+
+        for i in range(len(self.data)):
+            for j in range(len(self.hidden_data)):
+                self.timelineTableModel.set_hidden_data(i, self.hidden_data[j])
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view2)
@@ -300,12 +304,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showTableWidget(self):
         # sample data
-        data = [
-            ["1", "Prune", "FULL", "50", "Magnitude", "-", "-"],
-            ["2", "Retrain", "-", "-", "-", "10", "0.001"],
-        ]
 
-        self.pruningTableModel = ReorderTableModel(data, headers=["", "Step", "Action", "Scope", "Pruning %", "Method", "Epochs", "Learning Rate"], show_edit_column=False)
+        self.pruningTableModel = ReorderTableModel(self.hidden_data, headers=["", "Step", "Action", "Scope", "Pruning %", "Method", "Epochs", "Learning Rate"], show_edit_column=False)
 
         self.reorder_table_view = ReorderTableView(self)
         self.reorder_table_view.setModel(self.pruningTableModel)
@@ -365,18 +365,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 ["", "", "", "", "", "", "", "", "", "", "", "", "", ""],
             ]
         ]
-        
-        self.timelineTableModel=ReorderTableModel(initial_data, headers=["", "", "Model\nType", "Start", "Dataset", "Hidden\nsizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch\nSize", "Learning\nRate", "Graph\nType"])
-
-        self.reorder_table_view2.setModel(self.timelineTableModel)
-
-        for idx in range(len(initial_data)):
-            for hidden_group in initial_hidden_data:
-                print(f"Setting hidden data for idx={idx}, hidden_group={hidden_group}")
-                self.timelineTableModel.set_hidden_data(idx, hidden_group)
-
-        self.reorder_table_view2.resizeColumnsToContents()
-
+        self.data = [initial_data, initial_hidden_data]
+        self.hidden_data = initial_hidden_data
+        self.overwrite_table_data(self.timelineTableModel, self.data)
 
     def complete_reset(self):
         self.loading_label.hide()
@@ -398,8 +389,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.model_training_handler.updateTrainingProcessLabel("")
         self.training_process_label.setText("")
         #reset selections of the tables
-        for child in self.findChildren(QtWidgets.QAbstractItemView):
-            child.clearSelection()
+        self.reorder_table_view.clear_selection()
+        self.reorder_table_view2.clear_selection()
 
         self.reset_timeline_table()
         self.saved_label.setText("")

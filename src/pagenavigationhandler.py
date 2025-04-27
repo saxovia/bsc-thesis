@@ -624,6 +624,8 @@ class PageNavigationHandler:
         self.load_and_display_graphs()
 
     def load_and_display_graphs(self, folder_path=None):
+        allowed_filenames = {"parameters_vs_accuracy.png", "mean_eccentricity.png", "mean_degree.png", "mean_closeness.png", "mean_betweenness.png", "mean_edge_betweenness.png"}
+
         if folder_path is None:
             folder_path = Qt.QtWidgets.QFileDialog.getExistingDirectory(
                 self.main_window, "Select Folder", self.load_default_graph_directory()
@@ -631,9 +633,12 @@ class PageNavigationHandler:
             if not folder_path:
                 return
 
-        png_files = [f for f in os.listdir(folder_path) if f.endswith(".png")]
+        png_files = [f for f in os.listdir(folder_path) if f.endswith(".png") and f in allowed_filenames]
         if not png_files:
-            self.main_window.show_warning("No Graphs Found", "The selected folder does not contain any PNG files.")
+            self.main_window.show_warning(
+                title="No Allowed Graphs Found",
+                message="The selected folder does not contain any allowed PNG files."
+            )
             return
 
         self.showChooseResultsPage()
