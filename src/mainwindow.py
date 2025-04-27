@@ -347,6 +347,37 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tableWidgetPruning.setLayout(layout)
         self.tableWidgetPruning.resizeColumnsToContents()
 
+    def reset_timeline_table(self):
+        initial_data = [
+            ["","", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
+            ["","", "3", "MLP", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
+            ["","", "3", "MLP", "Prune", "MNIST", "[11,3,6,4,2,8]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
+            ["","", "1", "MLP", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "1", 2, 1.0, 64, 0.001, "WS"],
+            ["","", "4", "MLP", "Prior", "MNIST", "70", "CrossEntropy", "Adam", "1", 2, 0.8, 64, 0.01, "WS"],
+            ["","", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64, 0.01, "WS"],
+            ["","", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64, 0.01, "WS"],
+        ]
+        initial_hidden_data = [
+            [
+                ["", "", "2", "Retrain", "-", "-", "-", "1", "0.001"],
+                ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"],
+                ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"],
+                ["", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+            ]
+        ]
+        
+        self.timelineTableModel=ReorderTableModel(initial_data, headers=["", "", "Model\nType", "Start", "Dataset", "Hidden\nsizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch\nSize", "Learning\nRate", "Graph\nType"])
+
+        self.reorder_table_view2.setModel(self.timelineTableModel)
+
+        for idx in range(len(initial_data)):
+            for hidden_group in initial_hidden_data:
+                print(f"Setting hidden data for idx={idx}, hidden_group={hidden_group}")
+                self.timelineTableModel.set_hidden_data(idx, hidden_group)
+
+        self.reorder_table_view2.resizeColumnsToContents()
+
+
     def complete_reset(self):
         self.loading_label.hide()
         self.page_navigation_handler.showHomePage()
@@ -369,6 +400,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #reset selections of the tables
         for child in self.findChildren(QtWidgets.QAbstractItemView):
             child.clearSelection()
+
+        self.reset_timeline_table()
         self.saved_label.setText("")
 
 

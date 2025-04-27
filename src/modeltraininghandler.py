@@ -175,7 +175,7 @@ class ModelTrainingHandler:
         except ValueError as ve:
             self.main_window.show_warning(
                 title="Invalid Row Data",
-                message=f"Error processing row: {str(ve)}",
+                message=f"Error processing row {row[0]}: {str(ve)}",
                 actions=None,
                 buttons=["ok"]
             )
@@ -185,7 +185,7 @@ class ModelTrainingHandler:
             print(f"Error processing row {row}: {str(e)}")
             self.main_window.show_warning(
                 title="Invalid Data",
-                message=f"Row {row} contains invalid data: {str(e)}",
+                message=f"Row {row} contains invalid data {row[0]}: {str(e)}",
                 actions=None,
                 buttons=["ok"]
             )

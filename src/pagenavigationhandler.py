@@ -36,7 +36,6 @@ class PageNavigationHandler:
     def resetSettingsButton(self):
         self.main_window.settings_button.disconnect()
         self.main_window.settings_button.clicked.connect(self.showSettingsPage)
-
     def showHomePage(self):
         self.fadeToPage(self.main_window.home_page)
         self.main_window.previous_page = self.main_window.current_page
@@ -64,9 +63,13 @@ class PageNavigationHandler:
         self.main_window.restart_button.show()
         self.resetSettingsButton()
         self.main_window.model_train_button.setText("Start Training")
-        self.main_window.model_train_button.clicked.connect(self.main_window.model_training_handler.parseThroughProcessesTable)
+        self.main_window.model_train_button.clicked.connect(self.startTrainingButton)
         self.main_window.undo_button.hide()
 
+    def startTrainingButton(self):
+        if self.main_window.current_page == "Model":
+            self.savePruningChangesAndGoBack()
+        self.main_window.model_training_handler.parseThroughProcessesTable()
 
     def showChooseResultsPage(self):
         self.fadeToPage(self.main_window.choose_results_page)
@@ -83,6 +86,9 @@ class PageNavigationHandler:
         self.main_window.current_page = "Settings"
         print(self.main_window.previous_page)
         self.main_window.settings_button.disconnect()
+
+        default_dir = self.load_default_graph_directory()
+        self.main_window.input_prior_graph_save_dir.setPlaceholderText(default_dir)
 
         if self.main_window.previous_page == "Home":
             self.main_window.settings_button.clicked.connect(self.showHomePage)
@@ -597,11 +603,11 @@ class PageNavigationHandler:
         os.makedirs(graph_dir, exist_ok=True)
 
         for i, serialized_graph in enumerate(self.metrics["serialized_graph"]):
-            graph_file_path = os.path.join(graph_dir, f"graph_{i}.gpickle")
+            graph_file_path = os.path.join(graph_dir, f"graph_{i}.graphml")
             try:
                 deserialized_graph = self.deserialize_graph(serialized_graph)
                 with open(graph_file_path, "wb") as f:
-                    pickle.dump(deserialized_graph, f)
+                    nx.write_graphml(deserialized_graph, f)
             except Exception as e:
                 print(f"Error saving graph {i}: {e}")
         self.main_window.saved_label.setText(f"Graphs and results saved successfully in {graph_dir}!")
@@ -662,17 +668,13 @@ class PageNavigationHandler:
         settings_file = os.path.join(os.path.dirname(__file__), "..", "settings.txt")
         
         prior_graph_save_dir = self.main_window.input_prior_graph_save_dir.text()
-        prior_model_save_dir = self.main_window.input_prior_model_save_dir.text()
-
+        if not prior_graph_save_dir:
+            return
         messages = []
 
         if not os.path.isdir(prior_graph_save_dir):
             prior_graph_save_dir = os.path.join(os.path.dirname(__file__), "..", "savedgraphs")
             messages.append("Default graph save directory used!")
-
-        if not os.path.isdir(prior_model_save_dir):
-            prior_model_save_dir = os.path.join(os.path.dirname(__file__), "..", "savedmodels")
-            messages.append("Default model save directory used!")
         if messages:
             self.main_window.saved_settings_label.setText(" ".join(messages))
 
@@ -680,9 +682,6 @@ class PageNavigationHandler:
             with open(settings_file, 'w') as f:
                 f.write("# Saved graphs file location\n")
                 f.write(f"{prior_graph_save_dir}\n")
-                f.write("# Saved models file location\n")
-                f.write(f"{prior_model_save_dir}\n")
-            
-            self.main_window.saved_settings_label.setText("Settings successfully saved!")
+            self.main_window.saved_settings_label.setText(f"Settings successfully saved, with {prior_graph_save_dir} as graph save directory!")
         except (FileNotFoundError, IOError) as e:
             self.main_window.saved_settings_label.setText(f"Error saving settings: {str(e)}")
