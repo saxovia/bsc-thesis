@@ -56,15 +56,11 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return None
     
     def get_hidden_data(self, row):
-        if not isinstance(row, int):
-            return None
         if 0 <= row < len(self._data):
             return self._data[row][-1]
         return None
 
     def set_hidden_data(self, row, value):
-        if not isinstance(row, int) or not isinstance(value, dict):
-            return False
         if 0 <= row < len(self._data):
             self._data[row][-1] = value
             return True
@@ -91,6 +87,12 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             self._data[row][0] = False
         
         self.endResetModel()
+
+        view = self.parent()
+        if isinstance(view, QtWidgets.QTableView):
+            view.selectionModel().clearSelection()
+            view.viewport().update()
+            
         return True
     
     def remove_selected_items(self):
@@ -117,25 +119,25 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return True
     
 
+
     def setData(self, index: QtCore.QModelIndex, value, role: QtCore.Qt.ItemDataRole):
         if not index.isValid():
             return False
-
+        
         row, col = index.row(), index.column()
 
         if col == 0 and role == QtCore.Qt.ItemDataRole.EditRole:
             self._data[row][col] = not self._data[row][col]
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.DecorationRole])
             return True
-
-        if col >= len(self._headers) - 2:
+        if col >= len(self._headers) - 2: #no editing on edit or delete columns
             return False
 
         if role == QtCore.Qt.ItemDataRole.EditRole and col > 0 and self._editable:
             self._data[row][col] = value
             self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.EditRole])
             return True
-
+        
         return False
 
 
@@ -145,7 +147,6 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
 
         col = index.column()
         row = index.row()
-        
         if row == self.rowCount() - 1:
             flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable
             if col == 0:
@@ -259,7 +260,6 @@ class ReorderTableView(QtWidgets.QTableView):
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.MultiSelection)
         self.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.InternalMove)
-        self.setDefaultDropAction(QtCore.Qt.DropAction.MoveAction)
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.setDragDropOverwriteMode(False)
         self.setAcceptDrops(True)
@@ -271,7 +271,7 @@ class ReorderTableView(QtWidgets.QTableView):
         header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(False)
-            
+        
     def mousePressEvent(self, event):
         if not self.model():
             return
@@ -291,7 +291,6 @@ class ReorderTableView(QtWidgets.QTableView):
                     self.edit(index)
                     return
 
-        # Allow default behavior for selection
         super().mousePressEvent(event)
 
     def setModel(self, model):
@@ -344,8 +343,6 @@ class ReorderTableView(QtWidgets.QTableView):
         if index.isValid() and index.row() == self.model().rowCount() - 1:
             event.ignore()
         else:
-            # Show the drop indicator between rows
-            self.setDropIndicatorShown(True)
             event.acceptProposedAction()
 
     def unlockDragging(self):
@@ -397,21 +394,25 @@ class ReorderTableView(QtWidgets.QTableView):
 
             event.accept()
         else:
-            event.ignore()
-
+                event.ignore()
 
     def selectionChanged(self, selected, deselected):
         super().selectionChanged(selected, deselected)
         model = self.model()
         if not model:
             return
-        
+
         selected_indexes = self.selectionModel().selectedRows()
+        if selected_indexes:
+            selected_rows = [index.row() for index in selected_indexes]
+            #print(f"Rows selected: {selected_rows}")
 
-        if not selected_indexes:
-            return
+        deselected_indexes = deselected.indexes()
+        if deselected_indexes:
+            deselected_rows = {index.row() for index in deselected_indexes}
+            #print(f"Rows deselected: {list(deselected_rows)}")
+
         selected_rows = {index.row() for index in selected_indexes}
-
         for row in range(model.rowCount()):
             index = model.index(row, 0)
             current_state = model.data(index, QtCore.Qt.ItemDataRole.EditRole)
@@ -421,7 +422,6 @@ class ReorderTableView(QtWidgets.QTableView):
                 model.blockSignals(True)
                 model.setData(index, should_be_checked, QtCore.Qt.ItemDataRole.EditRole)
                 model.blockSignals(False)
-
 
         self.viewport().update()
 
@@ -436,14 +436,6 @@ class ReorderTableView(QtWidgets.QTableView):
         model = self.model()
         if not model:
             return
-
-        selection = QtCore.QItemSelection()
-        first_col = model.index(start_row, 0)
-        last_col = model.index(end_row, model.columnCount() - 1)
-        selection.select(first_col, last_col)
-
-        selection_model = self.selectionModel()
-        selection_model.select(selection, QtCore.QItemSelectionModel.SelectionFlag.Select)
 
         for row in range(start_row, end_row + 1):
             index = model.index(row, 0)
@@ -481,7 +473,6 @@ class ReorderTableView(QtWidgets.QTableView):
         
         self.selectionModel().select(selection, QtCore.QItemSelectionModel.SelectionFlag.Select)
         self.viewport().update()
-
 
 class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
     def __init__(self, editable=True, show_edit_column=True):

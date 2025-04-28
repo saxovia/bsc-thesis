@@ -62,13 +62,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.window_control = WindowControl(self)
         #self.home_button.clicked.connect(self.page_navigation_handler.showHomePage)
 
-        self.page_navigation_handler.showHomePage() #this ensures to start at the home page
-
-
-        self.model_train_button.setEnabled(True)
-
-        self.neural_networks = []
-        self.previous_results = []
 
 
         self.data = [
@@ -80,13 +73,18 @@ class MainWindow(QtWidgets.QMainWindow):
             ["", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64,0.01, "WS"],
             ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64,0.01, "WS"],
         ]
-        self.hidden_data = [
-            ["1", "Prune", "FULL", "50", "Magnitude", "-", "-"],
-            ["2", "Retrain", "-", "-", "-", "10", "0.001"],
+        self.hiddendata = [
+            [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"] ],
         ]
-        
+        self.page_navigation_handler.showHomePage() #this ensures to start at the home page
         self.showTableWidget()
         self.showTableWidget2()
+
+        self.model_train_button.setEnabled(True)
+
+        self.neural_networks = []
+        self.previous_results = []
+        self.previous_results = []
 
     def fadeInUp(self, widget):
         self.ui_handler.fadeInUp(widget) #this redirects the pagenavigationhandler.py to the animations.py
@@ -141,19 +139,70 @@ class MainWindow(QtWidgets.QMainWindow):
         statusbartext = f"RAM: {ram_usage:.2f} GB / {ram_total:.2f} GB | CPU: {psutil.cpu_percent()}% | GPU Usage: {gpu_usage_string}"
         self.statusbar.showMessage(statusbartext)
 
+    def showTableWidget(self):
+        # sample data
+        processed_data = [[False] + row for row in self.hiddendata]
+
+        self.pruningTableModel = ReorderTableModel(processed_data, headers=["", "Step", "Action", "Scope", "Pruning %", "Method", "Epochs", "Learning Rate"], show_edit_column=False)
+
+
+        self.reorder_table_view = ReorderTableView(self)
+        self.reorder_table_view.setModel(self.pruningTableModel)
+        self.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
+
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.reorder_table_view)
+
+        header = self.reorder_table_view.horizontalHeader()
+        header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
+        header.setStyleSheet("QHeaderView::section {"
+                            "   qproperty-alignment: AlignCenter;"
+                            "   padding: 4px;"
+                            "   font-size: 7pt;"
+                            "   white-space: normal;"
+                            "}")
+        # Adjust font size
+        font = header.font()
+        font.setPointSize(8)  # Set to a smaller font size
+        header.setFont(font)
+        self.reorder_table_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.reorder_table_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.MultiSelection)
+
+        self.reorder_table_view.verticalHeader().hide()
+        self.reorder_table_view.resizeColumnsToContents()
+        self.reorder_table_view.setColumnWidth(0, 20)
+        if self.tableWidgetPruning.layout():
+            QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout()) 
+
+
+        header = self.reorder_table_view.horizontalHeader()
+        for col in range(2, self.pruningTableModel.columnCount() - 2):
+            header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeMode.Stretch)
+
+        self.reorder_table_view.verticalHeader().hide()
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.reorder_table_view)
+
+        if self.tableWidgetPruning.layout():
+            QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout()) 
+        self.tableWidgetPruning.setLayout(layout)
+        self.tableWidgetPruning.resizeColumnsToContents()
 
     def showTableWidget2(self):
         # sample data
+
         self.timelineTableModel = ReorderTableModel(self.data, headers=["", "", "Model\nType", "Start", "Dataset", "Hidden\nsizes", "Loss", "Optimizer", "Epochs", "k", "p", "Batch\nSize", "Learning\nRate", "Graph\nType"])
 
         self.reorder_table_view2 = ReorderTableView(self)
         self.reorder_table_view2.setModel(self.timelineTableModel)
         self.reorder_table_view2.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
-
         for i in range(len(self.data)):
-            for j in range(len(self.hidden_data)):
-                self.timelineTableModel.set_hidden_data(i, self.hidden_data[j])
+            for j in range(len(self.hiddendata)):
+                self.timelineTableModel.set_hidden_data(i, self.hiddendata[j])
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.reorder_table_view2)
@@ -200,9 +249,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.multiply_rows_timeline_button.clicked.connect(lambda: self.multiply_rows_timeline(self.timelineTableModel))
         self.multiply_rows_pruning_button.clicked.connect(lambda: self.multiply_rows_timeline(self.pruningTableModel))
 
-        
-
-        #self.delete_rows_timeline_button.clicked.connect(self.timelineTableModel.remove_selected_items)
         self.reorder_table_view2.rowEdited.connect(lambda row: self.handle_row_edit(row))
 
     def multiply_rows_timeline(self, model):
@@ -269,8 +315,6 @@ class MainWindow(QtWidgets.QMainWindow):
             model.multiply_selected_items(count + 1)
                 
     def handle_row_edit(self, row):
-        
-        self.reorder_table_view2.selectRow(row)
         data = self.timelineTableModel.get_hidden_data(row)
 
         if len(data) <= 1:
@@ -290,7 +334,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pruningTableModel.endResetModel()
         self.page_navigation_handler.showModelPage()
         self.page_navigation_handler.showModelPruningTablePage()
-  
+
+
     def overwrite_table_data(self, table, data):
         table.beginResetModel()
         table._data = []
@@ -302,72 +347,6 @@ class MainWindow(QtWidgets.QMainWindow):
             table._data.append(row)
         table.endResetModel()
 
-    def showTableWidget(self):
-        # sample data
-
-        self.pruningTableModel = ReorderTableModel(self.hidden_data, headers=["", "Step", "Action", "Scope", "Pruning %", "Method", "Epochs", "Learning Rate"], show_edit_column=False)
-
-        self.reorder_table_view = ReorderTableView(self)
-        self.reorder_table_view.setModel(self.pruningTableModel)
-        self.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
-
-
-        header = self.reorder_table_view.horizontalHeader()
-        header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-
-        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
-        header.setStyleSheet("QHeaderView::section {"
-                            "   qproperty-alignment: AlignCenter;"
-                            "   padding: 4px;"
-                            "   font-size: 7pt;"
-                            "   white-space: normal;"
-                            "}")
-
-        # Adjust font size
-        font = header.font()
-        font.setPointSize(8)  # Set to a smaller font size
-        header.setFont(font)
-        self.reorder_table_view.verticalHeader().hide()
-        self.reorder_table_view.resizeColumnsToContents()
-        self.reorder_table_view.setColumnWidth(0, 20)
-        if self.tableWidgetPruning_2.layout():
-            QtWidgets.QWidget().setLayout(self.tableWidgetPruning_2.layout()) 
-
-
-        header = self.reorder_table_view.horizontalHeader()
-        for col in range(2, self.pruningTableModel.columnCount() - 2):
-            header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeMode.Stretch)
-
-        self.reorder_table_view.verticalHeader().hide()
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.reorder_table_view)
-
-        if self.tableWidgetPruning.layout():
-            QtWidgets.QWidget().setLayout(self.tableWidgetPruning.layout()) 
-        self.tableWidgetPruning.setLayout(layout)
-        self.tableWidgetPruning.resizeColumnsToContents()
-
-    def reset_timeline_table(self):
-        initial_data = [
-            ["","", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
-            ["","", "3", "MLP", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["","", "3", "MLP", "Prune", "MNIST", "[11,3,6,4,2,8]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["","", "1", "MLP", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "1", 2, 1.0, 64, 0.001, "WS"],
-            ["","", "4", "MLP", "Prior", "MNIST", "70", "CrossEntropy", "Adam", "1", 2, 0.8, 64, 0.01, "WS"],
-            ["","", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64, 0.01, "WS"],
-            ["","", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64, 0.01, "WS"],
-        ]
-        initial_hidden_data = [
-            [
-                ["", "", "2", "Retrain", "-", "-", "-", "1", "0.001"],
-                ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"],
-                ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"],
-                ["", "", "", "", "", "", "", "", "", "", "", "", "", ""],
-            ]
-        ]
-        self.data = [initial_data, initial_hidden_data]
-        self.hidden_data = initial_hidden_data
-        self.overwrite_table_data(self.timelineTableModel, self.data)
 
     def complete_reset(self):
         self.loading_label.hide()
@@ -400,6 +379,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not isinstance(title, str):
             title = str(title)
 
+        #TODO generalize this function to be used in other places as well
         def discard_action():
             self.complete_reset()
 
@@ -444,4 +424,3 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         msg.exec()
         self.setGraphicsEffect(None)
-
