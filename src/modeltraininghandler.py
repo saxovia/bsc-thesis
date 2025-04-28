@@ -12,16 +12,16 @@ class ModelTrainingHandler:
         self.current_model_index = 0
         self.action_queue = []
         
-    def setupTrainingUI(self):
+    def setup_training_UI(self):
         self.main_window.model_train_button.setEnabled(False)
         self.main_window.undo_button.setEnabled(False)
         self.main_window.stackedWidget_2.setCurrentWidget(self.main_window.model_training_page)
         self.main_window.model_train_button.setText("...")
         self.main_window.model_train_button.disconnect()
-        self.main_window.model_train_button.clicked.connect(self.main_window.page_navigation_handler.showChooseResultsPage)
-        self.showLoadingAnimation()
+        self.main_window.model_train_button.clicked.connect(self.main_window.page_navigation_handler.show_choose_results_page)
+        self.show_loading_animation()
 
-    def resetUI(self):
+    def reset_UI(self):
         self.main_window.model_train_button.setEnabled(True)
         self.main_window.undo_button.setEnabled(True)   
         self.main_window.model_train_button.setText("Start Training")
@@ -29,9 +29,9 @@ class ModelTrainingHandler:
             self.main_window.model_train_button.clicked.disconnect()
         except TypeError:
             pass
-        self.main_window.model_train_button.clicked.connect(self.parseThroughProcessesTable)
+        self.main_window.model_train_button.clicked.connect(self.parse_through_processes_table)
     
-    def showLoadingAnimation(self):
+    def show_loading_animation(self):
         self.main_window.loading_label.setFixedSize(50, 50)
         movie = QMovie("./resources/icons/loading.gif")
         self.main_window.loading_label.setVisible(True)
@@ -39,10 +39,10 @@ class ModelTrainingHandler:
         movie.start()
         self.main_window.loading_label.show()
 
-    def parseThroughProcessesTable(self):
+    def parse_through_processes_table(self):
         self.main_window.model_train_button.setEnabled(False)
         self.main_window.undo_button.setEnabled(False)
-        self.main_window.page_navigation_handler.savePruningChangesAndGoBack()
+        self.main_window.page_navigation_handler.save_pruning_changes_and_goback()
 
         data=self.main_window.reorder_table_view2.model().get_table_data()
         if len(data)<1:
@@ -61,13 +61,13 @@ class ModelTrainingHandler:
         try:
             for row in data:
                 if row and len(row)>0:
-                    success=self.processTableRow(row)
+                    success=self.process_table_row(row)
                     if not success:
-                        self.resetUI()
+                        self.reset_UI()
                         return # <-- Important: stop if invalid row
 
             self.current_model_index=0
-            self.mainTrainLoop()
+            self.main_train_loop()
 
         except Exception as e:
             print(f"Error processing table data: {str(e)}")
@@ -77,7 +77,7 @@ class ModelTrainingHandler:
                 actions=None,
                 buttons=["ok"]
             )
-            self.resetUI()
+            self.reset_UI()
             return
 
     def validate_table_data(self, table_model):
@@ -86,7 +86,7 @@ class ModelTrainingHandler:
                 row_data = [
                     table_model.index(row_index, col).data() for col in range(table_model.columnCount())
                 ]
-                self.extractTrainingParameters(row_data[2:])
+                self.extract_training_parameters(row_data[2:])
             except Exception as e:
                 self.main_window.show_warning(
                     title="Invalid Data",
@@ -97,7 +97,7 @@ class ModelTrainingHandler:
                 return False
         return True
 
-    def processTableRow(self, row):
+    def process_table_row(self, row):
         try:
             index=row[0]
             if not index:
@@ -118,7 +118,7 @@ class ModelTrainingHandler:
             if not dataset or dataset not in valid_datasets:
                 raise ValueError("Dataset is missing or invalid.")
 
-            N=self.parseNValue(row[4], start)
+            N=self.parse_n_value(row[4], start)
             if not N:
                 raise ValueError("N value is missing or invalid.")
 
@@ -191,7 +191,7 @@ class ModelTrainingHandler:
             )
             return False
 
-    def parseNValue(self, n_value, start_type):
+    def parse_n_value(self, n_value, start_type):
         if n_value == "":
             return [6,6,6] if start_type == "Prune" else 250
             
@@ -205,22 +205,22 @@ class ModelTrainingHandler:
         else:
             return int(n_value)
 
-    def mainTrainLoop(self):
-        self.main_window.page_navigation_handler.showModelPage()
-        self.setupTrainingUI()
+    def main_train_loop(self):
+        self.main_window.page_navigation_handler.show_model_page()
+        self.setup_training_UI()
         #print(self.main_window.neural_networks)
         if self.current_model_index < len(self.main_window.neural_networks):
-            self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
+            self.train_one_model(self.main_window.neural_networks[self.current_model_index])
 
-    def trainOneModel(self, modelrow):
-        params = self.extractTrainingParameters(modelrow)
+    def train_one_model(self, modelrow):
+        params = self.extract_training_parameters(modelrow)
         
         if modelrow[2] == "Prior":
-            self.trainPriorModel(params)
+            self.train_prior_model(params)
         else:
-            self.trainPrunedModel(params)
+            self.train_pruned_model(params)
 
-    def extractTrainingParameters(self, modelrow):
+    def extract_training_parameters(self, modelrow):
         return {
             'index': int(modelrow[0]),
             'model': modelrow[1],
@@ -237,7 +237,7 @@ class ModelTrainingHandler:
             'graph_type': modelrow[12]
         }
 
-    def trainPriorModel(self, params):
+    def train_prior_model(self, params):
         self.trainer = Trainer(
             params['model'], params['dataset'], 
             hidden_sizes=params['N'], loss=params['loss'], 
@@ -246,12 +246,12 @@ class ModelTrainingHandler:
             lr=params['learning_rate'], graph_type=params['graph_type'], 
             index=params['index']
         )
-        self.trainer.message.connect(self.updateTrainingProcessLabel)
+        self.trainer.message.connect(self.update_training_process_label)
         self.trainer.load_data_and_create_graph()
         self.trainer.start()
-        self.trainer.finished.connect(self.onTrainingFinished)
+        self.trainer.finished.connect(self.on_training_finished)
 
-    def trainPrunedModel(self, params):
+    def train_pruned_model(self, params):
         self.trainer = Trainer(
             params['model'], params['dataset'], 
             hidden_sizes=params['N'], loss=params['loss'], 
@@ -260,20 +260,20 @@ class ModelTrainingHandler:
             index=params['index']
         )
         
-        self.trainer.message.connect(self.updateTrainingProcessLabel)
+        self.trainer.message.connect(self.update_training_process_label)
         self.trainer.load_data_and_create_graph()
-        self.handleReadingPruningTable(self.trainer)
-        self.trainer.finished.connect(self.onTrainingFinished)
+        self.handle_reading_pruning_table(self.trainer)
+        self.trainer.finished.connect(self.on_training_finished)
 
 
-    def updateTrainingProcessLabel(self, message):
+    def update_training_process_label(self, message):
         previous_text = self.main_window.training_process_label.text()
 
         self.main_window.training_process_label.setText(previous_text + "\n" + message)
 
-    def onTrainingFinished(self):
+    def on_training_finished(self):
         if self.action_queue and len(self.action_queue) > 0:
-            self.processNextAction()
+            self.process_next_action()
             return
 
 
@@ -286,24 +286,24 @@ class ModelTrainingHandler:
         self.current_model_index += 1
         self.main_window.previous_results.append(self.trainer.get_state())
         if self.current_model_index < len(self.main_window.neural_networks):
-            self.trainOneModel(self.main_window.neural_networks[self.current_model_index])
+            self.train_one_model(self.main_window.neural_networks[self.current_model_index])
             pass
         else: # Training finalized
             print("All models training completed")
             self.main_window.loading_label.hide()
-            self.main_window.results_handler.visualize_results()
+            self.main_window.results_handler.visualize_results(self.main_window.previous_results)
             self.main_window.model_train_button.setEnabled(True)
             self.main_window.model_train_button.setText("Show Results")
             self.main_window.save_results_button.show()
 
 
-    def handleReadingPruningTable(self, model):
+    def handle_reading_pruning_table(self, model):
         try:
             hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index - 2)
             if hidden_data == '' or hidden_data is None:
                 self.trainer.message.emit("No hidden data for model. Skipping pruning actions.")
                 self.trainer.finished.emit()
-                self.onTrainingFinished()
+                self.on_training_finished()
                 return
             self.action_queue = []
             for row in hidden_data:
@@ -320,127 +320,38 @@ class ModelTrainingHandler:
 
             if not self.action_queue:
                 self.trainer.finished.emit()
-                self.onTrainingFinished()
+                self.on_training_finished()
                 return
 
-            self.processNextAction()
+            self.process_next_action()
         except Exception as e:
             print(f"Error reading pruning table: {str(e)}")
             self.trainer.message.emit(f"Error reading pruning table: {str(e)}")
             self.trainer.finished.emit()
-            self.onTrainingFinished()
+            self.on_training_finished()
             return
         
-    def processNextAction(self):
+    def process_next_action(self):
         if not self.action_queue or len(self.action_queue) == 0 or self.trainer is None:
             return
         action, row = self.action_queue.pop(0)
         if action == "Prune":
-            self.handlePruneAction(row)
+            self.handle_prune_action(row)
         elif action == "Retrain":
-            self.handleRetrainAction(row)
+            self.handle_retrain_action(row)
         
 
-    def handlePruneAction(self, row):
+    def handle_prune_action(self, row):
         layer = row[2]
         prune_ratio = float(row[3]) / 100
         prune_method = row[4]
 
         self.trainer.async_prune(prune_ratio, layer, prune_method)
-        self.processNextAction()
+        self.process_next_action()
 
-    def handleRetrainAction(self, row):
+    def handle_retrain_action(self, row):
         epochs = row[5]
         learning_rate = row[6]
         self.trainer.epochs = int(epochs)
         self.trainer.lr = float(learning_rate)
         self.trainer.start()
-
-    def saveModel(self, model):
-        if hasattr(self, 'trainer') and self.trainer is not None:
-            self.trainer.running = False
-            self.trainer.quit()
-            self.trainer.wait()
-
-        temp_neural_networks = self.main_window.neural_networks.copy()
-        self.main_window.neural_networks = []
-
-        # Get default path from settings.txt
-        settings_file = os.path.join(os.path.dirname(__file__), "..\settings.txt")
-        fallback_path = os.path.join(os.path.dirname(__file__), "..\savedmodels")
-        
-        default_dir = fallback_path
-        
-        try:
-            with open(settings_file, 'r') as f:
-                for i in range.len(f):
-                    f[i] = f[i].strip()
-                    if (f[i] == "# Saved models file location"):
-                        default_dir = f[i+1]
-                        break
-        except (FileNotFoundError, IOError) as e:
-            print(f"Note: Using fallback path ({fallback_path}) because: {str(e)}")
-        
-        os.makedirs(default_dir, exist_ok=True)
-        
-        timestamp = QtCore.QDateTime.currentDateTime().toString('yyyyMMdd_hhmmss')
-        default_name = os.path.join(default_dir, f"model_{timestamp}.pt")
-        
-        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self.main_window,
-            "Save Model",
-            default_name,
-            "PyTorch Model Files (*.pt);;All Files (*)"
-        )
-        
-        if not file_path:
-            self.main_window.neural_networks = temp_neural_networks.copy()
-            return
-        if not file_path.endswith('.pt'):
-            file_path += '.pt'
-        try:
-            if self.trainer.running:
-                self.trainer.stop()
-            self.trainer.save_model(file_path, temp_neural_networks, self.action_queue)
-            print("Model saved successfully!")
-        except Exception as e:
-            print(f"Failed to save model:\n{str(e)}")
-
-        self.main_window.neural_networks = temp_neural_networks.copy()
-
-
-    def loadModel(self, model):
-        
-        fallback_path = os.path.join(os.path.dirname(__file__), "..\savedmodels")
-        
-        default_dir = fallback_path # TODO
-        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self.main_window,
-            "Load Model",
-            default_dir,
-            "PyTorch Model Files (*.pt);;All Files (*)"
-        )
-        if not file_path:
-            return
-        
-        try:
-            self.trainer = Trainer("MLP", "MNIST")
-            data = self.trainer.load_model(file_path, self.main_window.neural_networks, self.action_queue)
-            self.trainer.load_data_and_create_graph()
-            
-            if data and len(data) >= 2:
-                self.main_window.neural_networks = data[0]
-                self.main_window.current_model_index = data[1]
-                self.action_queue = data[2]
-                print("Model loaded successfully!")
-            else:
-                print("Invalid model file format")
-            #self.trainer.start()
-            self.mainTrainLoop()
-            #self.trainer.finished.connect(self.onTrainingFinished)
-                
-        except Exception as e:
-            self.main_window.neural_networks =[]
-            self.main_window.current_model_index = -1
-            print(f"Failed to load model:\n{str(e)}")
-            #self.show_message("Error", f"Failed to load model:\n{str(e)}", "critical")

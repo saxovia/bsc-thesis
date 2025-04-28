@@ -2,7 +2,7 @@ from PyQt6 import QtCore, QtWidgets
 
 class UIAnimations:
     @staticmethod
-    def fadeInUp(widget):
+    def fade_in_up(widget):
         if widget is None:
             return None
     

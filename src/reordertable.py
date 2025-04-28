@@ -20,7 +20,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         return len(self._data)
     
     def get_table_data(self):
-        return [row[2:] for row in self._data]
+        return [row[2:] for row in self._data[:-1]]
 
     def headerData(self, column: int, orientation, role: QtCore.Qt.ItemDataRole):
         if role == QtCore.Qt.ItemDataRole.DisplayRole and orientation == QtCore.Qt.Orientation.Horizontal:
@@ -271,6 +271,9 @@ class ReorderTableView(QtWidgets.QTableView):
         header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(False)
+        
+    def contextMenuEvent(self, event):
+        event.ignore()
         
     def mousePressEvent(self, event):
         if not self.model():

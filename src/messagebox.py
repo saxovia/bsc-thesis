@@ -25,17 +25,13 @@ class CustomMessageBox(QtWidgets.QMessageBox):
         mainLayout.addWidget(self)
         self.setLayout(mainLayout)
 
-        print("After layout")
         self.button_map = {}  # Store buttons +  labels
         for button_text, role, callback in buttons:
             if isinstance(role, int):
                 role = QtWidgets.QMessageBox.ButtonRole(role)
             btn = self.addButton(button_text, role)
             btn.setObjectName(button_text.lower().replace(" ", "_"))
-            self.button_map[btn] = callback 
-        for btn in self.button_map:
-            print(f"Button Text: {btn.text()}, Object Name: {btn.objectName()}")
-
+            self.button_map[btn] = callback
         # Messagebox specific styling
         self.setStyleSheet("""
             QMessageBox QPushButton#discard:hover {

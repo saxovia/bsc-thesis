@@ -4,11 +4,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import networkx as nx
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
 from PyQt6.QtCore import QThread, pyqtSignal
 from src.training.pruner import MagnitudePruner, RandomPruner, PrunerThread
-from collections import defaultdict
 from src.training.datahandler import DataHandler
 from src.training.modelhandler import ModelHandler
 import networkx as nx
@@ -348,19 +345,3 @@ class Trainer(QThread):
             self.training_metrics = state['training_metrics']
         if state.get('graph_metrics'):
             self.graph_metrics = state['graph_metrics']
-
-    # Unused methods
-    def save_model(self, path, neural_networks, action_queue):
-        state = self.get_state()
-        state['neural_networks'] = neural_networks
-        state['action_queue'] = action_queue
-        torch.save(state, path)
-        print(f"Saved model and trainer state to {path}")
-
-    def load_model(self, path, neural_networks, action_queue):
-        state = torch.load(path, map_location=self.device)
-        self.set_state(state)
-        self.index = state.get('index')
-        neural_networks = state.get('neural_networks', neural_networks)
-        action_queue = state.get('action_queue', action_queue)
-        return self.index

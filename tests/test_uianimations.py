@@ -22,14 +22,14 @@ def widget():
     test_widget.show()
     return test_widget
 
-def test_fadeInUp_position(widget, qtbot):
+def test_fade_in_up_position(widget, qtbot):
     initial_pos = widget.pos()
-    UIAnimations.fadeInUp(widget)
+    UIAnimations.fade_in_up(widget)
     def check_position():
         return widget.pos() == initial_pos
     qtbot.waitUntil(check_position, timeout=1000)
     
-def test_fadeInUp_opacity(widget, qtbot):
-    effect = UIAnimations.fadeInUp(widget)
+def test_fade_in_up_opacity(widget, qtbot):
+    effect = UIAnimations.fade_in_up(widget)
     qtbot.wait(500)
     assert abs(effect.opacity() - 1.0) < 0.01

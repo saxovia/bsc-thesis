@@ -14,7 +14,7 @@ def handler(mock_main_window):
 def mock_main_window():
     main_window = MagicMock()
     main_window.stackedWidget.setCurrentWidget = MagicMock()
-    main_window.fadeInUp = MagicMock()
+    main_window.fade_in_up = MagicMock()
     main_window.settings_button.disconnect = MagicMock()
     main_window.settings_button.clicked.connect = MagicMock()
     main_window.restart_button.show = MagicMock()
@@ -45,21 +45,21 @@ def test_fade_to_page(mock_singleShot, mock_main_window):
     handler = PageNavigationHandler(mock_main_window)
     new_page = MagicMock()
 
-    handler.fadeToPage(new_page)
+    handler.fade_to_page(new_page)
 
     called_lambda = mock_singleShot.call_args[0][1]
-    with patch.object(handler, 'performFadeIn') as mock_performFadeIn:
+    with patch.object(handler, 'perform_fadeIn') as mock_perform_fadeIn:
         called_lambda()
-        mock_performFadeIn.assert_called_once_with(new_page)
+        mock_perform_fadeIn.assert_called_once_with(new_page)
 
 def test_perform_fade_in(mock_main_window):
     handler = PageNavigationHandler(mock_main_window)
     new_page = MagicMock()
 
-    handler.performFadeIn(new_page)
+    handler.perform_fadeIn(new_page)
 
     mock_main_window.stackedWidget.setCurrentWidget.assert_called_once_with(new_page)
-    mock_main_window.fadeInUp.assert_called_once_with(new_page)
+    mock_main_window.fade_in_up.assert_called_once_with(new_page)
 
 @patch("PyQt6.QtCore.QTimer.singleShot")
 def test_show_home_page(mock_singleShot):
@@ -74,7 +74,7 @@ def test_show_home_page(mock_singleShot):
 
     mock_singleShot.side_effect = lambda delay, func: func()
     handler = PageNavigationHandler(mock_main_window)
-    handler.showHomePage()
+    handler.show_home_page()
     
     
     assert mock_main_window.stackedWidget.setCurrentWidget.called, "setCurrentWidget was not called"
@@ -88,7 +88,7 @@ def test_show_home_page(mock_singleShot):
 def test_reset_settings_button(mock_main_window):
     handler = PageNavigationHandler(mock_main_window)
 
-    handler.resetSettingsButton()
+    handler.reset_settings_button()
 
     mock_main_window.settings_button.disconnect.assert_called_once()
     mock_main_window.settings_button.clicked.connect.assert_called_once()

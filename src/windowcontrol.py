@@ -11,7 +11,7 @@ class WindowControl:
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.MouseButton.LeftButton and self.title_bar.underMouse():
             self.mousePressed = True
-            self.old_pos = QtCore.QPoint(event.globalPosition().x(), event.globalPosition().y())
+            self.old_pos = event.globalPosition().toPoint()  # Convert QPointF to QPoint
 
     def mouseMoveEvent(self, event):
         if self.mousePressed:
@@ -22,7 +22,7 @@ class WindowControl:
                 self.window.is_maximized = False
                 self.old_pos = event.globalPosition().toPoint()
             else:
-                delta = event.globalPosition().toPoint() - self.old_pos
+                delta = event.globalPosition().toPoint() - self.old_pos 
                 self.window.move(self.window.x() + delta.x(), self.window.y() + delta.y())
                 self.old_pos = event.globalPosition().toPoint()
                 

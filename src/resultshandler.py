@@ -374,7 +374,7 @@ class ResultsHandler:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
-            for i in range(len(self.metrics["model_type"])):
+            for i in range(len(self.metrics["input_size"])):
                 row_data = {field: self.metrics[field][i] for field in fieldnames if field in self.metrics}
                 writer.writerow(row_data)
 
@@ -423,7 +423,7 @@ class ResultsHandler:
             )
             return
 
-        self.main_window.page_navigation_handler.showChooseResultsPage()
+        self.main_window.page_navigation_handler.show_choose_results_page()
         self.main_window.page_navigation_handler.previous_page = self.main_window.current_page
         
         scroll_content = self.main_window.scrollAreaWidgetContents_2
