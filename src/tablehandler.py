@@ -200,11 +200,10 @@ class TableHandler:
                 self.main_window.timelineTableModel.index(row, 0),
                 QtCore.QItemSelectionModel.SelectionFlag.Select | QtCore.QItemSelectionModel.SelectionFlag.Rows
             )
-        # currentIndex().row() returns a value and cannot be assigned to
-        # Instead, we need to set the current index using setCurrentIndex()
         self.main_window.reorder_table_view2.setCurrentIndex(
-            self.main_window.reorder_table_view2.model().index(row, 0)
+            self.main_window.reorder_table_view2.model().index(row , 0)
         )
+
         print(self.main_window.reorder_table_view2.selectionModel())
         data = self.main_window.timelineTableModel.get_hidden_data(row)
 
