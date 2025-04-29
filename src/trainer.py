@@ -85,7 +85,7 @@ class Trainer(QThread):
 
 
     def run(self):
-        progress_message = "Starting the training process..."
+        progress_message = "\nStarting the training process..."
         self.message.emit(progress_message)
 
         self.train(self.model, self.train_loader, self.epochs - self.current_epoch, lr=self.lr)

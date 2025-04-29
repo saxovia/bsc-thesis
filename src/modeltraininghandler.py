@@ -81,12 +81,11 @@ class ModelTrainingHandler:
             return
 
     def validate_table_data(self, table_model):
-        for row_index in range(table_model.rowCount()):
+        for row_index in range(table_model.rowCount() - 1):
             try:
-                row_data = [
-                    table_model.index(row_index, col).data() for col in range(table_model.columnCount())
-                ]
-                self.extract_training_parameters(row_data[2:])
+                row_data = table_model.get_table_data()[row_index]
+                
+                self.extract_training_parameters(row_data)
             except Exception as e:
                 self.main_window.show_warning(
                     title="Invalid Data",
@@ -98,6 +97,11 @@ class ModelTrainingHandler:
         return True
 
     def process_table_row(self, row):
+        # Skip rows where all parameters are empty or None
+        if all(param == "" or param is None for param in row):
+            print(f"Skipping empty row {row[0]}")
+            return True
+
         try:
             index=row[0]
             if not index:
@@ -352,6 +356,7 @@ class ModelTrainingHandler:
     def handle_retrain_action(self, row):
         epochs = row[5]
         learning_rate = row[6]
+        print(f"Retraining model with {epochs} epochs and {learning_rate} learning rate")
         self.trainer.epochs = int(epochs)
         self.trainer.lr = float(learning_rate)
         self.trainer.start()

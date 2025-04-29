@@ -28,6 +28,9 @@ class TableHandler:
         self.main_window.reorder_table_view.setModel(self.main_window.pruningTableModel)
         self.main_window.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
+        # Connect selection changed signal
+        self.main_window.reorder_table_view.selectionModel().selectionChanged.connect(self.handle_pruning_selection_changed)
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.main_window.reorder_table_view)
 
@@ -188,7 +191,7 @@ class TableHandler:
             count = spin_box.value()
             model.multiply_selected_items(count + 1)
                 
-    def handle_row_edit(self, row): # TODO FIX THIS!!!
+    def handle_row_edit(self, row):
         # Select the row if it's not already selected
         if not self.main_window.timelineTableModel._data[row][0]:
             self.main_window.timelineTableModel.setData(
@@ -214,11 +217,13 @@ class TableHandler:
 
         for hidden_row in data:
             new_row = [""] * self.main_window.pruningTableModel.columnCount()
-
             for j in range(min(len(hidden_row), self.main_window.pruningTableModel.columnCount())):
                 new_row[j] = hidden_row[j]
             self.main_window.pruningTableModel._data.append(new_row)
-        #self.main_window.pruningTableModel._data.append([""] * self.main_window.pruningTableModel.columnCount())
+
+        # Check if the last row is empty and add one if it isn't
+        if not self.main_window.pruningTableModel._data or not all(cell == "" for cell in self.main_window.pruningTableModel._data[-1]):
+            self.main_window.pruningTableModel._data.append([""] * self.main_window.pruningTableModel.columnCount())
 
         self.main_window.pruningTableModel.endResetModel()
         self.main_window.page_navigation_handler.show_model_page()
@@ -229,12 +234,34 @@ class TableHandler:
         table._data = []
 
         for row in data:
-            new_row = [""] * [""] * table.columnCount()
+            new_row = [""] * table.columnCount()
             for j in range(min(len(row), table.columnCount())):
                 new_row[j] = row[j]
             table._data.append(row)
         table.endResetModel()
 
     def reset_timeline_table(self):
-        self.overwrite_table_data(self.main_window.timelineTableModel, self.data)
+        table = self.main_window.timelineTableModel
+        data = self.data
+        table.beginResetModel()
+        table._data = []
+        
+        for row in data:
+            new_row = [False] + list(row) + ['', '', []]
+            table._data.append(new_row)
+            
+            for i in range(len(self.hiddendata)):
+                table.set_hidden_data(len(table._data)-1, self.hiddendata[i])
+            
+        table._data.append([False] + [''] * (len(table._headers) - 3) + ['', '', {"hidden_key": "default_value"}])
+        
+        table.endResetModel()
+
+
+    def handle_pruning_selection_changed(self, selected, deselected):
+        selected_rows = [index.row() for index in self.main_window.reorder_table_view.selectionModel().selectedRows()]
+        deselected_rows = [index.row() for index in deselected.indexes()]
+        
+        print(f"Selected rows: {selected_rows}")
+        print(f"Deselected rows: {deselected_rows}")
 

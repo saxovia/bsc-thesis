@@ -35,6 +35,9 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         if row < 0 or row >= len(self._data) or col < 0 or col >= len(self._data[row]):
             return None
 
+        if row == len(self._data) - 1 and col == 2 and role == QtCore.Qt.ItemDataRole.DisplayRole:
+            return None
+
         if col==0:
             if role == QtCore.Qt.ItemDataRole.DecorationRole:
                 return QIcon("./resources/icons/checked.png") if self._data[row][col] else QIcon("./resources/icons/unchecked.png")
@@ -127,15 +130,35 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         row, col = index.row(), index.column()
 
         if col == 0 and role == QtCore.Qt.ItemDataRole.EditRole:
-            self._data[row][col] = not self._data[row][col]
-            self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.DecorationRole])
+            # Only update if the value is actually changing
+            if self._data[row][col] != value:
+                self._data[row][col] = value
+                self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.DecorationRole])
             return True
         if col >= len(self._headers) - 2: #no editing on edit or delete columns
             return False
 
         if role == QtCore.Qt.ItemDataRole.EditRole and col > 0 and self._editable:
-            self._data[row][col] = value
-            self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.EditRole])
+            # Get all selected rows
+            selected_rows = [i for i, row_data in enumerate(self._data[:-1]) if row_data[0]]
+            
+            # If no rows are selected, just update the current row
+            if not selected_rows:
+                self._data[row][col] = value
+                self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.EditRole])
+            else:
+                # Update all selected rows
+                for selected_row in selected_rows:
+                    self._data[selected_row][col] = value
+                    selected_index = self.index(selected_row, col)
+                    self.dataChanged.emit(selected_index, selected_index, [QtCore.Qt.ItemDataRole.EditRole])
+            
+            # If editing the last row and it's not empty, add a new empty row
+            if row == len(self._data) - 1 and value != '':
+                self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
+                self._data.append([False] + [''] * (len(self._headers) - 3) + ['', '', {"hidden_key": "default_value"}])
+                self.endInsertRows()
+            
             return True
         
         return False
@@ -147,6 +170,7 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
 
         col = index.column()
         row = index.row()
+        
         if row == self.rowCount() - 1:
             flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable
             if col == 0:
@@ -155,15 +179,17 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
                 flags |= QtCore.Qt.ItemFlag.ItemIsEditable
             return flags
 
+        # Checkbox column
         if col == 0:
             return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable
+            
         if col >= len(self._headers) - 2:
             return QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDropEnabled
 
+        # Regular cells
         flags = QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsDragEnabled | QtCore.Qt.ItemFlag.ItemIsDropEnabled
         if self._editable:
             flags |= QtCore.Qt.ItemFlag.ItemIsEditable
-        
         
         return flags
 
@@ -273,7 +299,7 @@ class ReorderTableView(QtWidgets.QTableView):
         header.setStretchLastSection(False)
         
     def contextMenuEvent(self, event):
-        event.ignore()
+        event.accept()
         
     def mousePressEvent(self, event):
         if not self.model():
@@ -289,9 +315,21 @@ class ReorderTableView(QtWidgets.QTableView):
 
             if event.button() == QtCore.Qt.MouseButton.RightButton:
                 if model and col < model.columnCount() - 2:
-                    if index.row() not in [selected.row() for selected in self.selectionModel().selectedRows()]:
-                        return
                     self.edit(index)
+                    return
+                event.accept()
+                return
+
+            # Handle double click for editing
+            if event.type() == QtCore.QEvent.Type.MouseButtonDblClick:
+                if model and col < model.columnCount() - 2:
+                    # Temporarily clear selection to prevent multi-row editing
+                    current_selection = self.selectionModel().selectedRows()
+                    self.selectionModel().clearSelection()
+                    self.edit(index)
+                    # Restore selection
+                    for row in current_selection:
+                        self.selectionModel().select(row, QtCore.QItemSelectionModel.SelectionFlag.Select | QtCore.QItemSelectionModel.SelectionFlag.Rows)
                     return
 
         super().mousePressEvent(event)
@@ -405,26 +443,22 @@ class ReorderTableView(QtWidgets.QTableView):
         if not model:
             return
 
-        selected_indexes = self.selectionModel().selectedRows()
-        if selected_indexes:
-            selected_rows = [index.row() for index in selected_indexes]
-            #print(f"Rows selected: {selected_rows}")
+        # Get currently selected rows
+        selected_rows = {index.row() for index in self.selectionModel().selectedRows()}
 
-        deselected_indexes = deselected.indexes()
-        if deselected_indexes:
-            deselected_rows = {index.row() for index in deselected_indexes}
-            #print(f"Rows deselected: {list(deselected_rows)}")
-
-        selected_rows = {index.row() for index in selected_indexes}
+        # Only update checkboxes for rows that have changed
         for row in range(model.rowCount()):
             index = model.index(row, 0)
             current_state = model.data(index, QtCore.Qt.ItemDataRole.EditRole)
             should_be_checked = row in selected_rows
 
+            # Only update if the state is actually changing
             if current_state != should_be_checked:
                 model.blockSignals(True)
                 model.setData(index, should_be_checked, QtCore.Qt.ItemDataRole.EditRole)
                 model.blockSignals(False)
+                # Emit dataChanged for just this row
+                model.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.DecorationRole])
 
         self.viewport().update()
 

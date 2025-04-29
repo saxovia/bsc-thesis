@@ -15,7 +15,7 @@ class WindowControl:
 
     def mouseMoveEvent(self, event):
         if self.mousePressed:
-            if not self.old_pos or not event.globalPosition().isValid():
+            if not self.old_pos:
                 return
             if self.window.is_maximized:
                 self.window.showNormal()

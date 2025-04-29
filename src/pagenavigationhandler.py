@@ -139,6 +139,8 @@ class PageNavigationHandler:
             for row in selected_rows:
                 self.main_window.timelineTableModel.set_hidden_data(row, pruning_data)
         self.show_timeline_page()
+
+        
     def visualize_results(self):
         if not self.main_window.previous_results:
             print("No results available for visualization.")
