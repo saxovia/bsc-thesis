@@ -113,8 +113,9 @@ class PageNavigationHandler:
         self.main_window.undo_button.clicked.connect(self.save_pruning_changes_and_goback)
 
     def save_pruning_changes_and_goback(self):
+
         current_row = self.main_window.reorder_table_view2.currentIndex().row()
-        self.main_window.reorder_table_view2.clearSelection()
+
         selection_model = self.main_window.reorder_table_view2.selectionModel()
         selected_rows = set(index.row() for index in selection_model.selectedRows())
         if not selected_rows:
@@ -137,7 +138,6 @@ class PageNavigationHandler:
                 
             for row in selected_rows:
                 self.main_window.timelineTableModel.set_hidden_data(row, pruning_data)
-
         self.show_timeline_page()
     def visualize_results(self):
         if not self.main_window.previous_results:

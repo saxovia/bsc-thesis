@@ -47,9 +47,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.is_maximized = False
         
 
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update_specs_usage)
-        self.timer.start(1000)
+        #self.timer = QtCore.QTimer(self)
+        #self.timer.timeout.connect(self.update_specs_usage)
+        #self.timer.start(1000)
 
         self.opacity_effect = QtWidgets.QGraphicsOpacityEffect(self.stackedWidget)
         self.stackedWidget.setGraphicsEffect(self.opacity_effect)

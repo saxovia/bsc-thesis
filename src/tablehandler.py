@@ -189,12 +189,27 @@ class TableHandler:
             model.multiply_selected_items(count + 1)
                 
     def handle_row_edit(self, row): # TODO FIX THIS!!!
+        # Select the row if it's not already selected
+        if not self.main_window.timelineTableModel._data[row][0]:
+            self.main_window.timelineTableModel.setData(
+                self.main_window.timelineTableModel.index(row, 0),
+                True,
+                QtCore.Qt.ItemDataRole.EditRole
+            )
+            self.main_window.reorder_table_view2.selectionModel().select(
+                self.main_window.timelineTableModel.index(row, 0),
+                QtCore.QItemSelectionModel.SelectionFlag.Select | QtCore.QItemSelectionModel.SelectionFlag.Rows
+            )
+        # currentIndex().row() returns a value and cannot be assigned to
+        # Instead, we need to set the current index using setCurrentIndex()
+        self.main_window.reorder_table_view2.setCurrentIndex(
+            self.main_window.reorder_table_view2.model().index(row, 0)
+        )
+        print(self.main_window.reorder_table_view2.selectionModel())
         data = self.main_window.timelineTableModel.get_hidden_data(row)
 
         if len(data) <= 1:
-            data = [
-                [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"] ],
-                ]
+            data = self.hiddendata
         self.main_window.pruningTableModel.beginResetModel()
         self.main_window.pruningTableModel._data = []
 
@@ -204,6 +219,7 @@ class TableHandler:
             for j in range(min(len(hidden_row), self.main_window.pruningTableModel.columnCount())):
                 new_row[j] = hidden_row[j]
             self.main_window.pruningTableModel._data.append(new_row)
+        #self.main_window.pruningTableModel._data.append([""] * self.main_window.pruningTableModel.columnCount())
 
         self.main_window.pruningTableModel.endResetModel()
         self.main_window.page_navigation_handler.show_model_page()
@@ -214,7 +230,7 @@ class TableHandler:
         table._data = []
 
         for row in data:
-            new_row = [""] * table.columnCount()
+            new_row = [""] * [""] * table.columnCount()
             for j in range(min(len(row), table.columnCount())):
                 new_row[j] = row[j]
             table._data.append(row)

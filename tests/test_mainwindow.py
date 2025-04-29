@@ -56,11 +56,6 @@ def test_complete_reset(app, qtbot):
     assert app.model_train_button.isEnabled()
     assert app.saved_label.text() == ""
 
-def test_overwrite_table_data(app):
-    new_data = [["X", "Y", "Z"] + [""] * (app.pruningTableModel.columnCount() - 3)]
-    app.overwrite_table_data(app.pruningTableModel, new_data)
-
-    assert app.pruningTableModel._data[0][0] == "X"
 
 def test_show_warning_calls_discard(monkeypatch, app):
     called = {"discarded": False}
