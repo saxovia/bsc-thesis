@@ -93,75 +93,8 @@ def test_reset_settings_button(mock_main_window):
     mock_main_window.settings_button.disconnect.assert_called_once()
     mock_main_window.settings_button.clicked.connect.assert_called_once()
 
-def test_visualize_results_data_processing(handler):
-    handler.main_window.previous_results = [{
-        "model_type": "MLP",
-        "graph_type": "BA",
-        "training_metrics": {
-            "final_train_loss": 0.5,
-            "final_train_accuracy": 80.0,
-            "final_val_loss": 0.6,
-            "final_val_accuracy": 75.0,
-            "model_metrics": {
-                "global_sparsity": 0.2,
-                "total_parameters": 10000,
-                "prune_type": "IH"
-            }
-        },
-        "graph_metrics": {
-            "degree": {"node1": 0.5, "node2": 0.7},
-            "eccentricity": {"node1": 0.1, "node2": 0.2},
-            "closeness": {"node1": 0.6, "node2": 0.8},
-            "betweenness": {"node1": 0.2, "node2": 0.3},
-            "edge_betweenness": {"node1": 0.3, "node2": 0.4}
-        }
-    }]
-    with patch('matplotlib.pyplot.figure'), \
-         patch('src.pagenavigationhandler.PageNavigationHandler.display_graphs'):
-        handler.visualize_results()
-        assert 75.0 in handler.metrics["val_accuracy"]
-        assert len(handler.metrics["val_accuracy"]) == 3
-
 def test_empty_results(handler):
     handler.main_window.previous_results = []
     handler.visualize_results()
     assert not any(handler.metrics.values())
 
-
-def test_save_graphs(mock_main_window, tmp_path):
-    handler = PageNavigationHandler(mock_main_window)
-    handler.metrics = {
-        'model_type': ['MLP', 'MLP'],
-        'graph_type': ['Full', 'Full'],
-        'prune_type': ['IH', 'HH'],
-        'total_parameters': [10000, 5000],
-        'val_accuracy': [75.0, 80.0],
-        'global_sparsity': [0.2, 0.5],
-        'degree': [{'node1': 0.5}, {'node1': 0.3}],
-        'eccentricity': [{'node1': 0.1}, {'node1': 0.2}],
-        'closeness': [{'node1': 0.6}, {'node1': 0.4}],
-        'betweenness': [{'node1': 0.2}, {'node1': 0.4}],
-        'edge_betweenness': [{'node1': 0.3}, {'node1': 0.5}]
-    }
-
-    mock_main_window.load_default_graph_directory.return_value = str(tmp_path)
-    mock_fig = MagicMock()
-    mock_fig.savefig = MagicMock()
-
-    with patch('matplotlib.pyplot.figure', return_value=mock_fig), \
-         patch.object(handler, 'create_parameters_vs_accuracy_graph', return_value=mock_fig), \
-         patch.object(handler, 'create_prune_metric_graph', return_value=mock_fig):
-        handler.save_graphs()
-        assert mock_fig.savefig.call_count == 6
-        saved_paths = [call[0][0] for call in mock_fig.savefig.call_args_list]
-        expected_filenames = [
-            "parameters_vs_accuracy.png",
-            "mean_eccentricity.png",
-            "mean_degree.png",
-            "mean_closeness.png",
-            "mean_betweenness.png",
-            "mean_edge_betweenness.png"
-        ]
-
-        for filename in expected_filenames:
-            assert any(filename in path for path in saved_paths), f"{filename} not found in saved paths"

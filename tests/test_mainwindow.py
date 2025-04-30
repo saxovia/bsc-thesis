@@ -2,16 +2,38 @@
 import pytest
 from PyQt6 import QtWidgets, QtCore
 from src.mainwindow import MainWindow
+import os
+import sys
 
 @pytest.fixture
 def app(qtbot):
-    test_app = QtWidgets.QApplication.instance()
-    if test_app is None:
-        test_app = QtWidgets.QApplication([])
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication([])
+    
     main_win = MainWindow()
     qtbot.addWidget(main_win)
     yield main_win
+    
+    if hasattr(main_win, 'model_training_handler') and hasattr(main_win.model_training_handler, 'trainer') and main_win.model_training_handler.trainer is not None:
+        main_win.model_training_handler.trainer.stop()
+    
+    #cleanup
+    for child in main_win.findChildren(QtCore.QObject):
+        if hasattr(child, 'disconnect'):
+            try:
+                child.disconnect()
+            except TypeError:
+                pass
+        if hasattr(child, 'deleteLater'):
+            child.deleteLater()
+    
     main_win.close()
+    main_win.deleteLater()
+    
+    QtCore.QCoreApplication.processEvents()
+    
+    QtCore.QTimer.singleShot(100, app.quit)
 
 def test_mainwindow_initialization(app):
     assert app.windowTitle() == 'MainWindow'

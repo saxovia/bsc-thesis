@@ -36,21 +36,25 @@ def test_trainer_initialization(trainer):
     assert trainer.layer_count == 3
 
 def test_load_data_and_create_graph(trainer, mocker):
+    mock_download_thread = mocker.Mock()
+    mock_download_thread.data_loaded = mocker.Mock()
+    mock_download_thread.error = mocker.Mock()
+    mock_download_thread.start = mocker.Mock()
+
     mock_data_handler_instance = mocker.Mock()
-    mock_data_handler_instance.load_data.return_value = ("mock_train_loader", "mock_test_loader")
-    mock_data_handler_instance.dataset_info = {
-        "MNIST": {
-            "input_size": 28*28,
-            "num_classes": 10,
-            "feature_size": 28,
-            "sequence_length": 28,
-        }
+    mock_data_handler_instance.load_data.return_value = mock_download_thread
+    mock_data_handler_instance.get_dataset_properties.return_value = {
+        "input_size": 28*28,
+        "num_classes": 10,
+        "feature_size": 28,
+        "sequence_length": 28,
     }
+
     mock_data_handler = mocker.patch("src.trainer.DataHandler", return_value=mock_data_handler_instance)
+
     mock_graph_handler_instance = mocker.Mock()
     mock_graph_handler_instance.create_dag_graph.return_value = "mock_dag_graph"
     mock_graph_handler = mocker.patch("src.trainer.GraphHandler", return_value=mock_graph_handler_instance)
-
     mock_model_handler_instance = mocker.Mock()
     mock_model_handler_instance.create_model.return_value = "mock_model"
     mock_model_handler = mocker.patch("src.trainer.ModelHandler", return_value=mock_model_handler_instance)
@@ -58,17 +62,16 @@ def test_load_data_and_create_graph(trainer, mocker):
     trainer.load_data_and_create_graph()
 
     mock_data_handler.assert_called_once_with("MNIST", 32)
-    mock_graph_handler.return_value.create_dag_graph.assert_called_once()
-    mock_model_handler.return_value.create_model.assert_called_once()
+    mock_download_thread.data_loaded.connect.assert_called_once()
+    mock_download_thread.error.connect.assert_called_once()
 
 def test_run_training(trainer, mocker):
     mock_train = mocker.patch.object(trainer, "train")
 
-
     trainer.message = mocker.Mock()
     trainer.finished = mocker.Mock()
     trainer.run()
-    trainer.message.emit.assert_called_with("Starting the training process...")
+    trainer.message.emit.assert_called_with("\nStarting the training process...")
     mock_train.assert_called_once()
     trainer.finished.emit.assert_called_once()
 
@@ -128,41 +131,3 @@ def test_validate(trainer, mocker):
 
     assert isinstance(val_loss, float)
     assert isinstance(val_acc, float)
-
-
-
-"""
-def test_get_state(trainer):
-    state = trainer.get_state()
-
-    assert isinstance(state, dict)
-    assert "model_state_dict" in state
-    assert "optimizer_state_dict" in state
-    assert "current_epoch" in state
-
-def test_set_state(trainer, mocker):
-    mock_model = Mock()
-    trainer.model = mock_model
-
-    state = {
-        "current_epoch": 5,
-        "model_state_dict": {},
-        "optimizer_state_dict": {},
-        "hidden_sizes": [64, 64],
-        "lr": 0.001,
-        "model_type": "MLPNet",
-        "dataset_type": "MNIST",
-        "graph_type": "Full",
-        "k": 2,
-        "p": 0.1,
-        "layer_count": 3,
-        "batch_size": 32
-    }
-
-    trainer.set_state(state)
-
-    assert trainer.current_epoch == 5
-    assert trainer.hidden_sizes == [64, 64]
-    assert trainer.lr == 0.001
-    assert trainer.model_type == "MLPNet
-"""

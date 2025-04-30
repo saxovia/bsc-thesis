@@ -292,18 +292,13 @@ class ModelTrainingHandler:
             self.process_next_action()
             return
 
-
         #Printage
-        self.trainer.message.emit#   (f"Final accuracy: {self.trainer.training_metrics.get('final_train_accuracy'):.4f}, Validation accuracy: {self.training_metrics.get('final_val_accuracy'):.4f}")
-
-        print(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
         self.trainer.message.emit(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
 
         self.current_model_index += 1
         self.main_window.previous_results.append(self.trainer.get_state())
         if self.current_model_index < len(self.main_window.neural_networks):
             self.train_one_model(self.main_window.neural_networks[self.current_model_index])
-            pass
         else: # Training finalized
             print("All models training completed")
             self.main_window.loading_label.hide()
@@ -363,7 +358,8 @@ class ModelTrainingHandler:
         prune_method = row[4]
 
         self.trainer.async_prune(prune_ratio, layer, prune_method)
-        self.process_next_action()
+        # Don't process next action here - wait for pruning to complete
+        # The pruning completion will be handled by the trainer's finished signal
 
     def handle_retrain_action(self, row):
         epochs = row[5]
@@ -372,3 +368,5 @@ class ModelTrainingHandler:
         self.trainer.epochs = int(epochs)
         self.trainer.lr = float(learning_rate)
         self.trainer.start()
+        # Don't process next action here - wait for retraining to complete
+        # The retraining completion will be handled by the trainer's finished signal

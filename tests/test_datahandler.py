@@ -36,10 +36,27 @@ def test_get_dataset_properties():
     with pytest.raises(ValueError, match="Unsupported dataset type: INVALID"):
         handler_invalid.get_dataset_properties()
 
-def test_load_data():
+def test_load_data(qtbot):
     handler = DataHandler(dataset_type="MNIST", batch_size=64)
-    train_loader, test_loader = handler.load_data()
-
+    download_thread = handler.load_data()
+    
+    train_loader = None
+    test_loader = None
+    
+    def on_data_loaded(loaded_train, loaded_test):
+        nonlocal train_loader, test_loader
+        train_loader = loaded_train
+        test_loader = loaded_test
+    
+    download_thread.data_loaded.connect(on_data_loaded)
+    
+    # Use qtbot to wait for the signal
+    with qtbot.waitSignal(download_thread.data_loaded, timeout=10000):
+        download_thread.start()
+    
+    assert train_loader is not None, "Train loader was not set"
+    assert test_loader is not None, "Test loader was not set"
+    
     assert len(train_loader) > 0
     assert len(test_loader) > 0
 
@@ -53,11 +70,3 @@ def test_load_data():
         assert images.shape[1:] == (1, 28, 28)
         assert labels.shape[0] == images.shape[0]
         break
-
-def get_dataset_properties():
-    handler = DataHandler(dataset_type="MNIST", batch_size=64)
-    properties = handler.get_dataset_properties()
-    assert properties["input_size"] == 28 * 28
-    assert properties["num_classes"] == 10
-    assert properties["feature_size"] == 28
-    assert properties["sequence_length"] == 28

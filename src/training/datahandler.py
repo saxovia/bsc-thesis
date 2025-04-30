@@ -15,6 +15,8 @@ class DatasetDownloadThread(QThread):
         self.dataset_type = dataset_type
         self.batch_size = batch_size
         self.root = root
+        self.train_loader = None
+        self.test_loader = None
         self.dataset_info = {
             "MNIST": {
                 "dataset": datasets.MNIST,
@@ -67,11 +69,11 @@ class DatasetDownloadThread(QThread):
                 root=self.root, train=False, transform=transform, download=False
             )
 
-            train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-            test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+            self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+            self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
             
             self.progress.emit("Dataset loading complete!")
-            self.data_loaded.emit(train_loader, test_loader)
+            self.data_loaded.emit(self.train_loader, self.test_loader)
             self.finished.emit()
             
         except Exception as e:
