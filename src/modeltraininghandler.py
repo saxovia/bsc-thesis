@@ -42,7 +42,6 @@ class ModelTrainingHandler:
     def parse_through_processes_table(self):
         self.main_window.model_train_button.setEnabled(False)
         self.main_window.undo_button.setEnabled(False)
-        self.main_window.page_navigation_handler.save_pruning_changes_and_goback()
 
         data=self.main_window.reorder_table_view2.model().get_table_data()
         if len(data)<1:
@@ -57,7 +56,7 @@ class ModelTrainingHandler:
         if not self.validate_table_data(self.main_window.reorder_table_view2.model()):
             return
 
-        print("Data from pruning table:", data)
+        #print("Data from pruning table:", data)
         try:
             for row in data:
                 if row and len(row)>0:
@@ -118,7 +117,11 @@ class ModelTrainingHandler:
                 raise ValueError("Start type is missing or invalid.")
 
             dataset=row[3]
-            valid_datasets=["MNIST", "CIFAR10", "CIFAR100"]
+            if dataset == "CIFAR10":
+                dataset = "CIFAR-10"
+            elif dataset == "CIFAR100":
+                dataset = "CIFAR-100"
+            valid_datasets=["MNIST", "CIFAR-10", "CIFAR-100"]
             if not dataset or dataset not in valid_datasets:
                 raise ValueError("Dataset is missing or invalid.")
 

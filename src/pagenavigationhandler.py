@@ -135,12 +135,19 @@ class PageNavigationHandler:
                     index = self.main_window.pruningTableModel.index(row, col)
                     row_data.append(self.main_window.pruningTableModel.data(index, Qt.QtCore.Qt.ItemDataRole.DisplayRole))
                 pruning_data.append(row_data)
-                
+            
+            print("1. hiddendata")
+            print(self.main_window.timelineTableModel.get_hidden_data(0))
+            print("2. pruning_data")
+            print(pruning_data)
+
             for row in selected_rows:
                 self.main_window.timelineTableModel.set_hidden_data(row, pruning_data)
+            print("3. hiddendata")
+            print(self.main_window.timelineTableModel.get_hidden_data(0))
         self.show_timeline_page()
 
-        
+
     def visualize_results(self):
         if not self.main_window.previous_results:
             print("No results available for visualization.")

@@ -299,7 +299,8 @@ class ReorderTableView(QtWidgets.QTableView):
         header.setStretchLastSection(False)
         
     def contextMenuEvent(self, event):
-        event.accept()
+        # Prevent the default context menu from showing
+        event.ignore()
         
     def mousePressEvent(self, event):
         if not self.model():
@@ -317,7 +318,7 @@ class ReorderTableView(QtWidgets.QTableView):
                 if model and col < model.columnCount() - 2:
                     self.edit(index)
                     return
-                event.accept()
+                event.ignore()  # Changed from accept() to ignore()
                 return
 
             # Handle double click for editing
