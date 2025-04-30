@@ -67,6 +67,8 @@ class PageNavigationHandler:
     def start_training_button(self):
         if self.main_window.current_page == "Model":
             self.save_pruning_changes_and_goback()
+        self.main_window.multiply_rows_pruning_button.hide()
+        self.main_window.multiply_rows_timeline_button.hide()
         self.main_window.model_training_handler.parse_through_processes_table()
 
     def show_choose_results_page(self):

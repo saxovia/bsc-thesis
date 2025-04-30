@@ -83,6 +83,8 @@ class DataHandler:
     def __init__(self, dataset_type, batch_size):
         self.dataset_type = dataset_type
         self.batch_size = batch_size
+        self.train_loader = None
+        self.test_loader = None
         self.dataset_info = {
             "MNIST": {
                 "dataset": datasets.MNIST,
@@ -132,9 +134,13 @@ class DataHandler:
             download_thread.progress.connect(message_callback)
             download_thread.error.connect(lambda msg: message_callback(f"Error: {msg}"))
         
-        download_thread.start()
+        download_thread.data_loaded.connect(self.set_data_loaders)
         
         return download_thread
+
+    def set_data_loaders(self, train_loader, test_loader):
+        self.train_loader = train_loader
+        self.test_loader = test_loader
 
     def get_dataset_properties(self):
         if self.dataset_type not in self.dataset_info:

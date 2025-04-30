@@ -21,13 +21,20 @@ class BasePruner(ABC): #abstract class for pruning
         
         for name, param in lstm.named_parameters():
             if 'weight' in name:
-                if mode == "FULL" or (mode == "IH" and "weight_ih" in name) or (mode == "HH" and "weight_hh" in name):
-                    
+                if mode == "FULL":
                     mask = self.compute_mask(param, prune_percent)
                     param.data.mul_(mask)
-                    if mode == "IH+HH":
-                        mask = self.compute_mask(param, prune_percent)
-                        param.data.mul_(mask)
+                elif mode == "IH" and "weight_ih" in name:
+                    mask = self.compute_mask(param, prune_percent)
+                    param.data.mul_(mask)
+                elif mode == "HH" and "weight_hh" in name:
+                    mask = self.compute_mask(param, prune_percent)
+                    param.data.mul_(mask)
+                elif mode == "IH+HH" and ("weight_ih" in name or "weight_hh" in name):
+                    mask = self.compute_mask(param, prune_percent)
+                    param.data.mul_(mask)
+                # weight_ho is not interpreted as a weight matrix in the same way as weight_ih and weight_hh
+                # so we don't apply pruning to it in the same way
                 param.data[param.data == 0] = 0
 
 

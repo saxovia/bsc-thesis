@@ -62,19 +62,22 @@ class GraphHandler:
         ba_graph = nx.barabasi_albert_graph(nodes, k)
         dag = nx.DiGraph()
         dag.add_nodes_from(ba_graph.nodes)
+        # Add edges in a way that only goes forward in the graph
         for u, v in ba_graph.edges():
             if u < v:
                 dag.add_edge(u, v)
-
+        # Get balanced distribution
         nodes_per_layer = nodes // target_layers
         layers = {}
+        # Assign layers to nodes based on their index
         for i, node in enumerate(dag.nodes()):
             layers[node] = min(i // nodes_per_layer, target_layers - 1)
 
+        # This is here so that edges only go forward
         for u, v in list(dag.edges()):
             if layers[u] >= layers[v]:
                 dag.remove_edge(u, v)
-
+        # Set node attributes for layers
         nx.set_node_attributes(dag, layers, 'layer')
         return dag
 

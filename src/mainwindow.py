@@ -47,19 +47,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.is_maximized = False
         
 
-        #self.timer = QtCore.QTimer(self)
-        #self.timer.timeout.connect(self.update_specs_usage)
-        #self.timer.start(1000)
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update_specs_usage)
+        self.timer.start(1000)
 
         self.opacity_effect = QtWidgets.QGraphicsOpacityEffect(self.stackedWidget)
         self.stackedWidget.setGraphicsEffect(self.opacity_effect)
         self.fade_animation = QtCore.QPropertyAnimation(self.opacity_effect, b"opacity")
         self.fade_animation.setDuration(500)
 
-        self.df = None
-        self.df_last_file_path = ""
         self.current_page = "Home"
-        self.onSettingsPage = False
+        self.on_settings_page = False
         self.window_control = WindowControl(self)
         #self.home_button.clicked.connect(self.page_navigation_handler.show_home_page)
 
@@ -153,6 +151,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.reorder_table_view2.clear_selection()
 
         self.table_handler.reset_timeline_table()
+
+        self.multiply_rows_pruning_button.show()
+        self.multiply_rows_timeline_button.show()
         self.saved_label.setText("")
 
 

@@ -11,6 +11,7 @@ class ModelTrainingHandler:
         self.trainers = []
         self.current_model_index = 0
         self.action_queue = []
+        self.is_processing = False
         
     def setup_training_UI(self):
         self.main_window.model_train_button.setEnabled(False)
@@ -221,9 +222,9 @@ class ModelTrainingHandler:
     def main_train_loop(self):
         self.main_window.page_navigation_handler.show_model_page()
         self.setup_training_UI()
-        #print(self.main_window.neural_networks)
         if self.current_model_index < len(self.main_window.neural_networks):
             self.train_one_model(self.main_window.neural_networks[self.current_model_index])
+        print("HELLO")
 
     def train_one_model(self, modelrow):
         params = self.extract_training_parameters(modelrow)
@@ -251,6 +252,7 @@ class ModelTrainingHandler:
         }
 
     def train_prior_model(self, params):
+        print(f"Creating trainer for model {params['index']}")
         self.trainer = Trainer(
             params['model'], params['dataset'], 
             hidden_sizes=params['N'], loss=params['loss'], 
@@ -259,13 +261,14 @@ class ModelTrainingHandler:
             lr=params['learning_rate'], graph_type=params['graph_type'], 
             index=params['index']
         )
+        
+        # Connect all signals before starting any operations
         self.trainer.message.connect(self.update_training_process_label)
-        self.trainer.load_data_and_create_graph()
-        self.trainer.download_thread.finished.connect(self.on_data_loaded)
-
-    def on_data_loaded(self):
-        self.trainer.start()
         self.trainer.finished.connect(self.on_training_finished)
+        self.trainer.data_ready.connect(self.on_data_ready)
+        
+        print(f"Starting data loading for model {params['index']}")
+        self.trainer.load_data_and_create_graph()
 
     def train_pruned_model(self, params):
         self.trainer = Trainer(
@@ -277,36 +280,15 @@ class ModelTrainingHandler:
         )
         
         self.trainer.message.connect(self.update_training_process_label)
-        self.trainer.load_data_and_create_graph()
+        self.trainer.finished.connect(self.on_training_finished)
+        self.trainer.data_ready.connect(self.on_data_ready)
         
-        self.trainer.download_thread.finished.connect(lambda: self.handle_reading_pruning_table(self.trainer))
+        self.trainer.load_data_and_create_graph()
 
-
-    def update_training_process_label(self, message):
-        previous_text = self.main_window.training_process_label.text()
-
-        self.main_window.training_process_label.setText(previous_text + "\n" + message)
-
-    def on_training_finished(self):
-        if self.action_queue and len(self.action_queue) > 0:
-            self.process_next_action()
-            return
-
-        #Printage
-        self.trainer.message.emit(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
-
-        self.current_model_index += 1
-        self.main_window.previous_results.append(self.trainer.get_state())
-        if self.current_model_index < len(self.main_window.neural_networks):
-            self.train_one_model(self.main_window.neural_networks[self.current_model_index])
-        else: # Training finalized
-            print("All models training completed")
-            self.main_window.loading_label.hide()
-            self.main_window.results_handler.visualize_results(self.main_window.previous_results)
-            self.main_window.model_train_button.setEnabled(True)
-            self.main_window.model_train_button.setText("Show Results")
-            self.main_window.save_results_button.show()
-
+    def on_data_ready(self):
+        print(f"Data loading completed for model {self.trainer.index}")
+        if self.trainer.index == self.current_model_index:
+            self.handle_reading_pruning_table(self.trainer)
 
     def handle_reading_pruning_table(self, model):
         try:
@@ -316,6 +298,7 @@ class ModelTrainingHandler:
                 self.trainer.finished.emit()
                 self.on_training_finished()
                 return
+                
             self.action_queue = []
             for row in hidden_data:
                 row = row[2:]
@@ -341,16 +324,16 @@ class ModelTrainingHandler:
             self.trainer.finished.emit()
             self.on_training_finished()
             return
-        
+
     def process_next_action(self):
         if not self.action_queue or len(self.action_queue) == 0 or self.trainer is None:
             return
+            
         action, row = self.action_queue.pop(0)
         if action == "Prune":
             self.handle_prune_action(row)
         elif action == "Retrain":
             self.handle_retrain_action(row)
-        
 
     def handle_prune_action(self, row):
         layer = row[2]
@@ -358,8 +341,20 @@ class ModelTrainingHandler:
         prune_method = row[4]
 
         self.trainer.async_prune(prune_ratio, layer, prune_method)
-        # Don't process next action here - wait for pruning to complete
-        # The pruning completion will be handled by the trainer's finished signal
+        if self.trainer.pruner_thread is not None:
+            self.trainer.pruner_thread.finished.connect(lambda success: self.on_pruning_complete(success))
+
+    def on_pruning_complete(self, success):
+        if success:
+            self.process_next_action()
+        else:
+            self.main_window.show_warning(
+                title="Pruning Failed",
+                message="The pruning operation failed. Please check the logs for details.",
+                actions=None,
+                buttons=["ok"]
+            )
+            self.process_next_action()
 
     def handle_retrain_action(self, row):
         epochs = row[5]
@@ -368,5 +363,28 @@ class ModelTrainingHandler:
         self.trainer.epochs = int(epochs)
         self.trainer.lr = float(learning_rate)
         self.trainer.start()
-        # Don't process next action here - wait for retraining to complete
-        # The retraining completion will be handled by the trainer's finished signal
+
+    def on_training_finished(self):
+        if self.action_queue and len(self.action_queue) > 0:
+            self.process_next_action()
+            return
+
+        self.trainer.message.emit(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
+
+        self.current_model_index += 1
+        self.main_window.previous_results.append(self.trainer.get_state())
+        
+        if self.current_model_index < len(self.main_window.neural_networks):
+            self.train_one_model(self.main_window.neural_networks[self.current_model_index])
+        else: # Training finalized
+            print("All models training completed")
+            self.main_window.loading_label.hide()
+            self.main_window.results_handler.visualize_results(self.main_window.previous_results)
+            self.main_window.model_train_button.setEnabled(True)
+            self.main_window.model_train_button.setText("Show Results")
+            self.main_window.save_results_button.show()
+
+    def update_training_process_label(self, message):
+        previous_text = self.main_window.training_process_label.text()
+
+        self.main_window.training_process_label.setText(previous_text + "\n" + message)
