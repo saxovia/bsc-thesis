@@ -107,16 +107,19 @@ class ModelTrainingHandler:
                 raise ValueError("Index is missing or invalid.")
 
             model=row[1]
+            model = model.replace(" ", "")
             valid_models=["MLP", "LSTM"]
             if not model or model not in valid_models:
                 raise ValueError("Model type is missing or invalid.")
 
             start=row[2]
+            start = start.replace(" ", "")
             valid_starts=["Prior", "Prune"]
             if not start or start not in valid_starts:
                 raise ValueError("Start type is missing or invalid.")
 
             dataset=row[3]
+            dataset = dataset.replace(" ", "")
             if dataset == "CIFAR10":
                 dataset = "CIFAR-10"
             elif dataset == "CIFAR100":
@@ -130,11 +133,13 @@ class ModelTrainingHandler:
                 raise ValueError("N value is missing or invalid.")
 
             loss=row[5]
+            loss = loss.replace(" ", "")
             valid_losses=["CrossEntropy", "MSE"]
             if not loss or loss not in valid_losses:
                 raise ValueError("Loss function is missing or invalid.")
 
             optimizer=row[6]
+            optimizer = optimizer.replace(" ", "")
             valid_optimizers=["SGD", "Adam", "RMSprop", "Adagrad", "Adadelta"]
             if not optimizer or optimizer not in valid_optimizers:
                 raise ValueError("Optimizer is missing or invalid.")
@@ -169,6 +174,7 @@ class ModelTrainingHandler:
                 raise ValueError("Learning rate is missing or invalid.")
 
             graph_type=row[12]
+            graph_type = graph_type.replace(" ", "")
             valid_graph_types=["Full", "WS", "BA"]
             if not graph_type or graph_type not in valid_graph_types:
                 raise ValueError("Graph type is missing or invalid.")
@@ -255,6 +261,9 @@ class ModelTrainingHandler:
         )
         self.trainer.message.connect(self.update_training_process_label)
         self.trainer.load_data_and_create_graph()
+        self.trainer.download_thread.finished.connect(self.on_data_loaded)
+
+    def on_data_loaded(self):
         self.trainer.start()
         self.trainer.finished.connect(self.on_training_finished)
 
@@ -269,8 +278,8 @@ class ModelTrainingHandler:
         
         self.trainer.message.connect(self.update_training_process_label)
         self.trainer.load_data_and_create_graph()
-        self.handle_reading_pruning_table(self.trainer)
-        self.trainer.finished.connect(self.on_training_finished)
+        
+        self.trainer.download_thread.finished.connect(lambda: self.handle_reading_pruning_table(self.trainer))
 
 
     def update_training_process_label(self, message):

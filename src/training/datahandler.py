@@ -1,8 +1,81 @@
-
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from PyQt6.QtCore import QThread, pyqtSignal, QObject
+import os
 
+class DatasetDownloadThread(QThread):
+    progress = pyqtSignal(str)
+    finished = pyqtSignal()
+    error = pyqtSignal(str)
+    data_loaded = pyqtSignal(object, object)
+    
+    def __init__(self, dataset_type, batch_size, root="./data"):
+        super().__init__()
+        self.dataset_type = dataset_type
+        self.batch_size = batch_size
+        self.root = root
+        self.dataset_info = {
+            "MNIST": {
+                "dataset": datasets.MNIST,
+                "transform": transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.1307,), (0.3081,))
+                ])
+            },
+            "CIFAR-10": {
+                "dataset": datasets.CIFAR10,
+                "transform": transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                ])
+            },
+            "CIFAR-100": {
+                "dataset": datasets.CIFAR100,
+                "transform": transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                ])
+            }
+        }
+        
+    def run(self):
+        try:
+            if self.dataset_type not in self.dataset_info:
+                raise ValueError(f"Unsupported dataset type: {self.dataset_type}")
+                
+            dataset_config = self.dataset_info[self.dataset_type]
+            transform = dataset_config["transform"]
+            
+            train_path = os.path.join(self.root, self.dataset_type.lower())
+            if os.path.exists(train_path):
+                self.progress.emit(f"Dataset {self.dataset_type} already exists. Loading...")
+            else:
+                self.progress.emit(f"Downloading {self.dataset_type} training set...")
+                train_dataset = dataset_config["dataset"](
+                    root=self.root, train=True, transform=transform, download=True
+                )
+                self.progress.emit(f"Downloading {self.dataset_type} test set...")
+                test_dataset = dataset_config["dataset"](
+                    root=self.root, train=False, transform=transform, download=True)
+            
+            self.progress.emit("Loading datasets...")
+            train_dataset = dataset_config["dataset"](
+                root=self.root, train=True, transform=transform, download=False
+            )
+            test_dataset = dataset_config["dataset"](
+                root=self.root, train=False, transform=transform, download=False
+            )
+
+            train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+            test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+            
+            self.progress.emit("Dataset loading complete!")
+            self.data_loaded.emit(train_loader, test_loader)
+            self.finished.emit()
+            
+        except Exception as e:
+            self.error.emit(str(e))
 
 class DataHandler:
     def __init__(self, dataset_type, batch_size):
@@ -47,24 +120,19 @@ class DataHandler:
             }
         }
 
-    def load_data(self):
+    def load_data(self, message_callback=None):
         if self.dataset_type not in self.dataset_info:
             raise ValueError(f"Unsupported dataset type: {self.dataset_type}")
 
-        dataset_config = self.dataset_info[self.dataset_type]
-        transform = dataset_config["transform"]
-
-        train_dataset = dataset_config["dataset"](
-            root="./data", train=True, transform=transform, download=True
-        )
-        test_dataset = dataset_config["dataset"](
-            root="./data", train=False, transform=transform, download=True
-        )
-
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
-
-        return train_loader, test_loader
+        download_thread = DatasetDownloadThread(self.dataset_type, self.batch_size)
+        
+        if message_callback:
+            download_thread.progress.connect(message_callback)
+            download_thread.error.connect(lambda msg: message_callback(f"Error: {msg}"))
+        
+        download_thread.start()
+        
+        return download_thread
 
     def get_dataset_properties(self):
         if self.dataset_type not in self.dataset_info:

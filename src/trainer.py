@@ -53,28 +53,35 @@ class Trainer(QThread):
         self.train_loader = None
         self.test_loader = None
         self.dag_graph = None
+        self.download_thread = None
 
         
     def load_data_and_create_graph(self):
-
-
         data_handler = DataHandler(self.dataset_type, self.batch_size)
 
-        self.train_loader, self.test_loader = data_handler.load_data()
+        download_thread = data_handler.load_data(message_callback=self.message.emit)
+        download_thread.data_loaded.connect(self.handle_data_loaded)
+        download_thread.error.connect(lambda msg: self.message.emit(f"Error: {msg}"))
+        
+        self.download_thread = download_thread
 
-        self.dataset_properties = data_handler.dataset_info.get(self.dataset_type, None)
-        input_size = self.dataset_properties["input_size"] if self.dataset_properties else None
-        num_classes = self.dataset_properties["num_classes"] if self.dataset_properties else None
-        self.feature_size = self.dataset_properties["feature_size"] if self.dataset_properties else None
-        self.sequence_length = self.dataset_properties["sequence_length"] if self.dataset_properties else None
+    def handle_data_loaded(self, train_loader, test_loader):
+        self.train_loader = train_loader
+        self.test_loader = test_loader
+
+        data_handler = DataHandler(self.dataset_type, self.batch_size)
+        self.dataset_properties = data_handler.get_dataset_properties()
+        
+        input_size = self.dataset_properties["input_size"]
+        num_classes = self.dataset_properties["num_classes"]
+        self.feature_size = self.dataset_properties["feature_size"]
+        self.sequence_length = self.dataset_properties["sequence_length"]
 
         self.graph_handler = GraphHandler()
         self.dag_graph = self.graph_handler.create_dag_graph(self.hidden_sizes, self.graph_type, self.k, self.p, self.layer_count)
 
         self.model_handler = ModelHandler(self.model_type, self.hidden_sizes, self.device)
         self.model = self.model_handler.create_model(self.graph_type, self.dag_graph, input_size, num_classes, self.feature_size)
-
-
 
         if self.graph_type == "WS" or self.graph_type == "BA":
             progress_message = f"Parameters of the {self.model_type} {self.graph_type} trainer: {self.epochs} epoch, {self.lr} learning_rate, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.k} k, {self.p} p, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
