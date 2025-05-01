@@ -9,31 +9,52 @@ class CustomMessageBox(QtWidgets.QMessageBox):
         self.setText(message)
         self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint | QtCore.Qt.WindowType.Dialog)
 
-        self.closeButton=QtWidgets.QPushButton(self)
-        icon=QtGui.QIcon("../resources/icons/close.png")
+        container = QtWidgets.QWidget()
+        container_layout = QtWidgets.QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        self.closeButton = QtWidgets.QPushButton(container)
+        icon = QtGui.QIcon("../resources/icons/close.png")
         self.closeButton.setIcon(icon)
         self.closeButton.setFixedSize(16, 16)
         self.closeButton.setStyleSheet("background:transparent;")
         self.closeButton.clicked.connect(self.close)
 
-        closeLayout=QtWidgets.QHBoxLayout()
-        closeLayout.addStretch()
-        closeLayout.addWidget(self.closeButton)
+        close_layout = QtWidgets.QHBoxLayout()
+        close_layout.addStretch()
+        close_layout.addWidget(self.closeButton)
+        close_layout.setContentsMargins(0, 0, 0, 0)
 
-        mainLayout=QtWidgets.QVBoxLayout(self)
-        mainLayout.addLayout(closeLayout)
-        mainLayout.addWidget(self)
-        self.setLayout(mainLayout)
+        container_layout.addLayout(close_layout)
+        self.layout().addWidget(container, 0, 0, 1, 1)
+        
+        self.layout().setContentsMargins(40, 40, 40, 40)
+        self.layout().setSpacing(10)
 
-        self.button_map = {}  # Store buttons +  labels
+        self.button_map = {}  # Store buttons + labels
         for button_text, role, callback in buttons:
             if isinstance(role, int):
                 role = QtWidgets.QMessageBox.ButtonRole(role)
             btn = self.addButton(button_text, role)
             btn.setObjectName(button_text.lower().replace(" ", "_"))
             self.button_map[btn] = callback
+
         # Messagebox specific styling
         self.setStyleSheet("""
+            QMessageBox {
+                background-color: #35314F;
+                color: white;
+                border-color: transparent;
+                border-width: 0px;
+                border-radius: 10px;
+                font-size: 14px;
+                text-align: center;
+            }
+            QMessageBox QLabel {
+                margin: 0px;
+                padding: 0px;
+            }
             QMessageBox QPushButton#discard:hover {
                 background-color: #c42b1c !important;
             }

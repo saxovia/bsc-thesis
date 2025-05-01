@@ -8,6 +8,7 @@ try:
     import torch
     import numpy
     import pytest
+    import pytest_mock
     import PyQt6
     import torchvision
     import matplotlib

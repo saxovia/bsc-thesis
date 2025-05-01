@@ -43,14 +43,13 @@ class UIAnimations:
         if hasattr(label, '_typing_timer'):
             try:
                 label._typing_timer.stop()
-                label._typing_timer.timeout.disconnect()
+                label._typing_timer.deleteLater()
             except:
                 pass
-            del label._typing_timer
+            label._typing_timer = None
 
-        # Create new timer
-        label._typing_timer = QtCore.QTimer(parent)
-        typing_timer = label._typing_timer
+        typing_timer = QtCore.QTimer(parent)
+        label._typing_timer = typing_timer
         typing_index = 0
 
         def update_typing():
@@ -61,15 +60,13 @@ class UIAnimations:
             else:
                 label.setText(text)
                 typing_timer.stop()
-                # Clean up the timer when done
-                try:
-                    typing_timer.timeout.disconnect()
-                except:
-                    pass
+                typing_timer.deleteLater()
+                label._typing_timer = None
 
         def start_typing():
-            typing_timer.timeout.connect(update_typing)
-            typing_timer.start(interval)
+            if hasattr(label, '_typing_timer') and label._typing_timer == typing_timer:
+                typing_timer.timeout.connect(update_typing)
+                typing_timer.start(interval)
 
         label.setText(" ")
         QtCore.QTimer.singleShot(500, start_typing)

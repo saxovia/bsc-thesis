@@ -6,7 +6,9 @@ class MLPNet(nn.Module):
     def __init__(self, layer_sizes):
         super().__init__()
         layers = []
+        # Add input layer
         for i in range(len(layer_sizes) - 1):
+            
             linear = nn.Linear(layer_sizes[i], layer_sizes[i+1])
             nn.init.xavier_normal_(linear.weight)
             nn.init.constant_(linear.bias, 0)

@@ -69,12 +69,16 @@ def test_complete_reset(app, qtbot):
     app.model_train_button.setEnabled(False)
     app.saved_label.setText("Saved!")
     
-    if hasattr(app, "typing_timer") and app.typing_timer:
-        with qtbot.waitSignal(app.typing_timer.timeout, timeout=1000, raising=False):
-            app.complete_reset()
-    else:
-        app.complete_reset()
-
+    # Ensure any existing timers are cleaned up
+    QtCore.QCoreApplication.processEvents()
+    
+    app.complete_reset()
+    
+    # Wait for any pending animations to complete
+    def check_button():
+        return app.model_train_button.isEnabled()
+    
+    qtbot.waitUntil(check_button, timeout=2000)
     assert app.model_train_button.isEnabled()
     assert app.saved_label.text() == ""
 
