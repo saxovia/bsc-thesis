@@ -54,7 +54,7 @@ class ResultsHandler:
             self._process_result(result)
             
         # TODO: Remove test data after development
-        self._add_test_data()
+        #self._add_test_data()
         
         self.display_graphs(self.metrics)
 

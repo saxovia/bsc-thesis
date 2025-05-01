@@ -86,9 +86,10 @@ class DataHandler:
             raise ValueError(f"Unsupported dataset type: {dataset_type}")
         
         valid_dataset_types = ["MNIST", "CIFAR-10", "CIFAR-100"]
-        if dataset_type not in valid_dataset_types:
+        lowercase_types = [dt.lower() for dt in valid_dataset_types]
+        if dataset_type.lower() in lowercase_types and dataset_type not in valid_dataset_types:
             raise ValueError(f"Unsupported dataset type: {dataset_type}")
-            
+        
         self.dataset_type = dataset_type
         self.batch_size = batch_size
         self.dataset_info = {
