@@ -84,6 +84,11 @@ class DataHandler:
             raise ValueError("Batch size must be positive")
         if dataset_type == "" or dataset_type is None:
             raise ValueError(f"Unsupported dataset type: {dataset_type}")
+        
+        valid_dataset_types = ["MNIST", "CIFAR-10", "CIFAR-100"]
+        if dataset_type not in valid_dataset_types:
+            raise ValueError(f"Unsupported dataset type: {dataset_type}")
+            
         self.dataset_type = dataset_type
         self.batch_size = batch_size
         self.dataset_info = {
