@@ -59,14 +59,20 @@ class UIAnimations:
                 typing_index += 5
             else:
                 label.setText(text)
-                typing_timer.stop()
-                typing_timer.deleteLater()
+                try:
+                    typing_timer.stop()
+                    typing_timer.deleteLater()
+                except:
+                    pass
                 label._typing_timer = None
 
         def start_typing():
             if hasattr(label, '_typing_timer') and label._typing_timer == typing_timer:
-                typing_timer.timeout.connect(update_typing)
-                typing_timer.start(interval)
+                try:
+                    typing_timer.timeout.connect(update_typing)
+                    typing_timer.start(interval)
+                except RuntimeError:
+                    pass
 
         label.setText(" ")
         QtCore.QTimer.singleShot(500, start_typing)

@@ -68,13 +68,19 @@ def test_type_text_effect(app, qtbot):
 def test_complete_reset(app, qtbot):
     app.model_train_button.setEnabled(False)
     app.saved_label.setText("Saved!")
-    
-    # Ensure any existing timers are cleaned up
+
     QtCore.QCoreApplication.processEvents()
+    
+    if hasattr(app.saved_label, '_typing_timer'):
+        try:
+            app.saved_label._typing_timer.stop()
+            app.saved_label._typing_timer.deleteLater()
+        except:
+            pass
+        app.saved_label._typing_timer = None
     
     app.complete_reset()
     
-    # Wait for any pending animations to complete
     def check_button():
         return app.model_train_button.isEnabled()
     
