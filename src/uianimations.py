@@ -40,7 +40,10 @@ class UIAnimations:
     
     @staticmethod
     def type_text_effect(label, text, parent, interval=10):
-        typing_timer = QtCore.QTimer(parent)
+        # Store the timer as a property of the label to keep it alive
+        if not hasattr(label, '_typing_timer'):
+            label._typing_timer = QtCore.QTimer(parent)
+        typing_timer = label._typing_timer
         typing_index = 0
 
         def update_typing():
@@ -52,8 +55,8 @@ class UIAnimations:
                 label.setText(text)
                 typing_timer.stop()
         def start_typing():
-                typing_timer.timeout.connect(update_typing)
-                typing_timer.start(interval)
+            typing_timer.timeout.connect(update_typing)
+            typing_timer.start(interval)
         label.setText(" ")
 
         QtCore.QTimer.singleShot(500, start_typing)

@@ -16,17 +16,15 @@ class CustomMessageBox(QtWidgets.QMessageBox):
         self.closeButton.setStyleSheet("background:transparent;")
         self.closeButton.clicked.connect(self.close)
 
-        topLayout = QtWidgets.QHBoxLayout()
-        topLayout.addStretch()
-        topLayout.addWidget(self.closeButton)
-        topLayout.setContentsMargins(0, 0, 5, 0)
-        
-        # Get the existing layout from QMessageBox
-        layout = self.layout()
-        # Insert the close button layout at the top
-        if layout is not None:
-            layout.insertLayout(0, topLayout)
-        
+        closeLayout=QtWidgets.QHBoxLayout()
+        closeLayout.addStretch()
+        closeLayout.addWidget(self.closeButton)
+
+        mainLayout=QtWidgets.QVBoxLayout(self)
+        mainLayout.addLayout(closeLayout)
+        mainLayout.addWidget(self)
+        self.setLayout(mainLayout)
+
         self.button_map = {}  # Store buttons +  labels
         for button_text, role, callback in buttons:
             if isinstance(role, int):

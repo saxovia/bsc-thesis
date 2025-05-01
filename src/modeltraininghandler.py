@@ -188,17 +188,17 @@ class ModelTrainingHandler:
         except ValueError as ve:
             self.main_window.show_warning(
                 title="Invalid Row Data",
-                message=f"Error processing row {row[0]}: {str(ve)}",
+                message=f"Error processing row {row[0] - 1}: {str(ve)}",
                 actions=None,
                 buttons=["ok"]
             )
             return False
 
         except Exception as e:
-            print(f"Error processing row {row}: {str(e)}")
+            print(f"Error processing row {row-1}: {str(e)}")
             self.main_window.show_warning(
                 title="Invalid Data",
-                message=f"Row {row} contains invalid data {row[0]}: {str(e)}",
+                message=f"Row {row-1} contains invalid data {row[0]}: {str(e)}",
                 actions=None,
                 buttons=["ok"]
             )
