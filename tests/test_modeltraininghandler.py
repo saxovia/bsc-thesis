@@ -89,6 +89,9 @@ def test_train_one_model(MockTrainer, mock_window, handler):
 def test_handle_prune_action(mock_window, handler):
     row = [None, "Prune", "Layer1", 50, "Magnitude"]
     mock_trainer = MagicMock(spec=Trainer)
+    mock_trainer.pruner_thread = MagicMock()
+    mock_trainer.pruner_thread.finished = MagicMock()
     handler.trainer = mock_trainer
     handler.handle_prune_action(row)
     mock_trainer.async_prune.assert_called_with(0.5, "Layer1", "Magnitude")
+    mock_trainer.pruner_thread.finished.connect.assert_called_once()

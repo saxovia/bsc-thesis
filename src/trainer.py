@@ -16,9 +16,9 @@ class Trainer(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal()
     message = pyqtSignal(str)
-    data_ready = pyqtSignal()  # New signal for data loading completion
 
-    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05, graph_type="Full", N=250, batch_size=64, layer_count=5, index=None):
+    def __init__(self, model_type, dataset_type, lr=None, hidden_sizes=[6,6,6], loss="CrossEntropy", optimizer="Adam", epochs=30, k=2, p=0.05,graph_type="Full", N=250, batch_size=64, layer_count=5, index=None):
+
         super().__init__()
         self.hidden_sizes = hidden_sizes
         self.model_type = model_type
@@ -37,10 +37,11 @@ class Trainer(QThread):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if loss == "CrossEntropy":
             self.criterion = nn.CrossEntropyLoss()
-        else:
+        else: #for now default to MSELoss
             self.criterion = nn.MSELoss()
         self.running = True
         self.current_epoch = 0
+        self.data_loaded = False
         self.training_metrics = {
             'final_train_loss': None,
             'final_train_accuracy': None,
@@ -54,34 +55,18 @@ class Trainer(QThread):
         self.test_loader = None
         self.dag_graph = None
         self.download_thread = None
-        self.data_loaded = False
-        self.graph_handler = GraphHandler()
-        self.model_handler = ModelHandler(self.model_type, self.hidden_sizes, self.device)
+
         
     def load_data_and_create_graph(self):
-        if self.data_loaded:
-            print("Data already loaded, skipping data loading")
-            self.data_ready.emit()
-            return
+        data_handler = DataHandler(self.dataset_type, self.batch_size)
 
-        print(f"Loading data for model {self.index}")
-        self.data_handler = DataHandler(self.dataset_type, self.batch_size)
-        self.download_thread = self.data_handler.load_data()
+        download_thread = data_handler.load_data(message_callback=self.message.emit)
+        download_thread.data_loaded.connect(self.handle_data_loaded)
+        download_thread.error.connect(lambda msg: self.message.emit(f"Error: {msg}"))
         
-        # Connect signals before starting thread
-        self.download_thread.finished.connect(self.add_loaders)
-        self.download_thread.data_loaded.connect(self.handle_data_loaded)
-        self.download_thread.error.connect(lambda msg: print(f"Error loading data: {msg}"))
-        
-        self.download_thread.start()
-        print("Download thread started")
-
-    def add_loaders(self):
-        self.train_loader = self.data_handler.train_loader
-        self.test_loader = self.data_handler.test_loader
+        self.download_thread = download_thread
 
     def handle_data_loaded(self, train_loader, test_loader):
-        print(f"Handling loaded data for model {self.index}")
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.data_loaded = True
@@ -94,11 +79,9 @@ class Trainer(QThread):
         self.feature_size = self.dataset_properties["feature_size"]
         self.sequence_length = self.dataset_properties["sequence_length"]
 
-        print(f"Creating graph for model {self.index}")
         self.graph_handler = GraphHandler()
         self.dag_graph = self.graph_handler.create_dag_graph(self.hidden_sizes, self.graph_type, self.k, self.p, self.layer_count)
 
-        print(f"Creating model for model {self.index}")
         self.model_handler = ModelHandler(self.model_type, self.hidden_sizes, self.device)
         self.model = self.model_handler.create_model(self.graph_type, self.dag_graph, input_size, num_classes, self.feature_size)
 
@@ -107,16 +90,26 @@ class Trainer(QThread):
         else:
             progress_message = f"Parameters of the {self.model_type} {self.graph_type} trainer: {self.epochs} epoch, {self.optimizer_type} optimizer, {self.criterion} loss function, {self.dataset_type} dataset, {self.hidden_sizes} hidden sizes"
         self.message.emit(progress_message)
-        print(f"Model setup complete for model {self.index}")
-        
-        # Emit data ready signal
-        self.data_ready.emit()
+        self.download_thread.finished.emit()
+
+
 
     def run(self):
-        print(f"Trainer run method started for model {self.index}")
         progress_message = "\nStarting the training process..."
         self.message.emit(progress_message)
         
+        
+        if not self.data_loaded:
+            print("Error: Data not loaded")
+            self.message.emit("Error: Data not loaded")
+            return
+            
+        if self.model is None:
+            print("Error: Model is None")
+            self.message.emit("Error: Model is None")
+            return
+            
+
         if not self.data_loaded:
             print("Error: Data not loaded")
             self.message.emit("Error: Data not loaded")
@@ -129,22 +122,18 @@ class Trainer(QThread):
             
         print(f"Starting training for model {self.index} with {self.epochs} epochs")
         self.train(self.model, self.train_loader, self.epochs - self.current_epoch, lr=self.lr)
-        print(f"Training completed for model {self.index}")
-        self.finished.emit()
-
+        self.finished.emit()  # notify gui when done
+    
     def stop(self):
         self.running = False
         if self.pruner_thread and self.pruner_thread.isRunning():
             self.pruner_thread.terminate()
-        if self.download_thread and self.download_thread.isRunning():
-            self.download_thread.terminate()
         self.terminate()
         self.wait()
         self.finished.emit()
 
     # Pruning methods
     def async_prune(self, prune_ratio, prune_type="FULL", prune_mode="Magnitude"):
-        self.message.emit("Starting pruning process...")
         if self.pruner_thread and self.pruner_thread.isRunning():
             self.message.emit("Pruning already in progress")
             return False

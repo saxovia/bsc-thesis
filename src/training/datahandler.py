@@ -15,8 +15,6 @@ class DatasetDownloadThread(QThread):
         self.dataset_type = dataset_type
         self.batch_size = batch_size
         self.root = root
-        self.train_loader = None
-        self.test_loader = None
         self.dataset_info = {
             "MNIST": {
                 "dataset": datasets.MNIST,
@@ -69,11 +67,12 @@ class DatasetDownloadThread(QThread):
                 root=self.root, train=False, transform=transform, download=False
             )
 
-            self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-            self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+            train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+            test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
             
-            self.progress.emit("Dataset loading complete!")
-            self.data_loaded.emit(self.train_loader, self.test_loader)
+            self.progress.emit("Dataset loading complete!\n")
+            print("Dataset loading complete!")
+            self.data_loaded.emit(train_loader, test_loader)
             self.finished.emit()
             
         except Exception as e:
@@ -81,10 +80,12 @@ class DatasetDownloadThread(QThread):
 
 class DataHandler:
     def __init__(self, dataset_type, batch_size):
+        if batch_size <= 0 or not isinstance(batch_size, int):
+            raise ValueError("Batch size must be positive")
+        if dataset_type == "" or dataset_type is None:
+            raise ValueError(f"Unsupported dataset type: {dataset_type}")
         self.dataset_type = dataset_type
         self.batch_size = batch_size
-        self.train_loader = None
-        self.test_loader = None
         self.dataset_info = {
             "MNIST": {
                 "dataset": datasets.MNIST,
@@ -134,13 +135,9 @@ class DataHandler:
             download_thread.progress.connect(message_callback)
             download_thread.error.connect(lambda msg: message_callback(f"Error: {msg}"))
         
-        download_thread.data_loaded.connect(self.set_data_loaders)
+        download_thread.start()
         
         return download_thread
-
-    def set_data_loaders(self, train_loader, test_loader):
-        self.train_loader = train_loader
-        self.test_loader = test_loader
 
     def get_dataset_properties(self):
         if self.dataset_type not in self.dataset_info:

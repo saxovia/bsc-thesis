@@ -69,13 +69,18 @@ class SparseMLPNet(nn.Module):
         for layer_idx in range(1, len(self.layer_sizes)):
             next_activations = {}
             for neuron_idx in range(self.layer_sizes[layer_idx]):
-                total_input = 0
+                total_input = torch.zeros_like(x[:, 0], requires_grad=True)
                 for prev_neuron_idx in range(self.layer_sizes[layer_idx - 1]):
                     if self.dag_graph.has_edge(f'input_{prev_neuron_idx}', f'layer{layer_idx}_{neuron_idx}'):
                         total_input += activations[f'input_{prev_neuron_idx}'] * self.network[layer_idx - 1].weight[prev_neuron_idx, neuron_idx]
                 next_activations[f'layer{layer_idx}_{neuron_idx}'] = torch.relu(total_input)
             activations.update(next_activations)
-        return activations[f'layer{len(self.layer_sizes) - 1}_0']
+            
+        output_size = self.layer_sizes[-1]
+        output_activations = [activations[f'layer{len(self.layer_sizes) - 1}_{i}'] for i in range(output_size)]
+        output = torch.stack(output_activations, dim=1)
+            
+        return output
 
 
 class SparseLSTMNet(nn.Module):
@@ -98,14 +103,21 @@ class SparseLSTMNet(nn.Module):
         self.fc = nn.Linear(current_input_size, output_dim)
 
     def forward(self, x):
-        sparse_input = []
+        sparse_input_features = []
         for i in range(x.size(1)):
             if self.dag_graph.has_edge(f'input_{i}', 'input_sparsified'):
-                sparse_input.append(x[:, i])
+                sparse_input_features.append(x[:, i])
         
-        sparse_input = torch.stack(sparse_input, dim=1)
+        if not sparse_input_features:
+            sparse_input = torch.zeros(x.size(0), 1, x.size(1), device=x.device, requires_grad=True)
+        else:
+            sparse_input = torch.stack(sparse_input_features, dim=1)
+            sparse_input = sparse_input.unsqueeze(1)
         
         for lstm in self.lstms:
             sparse_input, _ = lstm(sparse_input)
         
-        return self.fc(sparse_input[:, -1, :])
+        final_hidden = sparse_input[:, -1, :]
+        output = self.fc(final_hidden)
+        
+        return output

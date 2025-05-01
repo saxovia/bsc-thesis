@@ -993,7 +993,7 @@ Alternatively, import an already trained model and customize the pruning process
                 </property>
                 <property name="font">
                  <font>
-                  <pointsize>20</pointsize>
+                  <pointsize>22</pointsize>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -1157,41 +1157,7 @@ Alternatively, import an already trained model and customize the pruning process
                  <property name="bottomMargin">
                   <number>0</number>
                  </property>
-                 <item row="0" column="0">
-                  <widget class="QLabel" name="model_page_title">
-                   <property name="minimumSize">
-                    <size>
-                     <width>0</width>
-                     <height>70</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>22</pointsize>
-                     <bold>false</bold>
-                    </font>
-                   </property>
-                   <property name="autoFillBackground">
-                    <bool>false</bool>
-                   </property>
-                   <property name="text">
-                    <string>Model</string>
-                   </property>
-                   <property name="alignment">
-                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                   </property>
-                   <property name="wordWrap">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="0" colspan="2">
+                 <item row="2" column="0" colspan="2">
                   <widget class="QStackedWidget" name="stackedWidget_2">
                    <property name="currentIndex">
                     <number>4</number>
@@ -2558,7 +2524,7 @@ Alternatively, import an already trained model and customize the pruning process
                              <x>0</x>
                              <y>0</y>
                              <width>820</width>
-                             <height>337</height>
+                             <height>413</height>
                             </rect>
                            </property>
                            <property name="styleSheet">

@@ -150,6 +150,7 @@ class PrunerThread(QThread):
             }
             self.results_ready.emit(results)
             
+            self.progress_message.emit("Pruning completed successfully")
             self.finished.emit(True)
             
         except Exception as e:

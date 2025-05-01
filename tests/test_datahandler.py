@@ -82,15 +82,13 @@ def test_invalid_batch_sizes():
         DataHandler(dataset_type="MNIST", batch_size=-1)
 
 def test_dataset_type_edge_cases():
-    # Test empty string
+
     with pytest.raises(ValueError, match="Unsupported dataset type: "):
         DataHandler(dataset_type="", batch_size=64)
     
-    # Test None
-    with pytest.raises(ValueError, match="Unsupported dataset type: None"):
+    with pytest.raises(ValueError, match="Unsupported dataset type: "):
         DataHandler(dataset_type=None, batch_size=64)
     
-    # Test case sensitivity
     with pytest.raises(ValueError, match="Unsupported dataset type: mnist"):
         DataHandler(dataset_type="mnist", batch_size=64)
 

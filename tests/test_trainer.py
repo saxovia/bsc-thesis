@@ -67,7 +67,12 @@ def test_load_data_and_create_graph(trainer, mocker):
 
 def test_run_training(trainer, mocker):
     mock_train = mocker.patch.object(trainer, "train")
-
+    
+    # Set up the data loading state
+    trainer.data_loaded = True
+    trainer.model = mocker.Mock()
+    trainer.train_loader = mocker.Mock()
+    
     trainer.message = mocker.Mock()
     trainer.finished = mocker.Mock()
     trainer.run()
