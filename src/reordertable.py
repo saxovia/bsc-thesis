@@ -130,7 +130,6 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
         row, col = index.row(), index.column()
 
         if col == 0 and role == QtCore.Qt.ItemDataRole.EditRole:
-            # Only update if the value is actually changing
             if self._data[row][col] != value:
                 self._data[row][col] = value
                 self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.DecorationRole])
@@ -139,21 +138,17 @@ class ReorderTableModel(QtCore.QAbstractTableModel):
             return False
 
         if role == QtCore.Qt.ItemDataRole.EditRole and col > 0 and self._editable:
-            # Get all selected rows
             selected_rows = [i for i, row_data in enumerate(self._data[:-1]) if row_data[0]]
-            
-            # If no rows are selected, just update the current row
+
             if not selected_rows:
                 self._data[row][col] = value
                 self.dataChanged.emit(index, index, [QtCore.Qt.ItemDataRole.EditRole])
             else:
-                # Update all selected rows
                 for selected_row in selected_rows:
                     self._data[selected_row][col] = value
                     selected_index = self.index(selected_row, col)
                     self.dataChanged.emit(selected_index, selected_index, [QtCore.Qt.ItemDataRole.EditRole])
             
-            # If editing the last row and it's not empty, add a new empty row
             if row == len(self._data) - 1 and value != '':
                 self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
                 self._data.append([False] + [''] * (len(self._headers) - 3) + ['', '', {"hidden_key": "default_value"}])

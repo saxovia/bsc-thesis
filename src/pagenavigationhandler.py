@@ -26,7 +26,6 @@ class PageNavigationHandler:
         QTimer.singleShot(100, lambda: self.perform_fadeIn(new_page))
 
     def perform_fadeIn(self, new_page):
-        # Set the page to the new page
         self.main_window.stackedWidget.setCurrentWidget(new_page)
         self.main_window.fade_in_up(new_page)
 

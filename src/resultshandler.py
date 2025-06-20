@@ -53,7 +53,6 @@ class ResultsHandler:
         for result in previous_results:
             self._process_result(result)
             
-        # TODO: Remove test data after development
         #self._add_test_data()
         
         self.display_graphs(self.metrics)
@@ -108,25 +107,25 @@ class ResultsHandler:
 
     def _calculate_derived_metrics(self, graph_metrics):
         # Average metrics
-        self.metrics["avg_degree"].append(sum(graph_metrics["degree"].values()) / len(graph_metrics["degree"]))
-        self.metrics["avg_eccentricity"].append(sum(graph_metrics["eccentricity"].values()) / len(graph_metrics["eccentricity"]))
-        self.metrics["avg_closeness"].append(sum(graph_metrics["closeness"].values()) / len(graph_metrics["closeness"]))
-        self.metrics["avg_betweenness"].append(sum(graph_metrics["betweenness"].values()) / len(graph_metrics["betweenness"]))
-        self.metrics["avg_edge_betweenness"].append(sum(graph_metrics["edge_betweenness"].values()) / len(graph_metrics["edge_betweenness"]))
+        self.metrics["avg_degree"].append(sum(graph_metrics["degree"].values()) / len(graph_metrics["degree"]) if len(graph_metrics["degree"]) > 0 else 0)
+        self.metrics["avg_eccentricity"].append(sum(graph_metrics["eccentricity"].values()) / len(graph_metrics["eccentricity"]) if len(graph_metrics["eccentricity"]) > 0 else 0)
+        self.metrics["avg_closeness"].append(sum(graph_metrics["closeness"].values()) / len(graph_metrics["closeness"]) if len(graph_metrics["closeness"]) > 0 else 0)
+        self.metrics["avg_betweenness"].append(sum(graph_metrics["betweenness"].values()) / len(graph_metrics["betweenness"]) if len(graph_metrics["betweenness"]) > 0 else 0)
+        self.metrics["avg_edge_betweenness"].append(sum(graph_metrics["edge_betweenness"].values()) / len(graph_metrics["edge_betweenness"]) if len(graph_metrics["edge_betweenness"]) > 0 else 0)
 
         # Min metrics
-        self.metrics["min_degree"].append(min(graph_metrics["degree"].values()))
-        self.metrics["min_eccentricity"].append(min(graph_metrics["eccentricity"].values()))
-        self.metrics["min_closeness"].append(min(graph_metrics["closeness"].values()))
-        self.metrics["min_betweenness"].append(min(graph_metrics["betweenness"].values()))
-        self.metrics["min_edge_betweenness"].append(min(graph_metrics["edge_betweenness"].values()))
+        self.metrics["min_degree"].append(min(graph_metrics["degree"].values()) if graph_metrics["degree"] else 0)
+        self.metrics["min_eccentricity"].append(min(graph_metrics["eccentricity"].values()) if graph_metrics["eccentricity"] else 0)
+        self.metrics["min_closeness"].append(min(graph_metrics["closeness"].values()) if graph_metrics["closeness"] else 0)
+        self.metrics["min_betweenness"].append(min(graph_metrics["betweenness"].values()) if graph_metrics["betweenness"] else 0)
+        self.metrics["min_edge_betweenness"].append(min(graph_metrics["edge_betweenness"].values()) if graph_metrics["edge_betweenness"] else 0)
 
         # Max metrics
-        self.metrics["max_degree"].append(max(graph_metrics["degree"].values()))
-        self.metrics["max_eccentricity"].append(max(graph_metrics["eccentricity"].values()))
-        self.metrics["max_closeness"].append(max(graph_metrics["closeness"].values()))
-        self.metrics["max_betweenness"].append(max(graph_metrics["betweenness"].values()))
-        self.metrics["max_edge_betweenness"].append(max(graph_metrics["edge_betweenness"].values()))
+        self.metrics["max_degree"].append(max(graph_metrics["degree"].values()) if graph_metrics["degree"] else 0)
+        self.metrics["max_eccentricity"].append(max(graph_metrics["eccentricity"].values()) if graph_metrics["eccentricity"] else 0)
+        self.metrics["max_closeness"].append(max(graph_metrics["closeness"].values()) if graph_metrics["closeness"] else 0)
+        self.metrics["max_betweenness"].append(max(graph_metrics["betweenness"].values()) if graph_metrics["betweenness"] else 0)
+        self.metrics["max_edge_betweenness"].append(max(graph_metrics["edge_betweenness"].values()) if graph_metrics["edge_betweenness"] else 0)
 
         # Standard deviation and variance
         self._calculate_variance_metrics(graph_metrics)
@@ -137,28 +136,28 @@ class ResultsHandler:
 
         # Degree
         avg_degree = self.metrics["avg_degree"][-1]
-        self.metrics["std_degree"].append(calculate_variance(graph_metrics["degree"].values(), avg_degree))
-        self.metrics["variance_degree"].append(calculate_variance(graph_metrics["degree"].values(), avg_degree))
+        self.metrics["std_degree"].append(calculate_variance(graph_metrics["degree"].values(), avg_degree) if graph_metrics["degree"] else 0)
+        self.metrics["variance_degree"].append(calculate_variance(graph_metrics["degree"].values(), avg_degree) if graph_metrics["degree"] else 0)
 
         # Eccentricity
         avg_eccentricity = self.metrics["avg_eccentricity"][-1]
-        self.metrics["std_eccentricity"].append(calculate_variance(graph_metrics["eccentricity"].values(), avg_eccentricity))
-        self.metrics["variance_eccentricity"].append(calculate_variance(graph_metrics["eccentricity"].values(), avg_eccentricity))
+        self.metrics["std_eccentricity"].append(calculate_variance(graph_metrics["eccentricity"].values(), avg_eccentricity) if graph_metrics["eccentricity"] else 0)
+        self.metrics["variance_eccentricity"].append(calculate_variance(graph_metrics["eccentricity"].values(), avg_eccentricity) if graph_metrics["eccentricity"] else 0)
 
         # Closeness
         avg_closeness = self.metrics["avg_closeness"][-1]
-        self.metrics["std_closeness"].append(calculate_variance(graph_metrics["closeness"].values(), avg_closeness))
-        self.metrics["variance_closeness"].append(calculate_variance(graph_metrics["closeness"].values(), avg_closeness))
+        self.metrics["std_closeness"].append(calculate_variance(graph_metrics["closeness"].values(), avg_closeness) if graph_metrics["closeness"] else 0)
+        self.metrics["variance_closeness"].append(calculate_variance(graph_metrics["closeness"].values(), avg_closeness) if graph_metrics["closeness"] else 0)
 
         # Betweenness
         avg_betweenness = self.metrics["avg_betweenness"][-1]
-        self.metrics["std_betweenness"].append(calculate_variance(graph_metrics["betweenness"].values(), avg_betweenness))
-        self.metrics["variance_betweenness"].append(calculate_variance(graph_metrics["betweenness"].values(), avg_betweenness))
+        self.metrics["std_betweenness"].append(calculate_variance(graph_metrics["betweenness"].values(), avg_betweenness) if graph_metrics["betweenness"] else 0)
+        self.metrics["variance_betweenness"].append(calculate_variance(graph_metrics["betweenness"].values(), avg_betweenness) if graph_metrics["betweenness"] else 0)
 
         # Edge Betweenness
         avg_edge_betweenness = self.metrics["avg_edge_betweenness"][-1]
-        self.metrics["std_edge_betweenness"].append(calculate_variance(graph_metrics["edge_betweenness"].values(), avg_edge_betweenness))
-        self.metrics["variance_edge_betweenness"].append(calculate_variance(graph_metrics["edge_betweenness"].values(), avg_edge_betweenness))
+        self.metrics["std_edge_betweenness"].append(calculate_variance(graph_metrics["edge_betweenness"].values(), avg_edge_betweenness) if graph_metrics["edge_betweenness"] else 0)
+        self.metrics["variance_edge_betweenness"].append(calculate_variance(graph_metrics["edge_betweenness"].values(), avg_edge_betweenness) if graph_metrics["edge_betweenness"] else 0)
 
     def _add_test_data(self):
         self.metrics['graph_type'].extend(['Full', 'Full'])

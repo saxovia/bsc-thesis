@@ -411,7 +411,7 @@ class Testing(QtWidgets.QMainWindow): #just in case for testing this by itself
         view.setModel(self.model)
 
         hidden_data_row_0 = self.model.get_hidden_data(0)
-        print(f"Hidden data for row 0: {hidden_data_row_0}")
+        #print(f"Hidden data for row 0: {hidden_data_row_0}")
         self.model.set_hidden_data(0, {"hidden_key": "new_value"})
         if editable:
             view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)

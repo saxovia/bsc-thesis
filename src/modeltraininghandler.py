@@ -56,28 +56,20 @@ class ModelTrainingHandler:
         if not self.validate_table_data(self.main_window.reorder_table_view2.model()):
             return
 
-        #print("Data from pruning table:", data)
-        try:
-            for row in data:
-                if row and len(row)>0:
-                    success=self.process_table_row(row)
-                    if not success:
-                        self.reset_UI()
-                        return # <-- Important: stop if invalid row
+        current_row = 0
+        current_column = 0
+        for row in data:
+            current_row += 1
+            if row and len(row) > 0:
+                for current_column in range(len(row)):
+                    pass
+                success, error_message = self.process_table_row(row)
+                if not success:
+                    self.reset_UI()
+                    return
 
-            self.current_model_index=0
-            self.main_train_loop()
-
-        except Exception as e:
-            print(f"Error processing table data: {str(e)}")
-            self.main_window.show_warning(
-                title="Invalid Data",
-                message=f"Error processing table data: {str(e)}",
-                actions=None,
-                buttons=["ok"]
-            )
-            self.reset_UI()
-            return
+        self.current_model_index=0
+        self.main_train_loop()
 
     def validate_table_data(self, table_model):
         for row_index in range(table_model.rowCount() - 1):
@@ -96,10 +88,10 @@ class ModelTrainingHandler:
         return True
 
     def process_table_row(self, row):
-        # Skip rows where all parameters are empty or None
+
         if all(param == "" or param is None for param in row):
             print(f"Skipping empty row {row[0]}")
-            return True
+            return True, None
 
         try:
             index=row[0]
@@ -140,14 +132,17 @@ class ModelTrainingHandler:
 
             optimizer=row[6]
             optimizer = optimizer.replace(" ", "")
-            valid_optimizers=["SGD", "Adam", "RMSprop", "Adagrad", "Adadelta"]
+            valid_optimizers=["SGD", "Adam", "RMSprop", "Adadelta"]
             if not optimizer or optimizer not in valid_optimizers:
                 raise ValueError("Optimizer is missing or invalid.")
 
             epochs=row[7]
-            if not epochs or not str(epochs).isdigit():
-                raise ValueError("Epochs value is missing or invalid.")
-            epochs=int(epochs)
+            if start != "Prune":
+                if not epochs or not str(epochs).isdigit():
+                    raise ValueError("Epochs value is missing or invalid.")
+                epochs=int(epochs)
+            else:
+                epochs = 1
 
             k=row[8]
             if start != "Prune":
@@ -168,14 +163,21 @@ class ModelTrainingHandler:
             batch_size=int(batch_size)
 
             learning_rate=row[11]
-            try:
-                learning_rate=float(learning_rate)
-            except (ValueError, TypeError):
-                raise ValueError("Learning rate is missing or invalid.")
+            if start != "Prune":
+                try:
+                    learning_rate=float(learning_rate)
+                except (ValueError, TypeError):
+                    raise ValueError("Learning rate is missing or invalid.")
+            else:
+                learning_rate = 0.01
 
             graph_type=row[12]
             graph_type = graph_type.replace(" ", "")
             valid_graph_types=["Full", "WS", "BA"]
+            if start == "Prune" and graph_type != "Full":
+                raise ValueError("Graph type cannot be 'WS' or 'BA' for pruning.")
+            if start == "Prior" and (graph_type == "Full"):
+                raise ValueError("Graph type cannot be 'Full' for prior training.")
             if not graph_type or graph_type not in valid_graph_types:
                 raise ValueError("Graph type is missing or invalid.")
 
@@ -183,26 +185,29 @@ class ModelTrainingHandler:
                 index, model, start, dataset, N, loss, optimizer,
                 epochs, k, p, batch_size, learning_rate, graph_type
             ])
-            return True
+            return True, None
 
         except ValueError as ve:
+            error_msg = f"Error in row {row[0]}: {str(ve)}"
+            print(error_msg)
             self.main_window.show_warning(
                 title="Invalid Row Data",
-                message=f"Error processing row {row[0] - 1}: {str(ve)}",
+                message=error_msg,
                 actions=None,
                 buttons=["ok"]
             )
-            return False
+            return False, str(ve)
 
         except Exception as e:
-            print(f"Error processing row {row-1}: {str(e)}")
+            error_msg = f"Error processing row {row[0]}: {str(e)}"
+            print(error_msg)
             self.main_window.show_warning(
                 title="Invalid Data",
-                message=f"Row {row-1} contains invalid data {row[0]}: {str(e)}",
+                message=error_msg,
                 actions=None,
                 buttons=["ok"]
             )
-            return False
+            return False, str(e)
 
     def parse_n_value(self, n_value, start_type):
         if n_value == "":
@@ -210,11 +215,21 @@ class ModelTrainingHandler:
             
         if start_type == "Prune":
             if "[" in n_value and "]" in n_value:
-                return [int(i) for i in n_value[1:-1].split(",") if i.strip() != ""]
+                parsed_values = [int(i) for i in n_value[1:-1].split(",") if i.strip() != ""]
+                if len(parsed_values) == 2:
+                    raise ValueError("Input size array cannot have exactly 2 elements")
+                if len(parsed_values) == 1:
+                    return parsed_values[0]
+                return parsed_values
             elif "," in n_value: 
-                return [int(i) for i in n_value.split(",") if i.strip() != ""]
+                parsed_values = [int(i) for i in n_value.split(",") if i.strip() != ""]
+                if len(parsed_values) == 2:
+                    raise ValueError("Input size array cannot have exactly 2 elements")
+                if len(parsed_values) == 1:
+                    return parsed_values[0]
+                return parsed_values
             else:
-                return [int(n_value)] * int(n_value)
+                return int(n_value)
         else:
             return int(n_value)
 
@@ -289,7 +304,6 @@ class ModelTrainingHandler:
         self.trainer.message.connect(self.update_training_process_label)
         self.trainer.load_data_and_create_graph()
         
-        # Only connect the download finished signal
         self.trainer.download_thread.finished.connect(
             lambda: self.handle_reading_pruning_table(self.trainer),
             QtCore.Qt.ConnectionType.QueuedConnection
@@ -308,7 +322,6 @@ class ModelTrainingHandler:
         print(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
         self.trainer.message.emit(f"\n=========\nTraining for model {self.current_model_index + 1} finished\n=========\n")
 
-        # Store the current trainer's state before cleanup
         if self.trainer is not None:
             self.main_window.previous_results.append(self.trainer.get_state())
             # Clean up the current trainer
@@ -336,7 +349,7 @@ class ModelTrainingHandler:
 
     def handle_reading_pruning_table(self, model):
         try:
-            hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index - 2)
+            hidden_data = self.main_window.timelineTableModel.get_hidden_data(model.index - 1)
             if hidden_data == '' or hidden_data is None:
                 self.trainer.message.emit("No hidden data for model. Skipping pruning actions.")
                 self.trainer.finished.emit()
@@ -360,6 +373,13 @@ class ModelTrainingHandler:
                 self.on_training_finished()
                 return
 
+            try:
+                self.trainer.finished.disconnect()
+                if hasattr(self.trainer, 'pruner_thread') and self.trainer.pruner_thread:
+                    self.trainer.pruner_thread.finished.disconnect()
+            except:
+                pass
+
             self.process_next_action()
         except Exception as e:
             print(f"Error reading pruning table: {str(e)}")
@@ -367,9 +387,14 @@ class ModelTrainingHandler:
             self.trainer.finished.emit()
             self.on_training_finished()
             return
-        
+
     def process_next_action(self):
-        if not self.action_queue or len(self.action_queue) == 0 or self.trainer is None:
+        if self.trainer is None:
+            self.trainer.finished.emit()
+            self.on_training_finished()
+            return
+            
+        if not self.action_queue or len(self.action_queue) == 0:
             self.trainer.finished.emit()
             self.on_training_finished()
             return
@@ -385,24 +410,32 @@ class ModelTrainingHandler:
         prune_ratio = float(row[3]) / 100
         prune_method = row[4]
 
-        # Start the pruning operation
+        try:
+            if self.trainer.pruner_thread:
+                self.trainer.pruner_thread.finished.disconnect()
+        except:
+            pass
+
         success = self.trainer.async_prune(prune_ratio, layer, prune_method)
         if not success:
             self.trainer.message.emit("Pruning already in progress, skipping action")
             self.process_next_action()
             return
-
-        # Connect to the pruner thread's finished signal after thread creation
         self.trainer.pruner_thread.finished.connect(self.on_pruning_completed)
 
     def on_pruning_completed(self, success):
-        # Disconnect the signal to avoid multiple calls
         if self.trainer.pruner_thread:
             self.trainer.pruner_thread.finished.disconnect(self.on_pruning_completed)
             
         if success:
-            # Process next action only after pruning is complete
-            self.process_next_action()
+            if self.trainer is None:
+                return
+
+            if self.action_queue:
+                self.process_next_action()
+            else:
+                self.trainer.finished.emit()
+                self.on_training_finished()
         else:
             self.trainer.message.emit("Pruning failed, stopping action queue")
             self.trainer.finished.emit()
@@ -411,28 +444,33 @@ class ModelTrainingHandler:
     def handle_retrain_action(self, row):
         epochs = row[5]
         learning_rate = row[6]
+        if epochs=="0" or learning_rate=="0":
+            self.process_next_action()
+            return
+            
         print(f"Retraining model with {epochs} epochs and {learning_rate} learning rate")
         self.trainer.epochs = int(epochs)
         self.trainer.lr = float(learning_rate)
         
-        # Disconnect any existing finished signals
         try:
             self.trainer.finished.disconnect()
         except:
             pass
-            
-        # Connect the finished signal for this retraining action
         self.trainer.finished.connect(self.on_retraining_completed)
-        
-        # Start the training
-        self.trainer.start()
+
+        if self.trainer is not None:
+            self.trainer.start()
 
     def on_retraining_completed(self):
-        # Disconnect the signal to avoid multiple calls
         try:
             self.trainer.finished.disconnect(self.on_retraining_completed)
         except:
             pass
             
-        # Process next action
-        self.process_next_action()
+        if self.trainer is None:
+            return
+        if self.action_queue:
+            self.process_next_action()
+        else:
+            self.trainer.finished.emit()
+            self.on_training_finished()

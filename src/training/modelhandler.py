@@ -14,7 +14,6 @@ class ModelHandler:
         self.model = None
 
     def create_model(self, graph_type, dag_graph, input_size, output_size, feature_size=None):
-
         if graph_type == "WS" or graph_type == "BA":
             if self.model_type == "MLP":
                 mlp_structure = self.dag_to_mlp_structure(dag_graph, input_size, output_size)
@@ -27,12 +26,24 @@ class ModelHandler:
                                            output_dim=output_size, dag_graph=dag_graph).to(self.device)
         elif graph_type == "Full":
             if self.model_type == "MLP":
-                mlp_structure = self.dag_to_mlp_structure(dag_graph, input_size, output_size)
+                if isinstance(self.hidden_sizes, list):
+                    mlp_structure = [input_size] + self.hidden_sizes + [output_size]
+                else:
+                    num_layers = 5
+                    layer_size = self.hidden_sizes
+                    mlp_structure = [input_size] + [layer_size] * num_layers + [output_size]
                 self.model = MLPNet(mlp_structure).to(self.device)
             else:  # LSTM
-                self.model = LSTMNet(input_size=feature_size, 
-                                     hidden_sizes=self.hidden_sizes, 
-                                     output_dim=output_size).to(self.device)
+                if isinstance(self.hidden_sizes, list):
+                    self.model = LSTMNet(input_size=feature_size, 
+                                         hidden_sizes=self.hidden_sizes, 
+                                         output_dim=output_size).to(self.device)
+                else:
+                    num_layers = 5
+                    layer_size = self.hidden_sizes
+                    self.model = LSTMNet(input_size=feature_size, 
+                                         hidden_sizes=[layer_size] * num_layers, 
+                                         output_dim=output_size).to(self.device)
         return self.model
 
     def calculate_metrics(self):
@@ -72,7 +83,6 @@ class ModelHandler:
         return metrics
 
     def dag_to_mlp_structure(self, dag_graph, input_size, output_size):
-        # Check if the graph has node attributes for layers
         layers = nx.get_node_attributes(dag_graph, 'layer')
         if not layers:
             return [input_size, output_size]

@@ -10,6 +10,8 @@ from src.training.datahandler import DataHandler
 from src.training.modelhandler import ModelHandler
 import networkx as nx
 from src.training.graphhandler import GraphHandler
+import warnings
+warnings.filterwarnings("ignore", message="The verbose parameter is deprecated.*")
 
 
 class Trainer(QThread):
@@ -108,8 +110,7 @@ class Trainer(QThread):
             print("Error: Model is None")
             self.message.emit("Error: Model is None")
             return
-            
-
+        
         if not self.data_loaded:
             print("Error: Data not loaded")
             self.message.emit("Error: Data not loaded")
@@ -120,7 +121,7 @@ class Trainer(QThread):
             self.message.emit("Error: Model is None")
             return
             
-        print(f"Starting training for model {self.index} with {self.epochs} epochs")
+        print(f"Starting training for model {self.index} with {self.epochs} epochs and {self.lr} learning rate")
         self.train(self.model, self.train_loader, self.epochs - self.current_epoch, lr=self.lr)
         self.finished.emit()  # notify gui when done
     
@@ -173,11 +174,8 @@ class Trainer(QThread):
             'global_sparsity_prune': results['actual_sparsity'],
             'prune_type': results['prune_type']
         }
-        #self.record_pruning_metrics(results['prune_mode'], results['target_sparsity'])
         
     def handle_pruning_finished(self, success):
-        if success:
-            self.message.emit("Pruning completed successfully")
         self.pruner_thread = None
         
     # Training methods
@@ -185,16 +183,39 @@ class Trainer(QThread):
         print("Training started...")
         model.to(self.device)
         
-        # Initialize optimizer
+        optimizer_configs = {
+            "Adam": {"lr": 0.001 if lr is None else lr, "weight_decay": 1e-4},
+            "SGD": {"lr": 0.01 if lr is None else lr, "momentum": 0.9, "weight_decay": 1e-4},
+            "RMSprop": {"lr": 0.001 if lr is None else lr, "weight_decay": 1e-4},
+            "Adadelta": {"lr": 1.0 if lr is None else lr, "weight_decay": 1e-4},
+        }
+        
+        # Get optimizer config
+        optimizer_config = optimizer_configs.get(self.optimizer_type, {"lr": 0.001, "weight_decay": 1e-4})
+        if lr is not None:
+            optimizer_config["lr"] = lr
+
         optimizers = {
             "Adam": optim.Adam,
             "SGD": optim.SGD,
             "RMSprop": optim.RMSprop,
-            "Adadelta": optim.Adadelta,
-            "Adagrad": optim.Adagrad
+            "Adadelta": optim.Adadelta
         }
-        self.optimizer = optimizers.get(self.optimizer_type, optim.Adam)(model.parameters(), lr=lr)
-        epoch = 0 
+        
+        # optimizer
+        self.optimizer = optimizers.get(self.optimizer_type, optim.Adam)(
+            model.parameters(), 
+            **optimizer_config
+        )
+        
+        # Use learning rate scheduler
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer, 
+            mode='min', 
+            factor=0.5, 
+            patience=1, 
+            verbose=True
+        )
 
         for epoch in range(epochs):
             if not self.running:
@@ -209,10 +230,13 @@ class Trainer(QThread):
                     print("Training stopped early")
                     return
                 images, labels = images.to(self.device), labels.to(self.device)
-                
-                # Handle different input formats
+
+                #Reshape images for LSTM models
                 if isinstance(model, (LSTMNet, SparseLSTMNet)):
-                    images = images.view(images.size(0), self.sequence_length, self.feature_size)
+                    if self.dataset_type == "MNIST":
+                        images = images.view(images.size(0), self.sequence_length, self.feature_size)
+                    elif self.dataset_type in ["CIFAR-10", "CIFAR-100"]:
+                        images = images.view(images.size(0), self.sequence_length, -1)
                 else:
                     images = images.view(images.size(0), -1)
 
@@ -220,25 +244,31 @@ class Trainer(QThread):
                 outputs = model(images)
                 
                 if isinstance(self.criterion, nn.MSELoss):
-                    labels_one_hot = torch.zeros(labels.size(0), 10).to(self.device)
+                    labels_one_hot = torch.zeros(labels.size(0), self.dataset_properties["num_classes"]).to(self.device)
                     labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
                     loss = self.criterion(outputs, labels_one_hot)
                 else:
                     loss = self.criterion(outputs, labels)
 
                 loss.backward()
+                # Gradient clipping to prevent exploding gradients
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 self.optimizer.step()
+                
+                # Re-apply masks for sparse models after optimizer step
+                if hasattr(model, '_apply_masks'):
+                    model._apply_masks()
 
                 total_loss += loss.item()
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
-
-            # Update metrics
-            self.current_epoch = epoch
+            self.current_epoch += 1
             train_loss = total_loss / len(train_loader)
             train_acc = 100. * correct / total
             val_loss, val_acc = self.validate(model)
+            
+            scheduler.step(val_loss)
             
             self.training_metrics.update({
                 'final_train_loss': train_loss,
@@ -249,7 +279,8 @@ class Trainer(QThread):
 
             print(f"Epoch {epoch+1}/{epochs}: "
                   f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.2f}%, "
-                  f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%")
+                  f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%, "
+                  f"LR: {self.optimizer.param_groups[0]['lr']:.6f}")
             self.message.emit(f"Epoch {epoch+1}/{epochs}: Train Acc: {train_acc:.2f}%, Val Acc: {val_acc:.2f}%")
 
 
@@ -270,18 +301,19 @@ class Trainer(QThread):
             for images, labels in self.test_loader:
                 images, labels = images.to(self.device), labels.to(self.device)
                 
+
                 if isinstance(model, (LSTMNet, SparseLSTMNet)):
-                    if hasattr(self, 'sequence_length') and hasattr(self, 'feature_size'):
+                    if self.dataset_type == "MNIST":
                         images = images.view(images.size(0), self.sequence_length, self.feature_size)
-                    else:
-                        images = images.view(images.size(0), -1)
+                    elif self.dataset_type in ["CIFAR-10", "CIFAR-100"]:
+                        images = images.view(images.size(0), self.sequence_length, -1)
                 else:
                     images = images.view(images.size(0), -1)
                 
                 outputs = model(images)
                 
                 if isinstance(self.criterion, nn.MSELoss):
-                    labels_one_hot = torch.zeros(labels.size(0), 10).to(self.device)
+                    labels_one_hot = torch.zeros(labels.size(0), self.dataset_properties["num_classes"]).to(self.device)
                     labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
                     loss = self.criterion(outputs, labels_one_hot)
                 else:
@@ -356,8 +388,7 @@ class Trainer(QThread):
                 "Adam": optim.Adam,
                 "SGD": optim.SGD,
                 "RMSprop": optim.RMSprop,
-                "Adadelta": optim.Adadelta,
-                "Adagrad": optim.Adagrad
+                "Adadelta": optim.Adadelta
             }
             opt_class = optimizers.get(self.optimizer_type, optim.Adam)
             self.optimizer = opt_class(self.model.parameters(), lr=self.lr or 0.001)

@@ -27,13 +27,13 @@ class UIAnimations:
         move_anim.setEasingCurve(QtCore.QEasingCurve.Type.OutCubic)
 
         def on_animation_finished():
-            widget.move(final_pos)  # Ensure the widget is at the final position
-            widget.updateGeometry()  # Update the layout to reflect the new position
+            widget.move(final_pos)
+            widget.updateGeometry()
 
         group = QtCore.QParallelAnimationGroup(widget)
         group.addAnimation(fade)
         group.addAnimation(move_anim)
-        group.finished.connect(on_animation_finished)  # Connect the finished signal
+        group.finished.connect(on_animation_finished)
         group.start(QtCore.QAbstractAnimation.DeletionPolicy.KeepWhenStopped)
 
         return effect

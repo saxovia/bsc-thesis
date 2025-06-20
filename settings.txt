@@ -1,2 +1,2 @@
 # Saved graphs file location
-C:\Users\Weebmachine\Desktop\bsc-thesis\src\..\savedgraphs
+C:\Users\user\Desktop\bsc-thesis\src\..\savedgraphs

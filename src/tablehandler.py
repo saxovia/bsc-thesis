@@ -6,13 +6,13 @@ class TableHandler:
     def __init__(self, main_window):
         self.main_window = main_window
         self.data = [
-            ["", "2", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "1", "", "", 32, 0.001, "Full"],
-            ["", "3", "MLP", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["", "3", "MLP", "Prune", "MNIST", "[11,3,6,4,2,8]", "CrossEntropy", "Adam", "1", "", "", 32, 0.01, "Full"],
-            ["", "1", "MLP", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "1", 2, 1.0, 64,0.001, "WS"],
-            ["", "4", "MLP", "Prior", "MNIST", "70", "CrossEntropy", "Adam", "1", 2, 0.8, 64,0.01, "WS"],
-            ["", "4", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "1", 2, 0.7, 64,0.01, "WS"],
-            ["", "4", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "1", 2, 0.5, 64,0.01, "WS"],
+            ["", "1", "MLP", "Prune", "MNIST", "[89, 44, 22, 11, 4, 80]", "CrossEntropy", "Adam", "", "", "", 32, "", "Full"],
+            ["", "2", "MLP", "Prune", "MNIST", "[15,9,6,4,2,12]", "CrossEntropy", "SGD", "", "", "", 32, "", "Full"],
+            ["", "3", "MLP", "Prune", "MNIST", "[11,3,6,4,2,8]", "CrossEntropy", "RMSprop", "", "", "", 32, "", "Full"],
+            ["", "4", "MLP", "Prior", "MNIST", "48", "CrossEntropy", "Adam", "2", 2, 1.0, 64,0.001, "WS"],
+            ["", "5", "MLP", "Prior", "MNIST", "70", "CrossEntropy", "Adam", "2", 2, 0.8, 64,0.01, "WS"],
+            ["", "6", "MLP", "Prior", "MNIST", "100", "CrossEntropy", "Adam", "2", 2, 0.7, 64,0.01, "WS"],
+            ["", "7", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "2", 2, 0.5, 64,0.01, "WS"],
         ]
         self.hiddendata = [
             [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"]  ],
@@ -28,7 +28,6 @@ class TableHandler:
         self.main_window.reorder_table_view.setModel(self.main_window.pruningTableModel)
         self.main_window.reorder_table_view.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
-        # Connect selection changed signal
         self.main_window.reorder_table_view.selectionModel().selectionChanged.connect(self.handle_pruning_selection_changed)
 
         layout = QtWidgets.QVBoxLayout()
@@ -262,6 +261,6 @@ class TableHandler:
         selected_rows = [index.row() for index in self.main_window.reorder_table_view.selectionModel().selectedRows()]
         deselected_rows = [index.row() for index in deselected.indexes()]
         
-        print(f"Selected rows: {selected_rows}")
-        print(f"Deselected rows: {deselected_rows}")
+        #print(f"Selected rows: {selected_rows}")
+        #print(f"Deselected rows: {deselected_rows}")
 
