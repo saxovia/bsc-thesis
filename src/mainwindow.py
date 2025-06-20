@@ -59,6 +59,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_page = "Home"
         self.on_settings_page = False
         self.window_control = WindowControl(self)
+        
+        # Set up signal handler for Ctrl+C (KeyboardInterrupt)
+        import signal
+        signal.signal(signal.SIGINT, self.signal_handler)
         #self.home_button.clicked.connect(self.page_navigation_handler.show_home_page)
 
         self.page_navigation_handler.show_home_page() #this ensures to start at the home page
@@ -116,15 +120,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # for footer
     def update_specs_usage(self):
-        memory = psutil.virtual_memory()
-        ram_usage = memory.used / (1024 ** 3)
-        ram_total = memory.total / (1024 ** 3)
+        try:
+            memory = psutil.virtual_memory()
+            ram_usage = memory.used / (1024 ** 3)
+            ram_total = memory.total / (1024 ** 3)
 
-        gpus = GPUtil.getGPUs()
-        gpu_usage = gpus[0].load * 100 if gpus else "N/A"
-        gpu_usage_string = f"{gpu_usage:.2f}%" if gpus else "N/A"
-        statusbartext = f"RAM: {ram_usage:.2f} GB / {ram_total:.2f} GB | CPU: {psutil.cpu_percent()}% | GPU Usage: {gpu_usage_string}"
-        self.statusbar.showMessage(statusbartext)
+            gpus = GPUtil.getGPUs()
+            gpu_usage = gpus[0].load * 100 if gpus else "N/A"
+            gpu_usage_string = f"{gpu_usage:.2f}%" if gpus else "N/A"
+            statusbartext = f"RAM: {ram_usage:.2f} GB / {ram_total:.2f} GB | CPU: {psutil.cpu_percent()}% | GPU Usage: {gpu_usage_string}"
+            self.statusbar.showMessage(statusbartext)
+        except KeyboardInterrupt:
+            # Handle keyboard interrupt (Ctrl+C) gracefully
+            print("Keyboard interrupt received. Exiting gracefully...")
+            self.close()
+        except Exception as e:
+            print(f"Error in update_specs_usage: {str(e)}")
+            # Just show a simplified status message if there's an error
+            self.statusbar.showMessage("RAM/CPU/GPU data unavailable")
 
 
     def complete_reset(self):
@@ -205,3 +218,10 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         msg.exec()
         self.setGraphicsEffect(None)
+
+    def signal_handler(self, signal, frame):
+
+        self.close()
+
+        import sys
+        sys.exit(0)

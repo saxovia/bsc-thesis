@@ -131,6 +131,17 @@ class PageNavigationHandler:
         if selected_rows:
             pruning_data = []
             for row in range(self.main_window.pruningTableModel.rowCount()):
+                if row == self.main_window.pruningTableModel.rowCount() - 1:
+                    all_empty = True
+                    for col in range(1, self.main_window.pruningTableModel.columnCount()):
+                        index = self.main_window.pruningTableModel.index(row, col)
+                        val = self.main_window.pruningTableModel.data(index, Qt.QtCore.Qt.ItemDataRole.DisplayRole)
+                        if val and str(val).strip():
+                            all_empty = False
+                            break
+                    if all_empty:
+                        continue
+                        
                 row_data = []
                 for col in range(self.main_window.pruningTableModel.columnCount()):
                     index = self.main_window.pruningTableModel.index(row, col)

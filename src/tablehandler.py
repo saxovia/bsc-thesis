@@ -15,7 +15,7 @@ class TableHandler:
             ["", "7", "MLP", "Prior", "MNIST", "250", "CrossEntropy", "Adam", "2", 2, 0.5, 64,0.01, "WS"],
         ]
         self.hiddendata = [
-            [ ["","", "2", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "3", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "4", "Retrain", "-", "-", "-", "1", "0.001"]  ],
+            [ ["","", "1", "Retrain", "-", "-", "-", "1", "0.001"], ["", "", "2", "Prune", "FULL", "10", "Magnitude", "-", "-"], ["", "", "3", "Retrain", "-", "-", "-", "2", "0.001"]],
         ]
 
     def show_table_widget(self):
@@ -78,8 +78,8 @@ class TableHandler:
         self.main_window.reorder_table_view2.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked)
 
         for i in range(len(self.data)):
-            for j in range(len(self.hiddendata)):
-                self.main_window.timelineTableModel.set_hidden_data(i, self.hiddendata[j])
+            if len(self.hiddendata) > 0:
+                self.main_window.timelineTableModel.set_hidden_data(i, self.hiddendata[0])
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.main_window.reorder_table_view2)
@@ -204,21 +204,24 @@ class TableHandler:
             )
         self.main_window.reorder_table_view2.setCurrentIndex(
             self.main_window.reorder_table_view2.model().index(row , 0)
-        )
-
+        )        
         print(self.main_window.reorder_table_view2.selectionModel())
         data = self.main_window.timelineTableModel.get_hidden_data(row)
 
-        if len(data) <= 1:
-            data = self.hiddendata
+        if not data or not isinstance(data, list):
+            data = self.hiddendata[0]
+        elif len(data) > 0 and not isinstance(data[0], list):
+            data = [data]
+            
         self.main_window.pruningTableModel.beginResetModel()
         self.main_window.pruningTableModel._data = []
 
         for hidden_row in data:
-            new_row = [""] * self.main_window.pruningTableModel.columnCount()
-            for j in range(min(len(hidden_row), self.main_window.pruningTableModel.columnCount())):
-                new_row[j] = hidden_row[j]
-            self.main_window.pruningTableModel._data.append(new_row)
+            if isinstance(hidden_row, list):
+                new_row = [""] * self.main_window.pruningTableModel.columnCount()
+                for j in range(min(len(hidden_row), self.main_window.pruningTableModel.columnCount())):
+                    new_row[j] = hidden_row[j]
+                self.main_window.pruningTableModel._data.append(new_row)
 
         # Check if the last row is empty and add one if it isn't
         if not self.main_window.pruningTableModel._data or not all(cell == "" for cell in self.main_window.pruningTableModel._data[-1]):
